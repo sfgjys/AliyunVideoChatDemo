@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- key -->
+    <string name="preference_key_play_format">preference-key-play-format</string>
+    <string name="preference_key_play_buffer_duration">preference-key-play-buffer-duration</string>
+    <string name="preference_key_show_log_info">preference-key-show-log-info</string>
+    <!-- string -->
+    <string name="unit_second">单位 s</string>
+</resources>

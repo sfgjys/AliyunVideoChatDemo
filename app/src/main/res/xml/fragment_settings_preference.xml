@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:title="Settings"
+>
+    <ListPreference
+        android:key="@string/preference_key_play_format"
+        android:entries="@array/play_format"
+        android:entryValues="@array/play_format_value"
+        android:summary="Flv|Rtmp|M3u8"
+        android:title="播放格式"
+        android:defaultValue="@string/flv"
+    />
+
+    <EditTextPreference
+        android:title="播放器Buffer时长"
+        android:key="@string/preference_key_play_buffer_duration"
+        android:summary="@string/unit_second"
+        android:inputType="number"
+        android:singleLine="true"
+        android:text="1"
+    />
+
+    <SwitchPreference
+        android:title="显示Log信息"
+        android:key="@string/preference_key_show_log_info"
+        android:textOff="不显示"
+        android:textOn="显示"
+        android:defaultValue="false"
+    />
+
+
+</PreferenceScreen>

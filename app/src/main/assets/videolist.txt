@@ -1,0 +1,6 @@
+flv[云外] 3 hd http://qt1.alivecdn.com/app-yunwai/video-yunwai.flv?auth_key=1466401806-0-0-86a27b4973cc56d0536676a0f8a0a7af
+rtmp[云外] 3 hd rtmp://qt1.alivecdn.com/app-yunwai/video-yunwai?auth_key=1466403218-0-0-bbd1b798afce192e989e1b60adc475e3
+m3u8[云外] 3 hd http://qt1.alivecdn.com/app-yunwai/video-yunwai.m3u8?auth_key=1466403218-0-0-5316f53d053fba19cd946a7ecf843ab1
+m3u8[回看] 4 hd http://livecdn.video.taobao.com/temp/test1466295255657-65e172e6-1b96-4660-9f2f-1aba576d84e8.m3u8
+m3u82[回看] 4 hd http://mtstvm3u8.video.taobao.com/20160615/2890efd2-5607-4300-9285-62963c5c1bdd.m3u8?auth_key=1466599640-0-freeuser-f1f7bb7155272bd56b46cf02e73ac1ac
+m3u8[回看] 4 hd http://mtstvm3u8.video.taobao.com/20160615/2890efd2-5607-4300-9285-62963c5c1bdd.m3u8?auth_key=1466599640-0-freeuser-f1f7bb7155272bd56b46cf02e73ac1ac

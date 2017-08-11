@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black_transprent_30"
+    android:orientation="vertical">
+
+
+    <ImageView
+        android:id="@+id/iv_invite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_margin="10dp"
+        android:padding="7dp"
+        android:src="@drawable/icon_connect" />
+
+    <ImageView
+        android:id="@+id/iv_flash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_margin="10dp"
+        android:layout_toLeftOf="@id/iv_invite"
+        android:src="@drawable/icon_live_share_normal"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/iv_camera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_margin="10dp"
+        android:layout_toLeftOf="@id/iv_flash"
+        android:src="@drawable/icon_create_camera_front" />
+
+    <ImageView
+        android:id="@+id/iv_beauty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_margin="10dp"
+        android:layout_toLeftOf="@id/iv_camera"
+        android:src="@drawable/icon_create_beauty_on" />
+</RelativeLayout>

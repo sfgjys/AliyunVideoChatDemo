@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="flv">flv</string>
+    <string name="rtmp">rtmp</string>
+    <string name="m3u8">m3u8</string>
+
+    <string-array name="play_format">
+        <item>flv</item>
+        <item>rtmp</item>
+        <item>m3u8</item>
+    </string-array>
+
+    <string-array name="play_format_value">
+        <item>@string/flv</item>
+        <item>@string/rtmp</item>
+        <item>@string/m3u8</item>
+    </string-array>
+
+    <string-array name="log_labels">
+        <item>音频编码码率：</item>
+        <item>视频编码码率：</item>
+        <item>音频上传码率：</item>
+        <item>视频上传码率：</item>
+        <item>队列中音频总帧数：</item>
+        <item>队列中视频总帧数：</item>
+        <item>视频编码帧率：</item>
+        <item>视频上传帧率：</item>
+        <item>视频采集帧率：</item>
+        <item>当前上传视频帧PTS：</item>
+        <item>当前上传音频帧PTS：</item>
+        <item>前一个关键帧PTS：</item>
+        <item>视频编码总帧数：</item>
+        <item>视频编码总时长：</item>
+        <item>上传Packets的总大小：</item>
+        <item>上传Packets的总时长：</item>
+        <item>上传视频的总帧数：</item>
+        <item>丢弃视频的总时长：</item>
+        <item>视频采集到上传的延时：</item>
+        <item>音频采集到上传的延时：</item>
+        <item>缓冲视频帧数：</item>
+        <item>缓冲音频帧数：</item>
+        <item>视频下载到播放延时：</item>
+        <item>音频下载到播放延时：</item>
+        <item>缓冲中最后视频帧PTS：</item>
+        <item>缓冲中最后音频帧PTS：</item>
+    </string-array>
+</resources>

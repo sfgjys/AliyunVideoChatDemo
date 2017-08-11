@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="label_push_delay">采集推送延迟:</string>
+    <string name="label_download_play_delay">下载播放延迟:</string>
+    <string name="label_video_cache_delay">视频缓冲延迟:</string>
+    <string name="label_first_frame_time">首帧耗时：</string>
+    <string name="label_audio_encode_bitrate">音频编码码率：</string>
+    <string name="label_video_encode_bitrate">视频编码码率：</string>
+    <string name="label_audio_upload_bitrate">音频上传码率：</string>
+    <string name="label_video_upload_bitrate">视频上传码率：</string>
+    <string name="label_audio_frames_in_queue">队列中音频总帧数：</string>
+    <string name="label_video_frames_in_queue">队列中视频总帧数：</string>
+    <string name="label_video_encode_frame_rate">视频编码帧率：</string>
+    <string name="label_video_upload_frame_rate">视频上传帧率：</string>
+    <string name="label_video_capture_frame_rate">视频采集帧率：</string>
+    <string name="label_current_video_pts">当前上传视频帧PTS：</string>
+    <string name="label_current_audio_pts">当前上传音频帧PTS：</string>
+    <string name="label_previous_i_frame_pts">前一个关键帧PTS：</string>
+    <string name="label_video_encode_frames">视频编码总帧数：</string>
+    <string name="label_video_encode_durations">视频编码总时长：</string>
+    <string name="label_upload_packet_sizes">上传Packets的总大小：</string>
+    <string name="label_upload_packet_durations">上传Packets的总时长：</string>
+    <string name="label_upload_video_frames">上传视频的总帧数：</string>
+    <string name="label_dropped_video_frame_durations">丢弃视频帧总时长：</string>
+    <string name="label_video_capture_to_upload_delay">视频采集到上传延时：</string>
+    <string name="label_audio_capture_to_upload_delay">音频采集到上传延时：</string>
+
+    <string name="label_cache_video_frames">缓冲视频帧数：</string>
+    <string name="label_cache_audio_frames">缓冲音频帧数：</string>
+    <string name="label_video_download_to_play_delay">视频下载到播放延时：</string>
+    <string name="label_audio_download_to_play_delay">音频下载到播放延时：</string>
+    <string name="label_cache_last_video_frame_pts">缓冲中最后视频帧PTS：</string>
+    <string name="label_cache_last_audio_frame_pts">缓冲中最后音频帧PTS：</string>
+</resources>

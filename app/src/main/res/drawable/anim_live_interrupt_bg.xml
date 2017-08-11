@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@drawable/bg_live_interrupt_1" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_2" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_3" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_4" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_5" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_6" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_7" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_8" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_9" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_10" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_11" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_12" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_13" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_14" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_15" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_16" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_17" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_18" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_19" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_20" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_21" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_22" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_23" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_24" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_25" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_26" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_27" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_28" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_29" android:duration="30"/>
+    <item android:drawable="@drawable/bg_live_interrupt_30" android:duration="30"/>
+
+</animation-list>

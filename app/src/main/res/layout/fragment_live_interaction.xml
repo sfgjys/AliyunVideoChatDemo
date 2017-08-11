@@ -1,0 +1,19 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent">
+    <FrameLayout android:id="@+id/bottom_container"
+                 android:layout_width="match_parent"
+                 android:layout_height="65dp"
+                 android:layout_alignParentBottom="true"
+                 android:layout_marginTop="5dp"
+    />
+
+    <FrameLayout
+        android:id="@+id/interaction_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_container"
+    ></FrameLayout>
+</RelativeLayout>

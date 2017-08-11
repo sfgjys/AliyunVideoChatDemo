@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="5dp"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/ll_live_user_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="5dp">
+
+        <ImageView
+            android:id="@+id/iv_live_avatar"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/timeline_share_wx_iamge1" />
+
+        <TextView
+            android:id="@+id/tv_live_name"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="6dp"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:singleLine="true"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/font_size_28px" />
+
+    </LinearLayout>
+
+    <com.alivc.videochat.demo.widget.SquareRelativeLayout
+        android:id="@+id/fl_live_cover_layout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#f3f3f3">
+
+        <ImageView
+            android:id="@+id/iv_live_cover"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:scaleType="centerCrop"
+            android:src="@drawable/logo" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:src="@drawable/icon_list_item_paly" />
+    </com.alivc.videochat.demo.widget.SquareRelativeLayout>
+
+</LinearLayout>

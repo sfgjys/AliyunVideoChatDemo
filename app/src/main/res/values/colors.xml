@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+
+    <color name="live_comment_text0">#28B4BB</color>
+    <color name="live_comment_text1">#8B9C00</color>
+    <color name="live_comment_text2">#DB7C00</color>
+
+    <color name="live_comment_name_color">#DBDBDB</color>
+    <color name="live_comment_circle_color">#806EFA</color>
+    <color name="live_comment_message_color">#B69FFF</color>
+
+
+    <color name="black_transprent_30">#4d000000</color>
+    <color name="black_transprent_80">#cc000000</color>
+    <color name="white_alpha_20">#33ffffff</color>
+
+    <color name="page_background">#FFF0F0F0</color>
+    <color name="row_divider">#ffcccccc</color>
+    <color name="live_level_sun_color">#FF7B86FC</color>
+    <color name="blue_7b_normal_color">#FF7B86FC</color>
+    <color name="white_alpha_30">#4dffffff</color>
+    <color name="live_close_title_color">#FFB5A2F1</color>
+    <color name="home_award_bg_color">#FF9279FA</color>
+    <color name="home_mission_income_color">#FFFFDF91</color>
+    <color name="text_setting_color">#999999</color>
+
+
+</resources>

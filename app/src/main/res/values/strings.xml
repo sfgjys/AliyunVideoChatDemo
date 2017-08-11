@@ -1,0 +1,114 @@
+<resources>
+    <string name="app_name">阿里云直播</string>
+    <string name="start_live">开始直播</string>
+    <string name="watch_live">观看直播</string>
+    <string name="room_id">房间号:</string>
+    <string name="name">用户名:</string>
+    <string name="uid">用户ID:</string>
+
+    <string name="input_room_id">房间号</string>
+    <string name="input_name">用户名</string>
+    <string name="input_uid">用户ID</string>
+
+    <string name="login_failed">登陆失败</string>
+    <string name="live_list_failed">加载直播列表失败</string>
+    <string name="create_live_failed">创建直播失败</string>
+
+    <string name="not_login_tip">请先登录</string>
+    <string name="close_live_failed">关闭直播失败</string>
+
+    <string name="send_like_failed">点赞失败</string>
+    <string name="send_comment_failed">发送评论失败</string>
+
+    <string name="no_camera_permission">没有权限使用摄像头，请开启摄像头权限</string>
+    <string name="no_record_audio_permission">没有权限使用录音，请开启录音权限</string>
+    <string name="no_read_phone_state_permission">没有读取用户数据的权限，请开启该权限</string>
+    <string name="no_write_external_storage_permission">没有文件写权限，请开启该权限</string>
+    <string name="no_read_external_storage_permission">没有文件读权限，请开启该权限</string>
+    <string name="live_finished">直播已结束</string>
+    <string name="live_cannot_publish">因长时间未成功推流，直播已结束，请退出</string>
+    <string name="back">返回</string>
+    <string name="live_play_interrupt_tip">主播暂时离开，请稍后</string>
+    <string name="live_buffering">正在缓冲...</string>
+    <string name="error_stop_playing">播放出错，请退出观看！</string>
+    <string name="error_video_chat_timeout">连麦炒作超时！</string>
+    <string name="error_audio_player">音频播放器停止播放！</string>
+    <string name="error_video_chat_no_audio_data">采集音频声音错误！</string>
+    <string name="error_video_chat_no_video_data">采集音频声音错误！</string>
+    <string name="error_invite_timeout">邀请连麦超时！</string>
+    <string name="error_mix_stream_success">连麦混流成功！</string>
+    <string name="error_mix_stream_error">连麦混流失败，请退出连麦！</string>
+    <string name="error_mix_stream_timeout">连麦混流超时！</string>
+    <string name="error_mix_stream_not_exist">连麦观众流不存在！</string>
+    <string name="error_main_stream_not_exist">连麦主播流不存在！</string>
+    <string name="error_player_invalid_inputfile">无效的输入流！</string>
+    <string name="error_player_open_failed">流打开失败！</string>
+    <string name="error_player_no_network">播放器无网络！</string>
+    <string name="error_player_timeout">播放器网络超时！</string>
+    <string name="error_player_read_packet_timeout">播放器下载超时！</string>
+    <string name="error_publisher_network_unconnect">推流无网络！</string>
+    <string name="error_publisher_network_timeout">推流网络超时！</string>
+    <string name="network_busy">当前网络状况不佳</string>
+    <string name="network_reconnect_failure">推流重连失败</string>
+    <string name="error_video_capture">视频采集失败</string>
+    <string name="reconnect_tip">推流已断开，正在重连...</string>
+    <string name="live_list_empty_text">精彩直播酝酿中，敬请期待</string>
+    <string name="no_users_to_chat">暂无可连麦用户</string>
+    <string name="no_stream_tip">直播尚未开始，请稍后刷新列表重试</string>
+    <string name="video_chatting_finished">连麦结束</string>
+    <string name="close_video_chatting_failed">关闭连麦失败</string>
+    <string name="video_chatting_timeout">连麦超时</string>
+    <string name="inviting_process_timeout">超时未处理，已经自动拒绝对方的连麦邀请</string>
+    <string name="invite_timeout_tip">对方长时间未响应，已取消连麦邀请</string>
+
+
+    <string name="no_read_phone_state">没有获取到 android.permissions.READ_PHONE_STATE权限, 播放器初始化失败</string>
+    <string name="not_allow_call_self">不可以连麦自己</string>
+    <string name="not_allow_repeat_call">已经发送过连麦邀请了，请不要重复发送</string>
+    <string name="invite_failed">发起连麦失败</string>
+    <string name="error_room_inviting">对方正在与他人连麦，请稍后再尝试</string>
+    <string name="error_chatting_already">对方正与自己连麦</string>
+    <string name="invite_succeed">发起连麦成功，请等待对方响应</string>
+    <string name="feedback_failed">连麦反馈失败</string>
+    <string name="received_calling">收到%1$s的连麦邀请</string>
+    <string name="video_callling_message">是否同意连麦？</string>
+    <string name="not_agree">不同意</string>
+    <string name="agree">同意</string>
+    <string name="title_video_call_response">连麦答复</string>
+    <string name="sure">确定</string>
+    <string name="agree_message">%1$s(%2$s)同意连麦</string>
+    <string name="not_agree_message">%1$s(%2$s)不同意连麦</string>
+    <string name="no_primary_stream_publish">对方尚未开始推流</string>
+    <string name="merge_stream_failed">连麦失败</string>
+    <string name="close_video_call_confirm_message">确定要结束连麦？</string>
+    <string name="close_video_call_title">结束连麦</string>
+    <string name="cancel">取消</string>
+    <string name="close_video_call_notify_message">%1$s已经终止连麦！</string>
+    <string name="no_network">链接断开</string>
+    <string name="poor_network">网络差</string>
+    <string name="good_network">网络恢复</string>
+    <string name="no_audio">采集音频失败</string>
+    <string name="publish_error">推流失败</string>
+
+    <string name="anchor">主播</string>
+    <string name="watcher">观众</string>
+
+    <string name="prompt">提示</string>
+    <string name="message_push_init_failed">消息推送初始化失败，请退出重新进入</string>
+    <string name="message_im_login_failed">IM服务器登陆失败，请退出重新登陆</string>
+    <string name="error_unknown">未知错误</string>
+    <string name="chatting">正在连麦...</string>
+    <string name="close_chat_failed_for_new_chat">当前连麦关闭失败，无法开启新的连麦</string>
+
+    <string name="show_first_frame">显示第一帧</string>
+
+    <string name="cannot_invite_chatting">当前不能邀请连麦</string>
+    <string name="no_inviting_for_response">当前没有连麦邀请</string>
+    <string name="mix_stream_timeout_tip">由于长时间未连麦成功，已自动结束连麦</string>
+    <string name="mix_internal_error">混流内部错误</string>
+    <string name="main_stream_not_exist">主流不存在</string>
+    <string name="mix_stream_not_exist">副流不存在</string>
+    <string name="mix_success">混流成功</string>
+    <string name="camera_open_failure_for_live">摄像头开启失败，无法直播</string>
+    <string name="camera_open_failure_for_chat">摄像头开启失败，无法连麦</string>
+</resources>
