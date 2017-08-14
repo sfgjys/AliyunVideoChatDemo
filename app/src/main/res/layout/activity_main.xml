@@ -17,6 +17,7 @@
             android:layout_width="wrap_content"
             android:layout_height="48dp"
             android:layout_marginLeft="10dp"
+            android:contentDescription="@string/only_one_image"
             android:onClick="onClick"
             android:scaleType="center"
             android:src="@drawable/back" />
@@ -25,11 +26,10 @@
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:gravity="center"
-            android:text="正在直播"
+            android:text="@string/liveing"
             android:textColor="#333"
             android:textSize="@dimen/font_size_28px" />
     </RelativeLayout>
-
 
 
     <android.support.v4.widget.SwipeRefreshLayout
@@ -57,6 +57,7 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:contentDescription="@string/only_one_image"
             android:src="@drawable/no_live_data" />
 
         <TextView
@@ -69,15 +70,15 @@
             android:textSize="@dimen/font_size_28px" />
 
         <Button
-            android:layout_marginTop="100dp"
             android:id="@+id/btn_create_my"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            android:onClick="onClick"
+            android:layout_marginTop="100dp"
             android:background="@drawable/login_btn_bg_rect"
-            android:text="创建我的直播"
-            android:textSize="@dimen/font_size_32px"
-            android:textColor="@android:color/white"/>
+            android:onClick="onClick"
+            android:text="@string/create_my_live"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/font_size_32px" />
     </LinearLayout>
 
     <ImageView
@@ -87,6 +88,7 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="20dp"
+        android:contentDescription="@string/only_one_image"
         android:onClick="onClick"
         android:src="@drawable/icon_tab_live" />
 

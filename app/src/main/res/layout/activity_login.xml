@@ -19,9 +19,9 @@
             android:layout_gravity="center_vertical"
             android:layout_margin="20dp"
             android:background="@drawable/login_input_bg_rect"
-            android:hint="用户名"
+            android:hint="@string/user_name"
+            android:maxLines="1"
             android:paddingLeft="30dp"
-            android:singleLine="true"
             android:textColor="@color/blue_7b_normal_color"
             android:textColorHint="@color/row_divider"
             android:textCursorDrawable="@drawable/live_edit_cursor"
@@ -35,9 +35,9 @@
             android:layout_margin="20dp"
             android:background="@drawable/login_btn_bg_rect"
             android:gravity="center"
+            android:maxLines="1"
             android:onClick="onClick"
-            android:singleLine="true"
-            android:text="登录"
+            android:text="@string/login"
             android:textColor="#fff"
             android:textSize="16sp" />
 
@@ -46,5 +46,6 @@
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:contentDescription="@string/only_one_image"
         android:src="@drawable/login_bg" />
 </LinearLayout>

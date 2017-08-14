@@ -8,7 +8,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.alivc.videochat.demo.R;
@@ -20,35 +19,33 @@ import com.alivc.videochat.demo.uitils.PreferenceUtil;
 
 import java.util.regex.Pattern;
 
-/**
- * Created by liujianghao on 16-8-9.
- */
 public class LoginActivity extends BaseActivity implements View.OnClickListener, TextWatcher {
     private static final String TAG = "LoginActivity";
 
     LoginPresenter mLoginPresenter;
-    private EditText mEtUsername;
-    private Button mBtnLoginNext;
+    private EditText mInputUserName;
+    private Button mLoginButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 登录具体操作对象
         mLoginPresenter = new LoginPresenter(mLoginView);
+
         setContentView(R.layout.activity_login);
-        mEtUsername = (EditText) findViewById(R.id.et_username);
-        mBtnLoginNext = (Button) findViewById(R.id.iv_login_phone_next);
-        mEtUsername.addTextChangedListener(this);
-        mBtnLoginNext.setEnabled(false);
+        mInputUserName = (EditText) findViewById(R.id.et_username);
+        mLoginButton = (Button) findViewById(R.id.iv_login_phone_next);
+        mInputUserName.addTextChangedListener(this);
+        mLoginButton.setEnabled(false);
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.iv_login_phone_next:
-                mLoginPresenter.login(mEtUsername.getText().toString());
+                mLoginPresenter.login(mInputUserName.getText().toString());
                 break;
-//            case R.id.iv_login_phone_back:
-//                finish();
         }
     }
 
@@ -119,17 +116,18 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener,
 
     }
 
-    private Pattern mNamePattern = Pattern.compile("[\\w|\\d]+");
-
     @Override
     public void afterTextChanged(Editable s) {
+        Pattern mNamePattern = Pattern.compile("[\\w|\\d]+");
+
+        // 使用正则表达式去约束输入的内容
         String text = s.toString();
         Log.d(TAG, "username : " + text);
         if (mNamePattern.matcher(text).matches()) {
             Log.d(TAG, "text pattern true");
-            mBtnLoginNext.setEnabled(true);
+            mLoginButton.setEnabled(true);
         } else {
-            mBtnLoginNext.setEnabled(false);
+            mLoginButton.setEnabled(false);
         }
     }
 }

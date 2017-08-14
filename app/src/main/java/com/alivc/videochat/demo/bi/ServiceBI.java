@@ -13,6 +13,10 @@ import retrofit2.Response;
  * Created by liujianghao on 16-8-2.
  */
 public class ServiceBI {
+
+    /**
+     * 接口的描述: 该类是网络请求后的结果监听回调
+     */
     public interface Callback<T> {
         void onResponse(int code, T response);
 
@@ -44,12 +48,13 @@ public class ServiceBI {
     }
 
     /**
-     * 判断请求是否在执行
+     * 方法描述: 判断参数Call任务是否还存在
      *
-     * @param call
-     * @return
+     * @param call Call任务请求
+     * @return true代表Call任务请求还存在
      */
-    public static final boolean isCalling(Call call) {
+    public static boolean isCalling(Call call) {
+        // isExecuted返回true 代表call已经入队或者已经执行
         return (call != null && call.isExecuted() && !call.isCanceled());
     }
 }

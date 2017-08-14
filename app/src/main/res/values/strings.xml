@@ -111,4 +111,9 @@
     <string name="mix_success">混流成功</string>
     <string name="camera_open_failure_for_live">摄像头开启失败，无法直播</string>
     <string name="camera_open_failure_for_chat">摄像头开启失败，无法连麦</string>
+    <string name="only_one_image">就是一张图片而已</string>
+    <string name="login">登录</string>
+    <string name="user_name">用户名</string>
+    <string name="liveing">正在直播</string>
+    <string name="create_my_live">创建我的直播</string>
 </resources>

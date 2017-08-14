@@ -7,6 +7,7 @@ import com.google.gson.annotations.SerializedName;
  * Created by liujianghao on 16-8-9.
  */
 public class LoginForm {
+    // HttpConstant.KEY_NAME是json数据中表现的字段
     @SerializedName(HttpConstant.KEY_NAME)
     private String username;
 

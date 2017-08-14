@@ -22,8 +22,8 @@ public class AccountServiceBI extends ServiceBI {
      */
     public Call<HttpResponse<LoginResult>> login(String username, Callback<LoginResult> callback) {
         Call<HttpResponse<LoginResult>> call;
-        LoginForm form = new LoginForm(username);
-        call = ServiceFactory.getAccountService().login(form);
+        LoginForm loginForm = new LoginForm(username);
+        call = ServiceFactory.getAccountService().login(loginForm);
         processObservable(call, callback);
         return call;
     }
