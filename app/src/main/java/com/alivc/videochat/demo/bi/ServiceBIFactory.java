@@ -1,7 +1,8 @@
 package com.alivc.videochat.demo.bi;
 
+
 /**
- * Created by liujianghao on 16-8-10.
+ * 类的描述: 可以获取各种ServiceBI实例对象
  */
 public class ServiceBIFactory {
     private static LiveServiceBI sLiveServiceBI = new LiveServiceBI();

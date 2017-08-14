@@ -27,7 +27,7 @@
             android:layout_marginLeft="6dp"
             android:ellipsize="end"
             android:gravity="center_vertical"
-            android:singleLine="true"
+            android:maxLines="1"
             android:textColor="@android:color/black"
             android:textSize="@dimen/font_size_28px" />
 

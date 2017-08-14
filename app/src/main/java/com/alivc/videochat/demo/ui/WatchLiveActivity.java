@@ -51,6 +51,29 @@ import java.util.TreeMap;
  */
 
 public class WatchLiveActivity extends BaseActivity implements View.OnClickListener, FragmentInteraction {
+
+    /**
+     * 方法描述: 跳转至本界面的方法
+     */
+    public static void startActivity(Context context,
+                                     String playUrl,
+                                     String roomID,
+                                     String anchorName,
+                                     String anchorUID) {
+        Intent intent = new Intent(context, WatchLiveActivity.class);
+        Bundle bundle = new Bundle();
+        // 直播列表Item的数据源LiveItemResult对象包含的roomId
+        bundle.putString(ExtraConstant.EXTRA_ROOM_ID, roomID);
+        // 直播列表Item的数据源LiveItemResult对象包含的rtmpPlayUrl
+        bundle.putString(ExtraConstant.EXTRA_PLAY_URL, playUrl);
+        // 直播列表Item的数据源LiveItemResult对象包含的name
+        bundle.putString(ExtraConstant.EXTRA_NAME, anchorName);
+        // 直播列表Item的数据源LiveItemResult对象包含的uid
+        bundle.putString(ExtraConstant.EXTRA_ANCHOR_UID, anchorUID);
+        intent.putExtras(bundle);
+        context.startActivity(intent);
+    }
+
     public static final int INTERACTION_TYPE_INVITE = 1;
 
     private static final String TAG = "WatchLivePresenter";
@@ -107,11 +130,15 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
+        // 屏幕常量
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // 全屏
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+
         ImManager imManager = new ImManager(this, new ImHelper(new MNSClientImpl()), mConnectivityMonitor);
         imManager.init();
+
         mPresenter = new LifecycleLivePlayPresenterImpl(this, mView, imManager, getUid());
         setLifecycleListener(mPresenter);
         super.onCreate(savedInstanceState);
@@ -258,22 +285,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         if (mLogInfoFragment != null) {
             getSupportFragmentManager().beginTransaction().remove(mLogInfoFragment).commit();
         }
-    }
-
-
-    public static void startActivity(Context context,
-                                     String playUrl,
-                                     String roomID,
-                                     String anchorName,
-                                     String anchorUID) {
-        Intent intent = new Intent(context, WatchLiveActivity.class);
-        Bundle bundle = new Bundle();
-        bundle.putString(ExtraConstant.EXTRA_ROOM_ID, roomID);
-        bundle.putString(ExtraConstant.EXTRA_PLAY_URL, playUrl);
-        bundle.putString(ExtraConstant.EXTRA_NAME, anchorName);
-        bundle.putString(ExtraConstant.EXTRA_ANCHOR_UID, anchorUID);
-        intent.putExtras(bundle);
-        context.startActivity(intent);
     }
 
 

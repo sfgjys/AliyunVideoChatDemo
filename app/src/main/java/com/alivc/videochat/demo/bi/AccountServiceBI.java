@@ -34,10 +34,6 @@ public class AccountServiceBI extends ServiceBI {
 
     /**
      * 获取MNS链接信息
-     *
-     * @param topic
-     * @param callback
-     * @return
      */
     public Call<HttpResponse<MNSConnectModel>> getMnsConnectionInfo(String topic, Callback<MNSConnectModel> callback) {
         Call<HttpResponse<MNSConnectModel>> call;

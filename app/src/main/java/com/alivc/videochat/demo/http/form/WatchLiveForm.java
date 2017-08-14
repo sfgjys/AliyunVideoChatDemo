@@ -4,9 +4,8 @@ import com.alivc.videochat.demo.http.HttpConstant;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Created by liujianghao on 16-10-26.
+ * 类的描述: 分装房间id和登录成功后保存的信息的类
  */
-
 public class WatchLiveForm {
     @SerializedName(HttpConstant.KEY_ROOM_ID)
     private String mRoomId;

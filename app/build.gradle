@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.alivc.videochat.demoapp"
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 23
         versionCode 21203
         versionName "2.1.2.3"

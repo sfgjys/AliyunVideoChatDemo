@@ -8,9 +8,18 @@ import java.io.Serializable;
 /**
  * Created by liujianghao on 16-8-9.
  */
-public class LiveItemResult implements Serializable{
+public class LiveItemResult implements Serializable {
+    /**
+     * 变量的描述: 状态为流没有创建
+     */
     public static final int STATUS_CREATE_NO_STREAM = 0;
+    /**
+     * 变量的描述: 状态为正常直播
+     */
     public static final int STATUS_NORMAL_LIVE_STREAM = 1;
+    /**
+     * 变量的描述: 状态为打断了流
+     */
     public static final int STATUS_INTERRUPTED_STREAM = 2;
 
     @SerializedName(HttpConstant.KEY_ROOM_ID)

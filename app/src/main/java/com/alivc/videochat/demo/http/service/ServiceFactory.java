@@ -16,6 +16,7 @@ public class ServiceFactory {
     static {
         // 创建拦截器，并将拦截器添加进OkHttpClient，以便下面初始化Retrofit对象时用
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
+        // 设置拦截器打印  请求/响应行 + 头 + 体
         interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         OkHttpClient client = new OkHttpClient.Builder().addInterceptor(interceptor).build();
 

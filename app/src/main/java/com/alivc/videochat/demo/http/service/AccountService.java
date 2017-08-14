@@ -19,5 +19,5 @@ public interface AccountService {
 
     // 请求路径
     @POST(HttpConstant.URL_WEBSOCKET_INFO)
-    Call<HttpResponse<MNSConnectModel>> getMnsConnectionInfo(@Body MNSConnectionInfoForm form);//
+    Call<HttpResponse<MNSConnectModel>> getMnsConnectionInfo(@Body MNSConnectionInfoForm form);// 获取MNS链接信息
 }

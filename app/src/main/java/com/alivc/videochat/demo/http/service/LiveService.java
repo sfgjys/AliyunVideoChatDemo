@@ -23,29 +23,21 @@ import retrofit2.http.POST;
  */
 public interface LiveService {
 
-
     @POST(HttpConstant.URL_CREATE_LIVE)
-    Call<HttpResponse<LiveCreateResult>>
-    createLive(@Body CreateLiveForm form);
-
+    Call<HttpResponse<LiveCreateResult>> createLive(@Body CreateLiveForm form);
 
     @POST(HttpConstant.URL_WATCH_LIVE)
-    Call<HttpResponse<WatchLiveResult>>
-    watchLive(@Body WatchLiveForm form);
+    Call<HttpResponse<WatchLiveResult>> watchLive(@Body WatchLiveForm form);
 
     @POST(HttpConstant.URL_CLOSE_LIVE)
-    Call<HttpResponse<Object>>
-    closeLive(@Body CloseLiveForm form);
+    Call<HttpResponse<Object>> closeLive(@Body CloseLiveForm form);
 
     @POST(HttpConstant.URL_LIST_LIVE)
-    Call<HttpResponse<List<LiveItemResult>>>
-    list();
+    Call<HttpResponse<List<LiveItemResult>>> list();
 
     @POST(HttpConstant.URL_WATCHER_LIST)
-    Call<HttpResponse<List<WatcherModel>>>
-    watcherList(@Body WatcherListForm form);
+    Call<HttpResponse<List<WatcherModel>>> watcherList(@Body WatcherListForm form);
 
     @POST(HttpConstant.URL_EXIT_WATCHING)
-    Call<HttpResponse<Object>>
-    exitWatching(@Body ExitWatchingForm form);
+    Call<HttpResponse<Object>> exitWatching(@Body ExitWatchingForm form);
 }

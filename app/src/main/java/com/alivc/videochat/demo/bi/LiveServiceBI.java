@@ -87,17 +87,21 @@ public class LiveServiceBI extends ServiceBI {
      * @param uid
      * @param callback
      */
-    public Call watchLive(String roomID, String uid,
-                          final Callback<WatchLiveResult> callback) {
-        Call watchLiveCall;
+    public Call watchLive(String roomID, String uid, final Callback<WatchLiveResult> callback) {
         final WatchLiveResult[] fResult = new WatchLiveResult[1];
-        WatchLiveForm form = new WatchLiveForm(roomID, uid);
-        watchLiveCall = ServiceFactory.getLiveService().watchLive(form);
-        watchLiveCall.enqueue(new retrofit2.Callback<HttpResponse<WatchLiveResult>>() {
 
+        Call<HttpResponse<WatchLiveResult>> watchLiveCall;
+        // 将房间id和登录成功后保存的信息分装进WatchLiveForm对象
+        WatchLiveForm form = new WatchLiveForm(roomID, uid);
+        // 获取LiveService专属的Call任务
+        watchLiveCall = ServiceFactory.getLiveService().watchLive(form);
+        // 使用Call开启网络请求
+        watchLiveCall.enqueue(new retrofit2.Callback<HttpResponse<WatchLiveResult>>() {
             @Override
             public void onResponse(final Call<HttpResponse<WatchLiveResult>> call, Response<HttpResponse<WatchLiveResult>> response) {
                 fResult[0] = response.body().getData();
+
+                // 这里是获取topic和subscriptionName参数分装成MNSConnectionInfoForm对象，然后去请求获取MNS链接信息
                 if (fResult[0] != null && fResult[0].getMNSModel() != null) {
                     String topic = fResult[0].getMNSModel().getTopic();//subscriptionName = topic;
                     MNSConnectionInfoForm form = new MNSConnectionInfoForm(topic, topic);
@@ -105,6 +109,7 @@ public class LiveServiceBI extends ServiceBI {
                     processObservable(mnsCall, new Callback<MNSConnectModel>() {
                         @Override
                         public void onResponse(int code, MNSConnectModel response) {
+                            // 将包含MNS链接信息的MNSConnectModel对象设置进WatchLiveResult回调给接口
                             fResult[0].setConnectModel(response);
                             if (callback != null) {
                                 callback.onResponse(code, fResult[0]);
@@ -147,7 +152,7 @@ public class LiveServiceBI extends ServiceBI {
     }
 
     /**
-     * @param callback
+     * 方法描述: 获取直播列表网络请求的Call，并使用Call和结果回调接口开启请求
      */
     public Call list(Callback<List<LiveItemResult>> callback) {
         Call<HttpResponse<List<LiveItemResult>>> call = ServiceFactory.getLiveService().list();
@@ -157,8 +162,7 @@ public class LiveServiceBI extends ServiceBI {
 
 
     /**
-     * @param roomID
-     * @param callback
+     * 方法描述: 使用roomId去开启网络请求，获取观众列表
      */
     public Call watcherList(String roomID, Callback<List<WatcherModel>> callback) {
         Call<HttpResponse<List<WatcherModel>>> call;
