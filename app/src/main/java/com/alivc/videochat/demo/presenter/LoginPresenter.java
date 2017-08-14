@@ -66,7 +66,7 @@ public class LoginPresenter {
      * @param username 登陆界面上输入框中的内容
      */
     public void login(String username) {
-        // 判断Call是否还存在是否还在入队，执行
+        // 判断Call是否还存在是否还在入队，执行  注意：虽然在请求结果的最后会释放Call，但是如果用户持续按登录，则login也会持续被调用
         if (ServiceBI.isCalling(mLoginCall)) {
             // 是的话，就取消Call
             mLoginCall.cancel();

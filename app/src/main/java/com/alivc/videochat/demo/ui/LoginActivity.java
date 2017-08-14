@@ -55,7 +55,7 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener,
         mLoginPresenter = null;
     }
 
-
+    // **************************************************** 登录请求结果具体操作对象 ****************************************************
     private LoginView mLoginView = new LoginView() {
         /**
          * 方法描述: 跳转到主页(MainActivity)
@@ -105,6 +105,8 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener,
 //            }
         }
     };
+
+    // --------------------------------------------------------------------------------------------------------
 
     @Override
     public void beforeTextChanged(CharSequence s, int start, int count, int after) {

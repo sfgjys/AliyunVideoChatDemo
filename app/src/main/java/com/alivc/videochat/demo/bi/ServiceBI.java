@@ -8,9 +8,8 @@ import com.alivc.videochat.demo.http.model.HttpResponse;
 import retrofit2.Call;
 import retrofit2.Response;
 
-
 /**
- * Created by liujianghao on 16-8-2.
+ * 类的描述: 该类包含请求结果回调接口，判断Call是否在队列中或已经执行，正式使用Call和结果回调接口实例开启请求的方法processObservable
  */
 public class ServiceBI {
 
@@ -23,16 +22,21 @@ public class ServiceBI {
         void onFailure(Throwable t);
     }
 
+    /**
+     * 方法描述: 使用参数一Call对象去进行正式的网络请求，并调用参数二接口去回调请求结果
+     */
     <T> void processObservable(Call<HttpResponse<T>> call, final ServiceBI.Callback<T> subscriber) {
         call.enqueue(new retrofit2.Callback<HttpResponse<T>>() {
             @Override
             public void onResponse(Call<HttpResponse<T>> call, Response<HttpResponse<T>> response) {
                 HttpResponse<T> body = response.body();
                 if (!response.isSuccessful() || body == null) {
+                    // 请求失败，转到onFailure方法
                     onFailure(call, new APIException("UnKnown Exception", APIErrorCode.ERROR_UNKNOWN));
                     return;
                 }
                 if (body.getCode() == HttpConstant.HTTP_OK && subscriber != null) {
+                    // 调用回调接口的方法
                     subscriber.onResponse(response.code(), response.body().getData());
                 } else {
                     onFailure(call, new APIException(body.getMessage(), body.getCode()));
@@ -41,6 +45,7 @@ public class ServiceBI {
 
             @Override
             public void onFailure(Call<HttpResponse<T>> call, Throwable t) {
+                // 调用回调接口的方法
                 if (subscriber != null)
                     subscriber.onFailure(t);
             }

@@ -12,15 +12,12 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
 
-/**
- * Created by liujianghao on 16-8-9.
- */
 public interface AccountService {
+    // 请求路径
     @POST(HttpConstant.URL_LOGIN)
-    Call<HttpResponse<LoginResult>>
-    login(@Body LoginForm form);
+    Call<HttpResponse<LoginResult>> login(@Body LoginForm form);// 将带有登录信息的对象参数传入获取Call任务对象
 
+    // 请求路径
     @POST(HttpConstant.URL_WEBSOCKET_INFO)
-    Call<HttpResponse<MNSConnectModel>>
-    getMnsConnectionInfo(@Body MNSConnectionInfoForm form);
+    Call<HttpResponse<MNSConnectModel>> getMnsConnectionInfo(@Body MNSConnectionInfoForm form);//
 }
