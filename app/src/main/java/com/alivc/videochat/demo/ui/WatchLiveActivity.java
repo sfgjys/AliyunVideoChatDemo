@@ -135,7 +135,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         // 全屏
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-
         ImManager imManager = new ImManager(this, new ImHelper(new MNSClientImpl()), mConnectivityMonitor);
         imManager.init();
 
@@ -148,7 +147,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         if (Build.VERSION.SDK_INT >= 23) {
             permissionCheck();
         }
-
 
         setContentView(R.layout.activity_watch_live);
         mRootContainer = (FrameLayout) findViewById(R.id.root_container);

@@ -1,22 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent"
-    >
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <SurfaceView
         android:id="@+id/host_play_surface"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        />
+        android:layout_height="match_parent" />
 
     <LinearLayout
         android:id="@+id/log_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:visibility="visible"
-        >
+        android:visibility="visible">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -26,16 +23,14 @@
                 android:id="@+id/tv_label_first_frame_time"
                 style="@style/LogText"
                 android:layout_width="wrap_content"
-                android:text="@string/label_first_frame_time"
-                />
+                android:text="@string/label_first_frame_time" />
 
             <TextView
                 android:id="@+id/tv_value_first_frame_time"
                 style="@style/LogText"
                 android:layout_width="match_parent"
                 android:layout_marginLeft="10dp"
-                android:layout_toRightOf="@id/tv_label_first_frame_time"
-                />
+                android:layout_toRightOf="@id/tv_label_first_frame_time" />
         </RelativeLayout>
     </LinearLayout>
 
@@ -44,27 +39,24 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@android:color/holo_red_light"
-        android:textSize="@dimen/font_size_28px"
-        />
+        android:textSize="@dimen/font_size_28px" />
 
     <ImageView
         android:id="@+id/iv_loading"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
     <FrameLayout
         android:id="@+id/root_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        ></FrameLayout>
+        android:layout_height="match_parent" />
     <!-- 连麦小窗显示区 -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|right"
         android:layout_marginBottom="70dp"
-        android:orientation="vertical"
-        >
+        android:orientation="vertical">
 
         <!-- 左边 -->
         <FrameLayout
@@ -72,15 +64,13 @@
             android:layout_height="128dp"
             android:layout_marginBottom="10dp"
             android:clickable="false"
-            android:focusable="false"
-            >
+            android:focusable="false">
 
             <SurfaceView
                 android:id="@+id/parter_view_left"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical"
-                />
+                android:orientation="vertical" />
 
             <ImageView
                 android:id="@+id/iv_abort_chat_left"
@@ -92,8 +82,7 @@
                 android:onClick="onClick"
                 android:padding="3dp"
                 android:src="@drawable/icon_live_close"
-                android:visibility="gone"
-                />
+                android:visibility="gone" />
         </FrameLayout>
 
         <!-- 中间 -->
@@ -108,8 +97,7 @@
                 android:id="@+id/parter_view_middle"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical"
-                />
+                android:orientation="vertical" />
 
             <ImageView
                 android:id="@+id/iv_abort_chat_middle"
@@ -121,8 +109,7 @@
                 android:onClick="onClick"
                 android:padding="3dp"
                 android:src="@drawable/icon_live_close"
-                android:visibility="gone"
-                />
+                android:visibility="gone" />
         </FrameLayout>
 
 
@@ -130,15 +117,13 @@
             android:layout_width="72dp"
             android:layout_height="128dp"
             android:clickable="false"
-            android:focusable="false"
-            >
+            android:focusable="false">
 
             <SurfaceView
                 android:id="@+id/parter_view_right"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical"
-                />
+                android:orientation="vertical" />
 
             <ImageView
                 android:id="@+id/iv_abort_chat_right"
@@ -150,8 +135,7 @@
                 android:onClick="onClick"
                 android:padding="3dp"
                 android:src="@drawable/icon_live_close"
-                android:visibility="gone"
-                />
+                android:visibility="gone" />
         </FrameLayout>
     </LinearLayout>
 
@@ -164,6 +148,5 @@
         android:layout_margin="5dp"
         android:onClick="onClick"
         android:padding="10dp"
-        android:src="@drawable/icon_live_close"
-        />
+        android:src="@drawable/icon_live_close" />
 </FrameLayout>
