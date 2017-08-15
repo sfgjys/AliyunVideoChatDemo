@@ -47,11 +47,7 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
     private ILivePlayView mView;
     private LifecycledPlayerMgr mPlayerMgr;
 
-
-    public LifecycleLivePlayPresenterImpl(Context context,
-                                          ILivePlayView view,
-                                          ImManager imManager,
-                                          String mUID) {
+    public LifecycleLivePlayPresenterImpl(Context context, ILivePlayView view, ImManager imManager, String mUID) {
         super(context);
         this.mView = view;
         this.mPlayerMgr = new LifecycledPlayerMgr(context, imManager, mUID, mCallback);

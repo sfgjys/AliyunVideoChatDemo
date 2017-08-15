@@ -74,26 +74,11 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         context.startActivity(intent);
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
     public static final int INTERACTION_TYPE_INVITE = 1;
 
     private static final String TAG = "WatchLivePresenter";
-
-    private final int PERMISSION_REQUEST_CODE = 1;
-    private final String[] permissionManifest = {
-            Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-    };
-
-    private final int[] noPermissionTip = {
-            R.string.no_camera_permission,
-            R.string.no_record_audio_permission,
-            R.string.no_read_phone_state_permission,
-            R.string.no_write_external_storage_permission,
-            R.string.no_read_external_storage_permission
-    };
 
     // TODO 预览surface view
     private ChattingViewHolder mLeftChattingHolder;
@@ -135,15 +120,24 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         // 全屏
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
+        // MNSClientImpl是MNSClient接口的实现类 参数二ImManager的帮助类，参数三网络链接状态广播
         ImManager imManager = new ImManager(this, new ImHelper(new MNSClientImpl()), mConnectivityMonitor);
+        // 初始化
         imManager.init();
-
+        // TODO 上下各两行代码不清楚
         mPresenter = new LifecycleLivePlayPresenterImpl(this, mView, imManager, getUid());
         setLifecycleListener(mPresenter);
+
+        // 以上代码必须在onCreate上面先写
         super.onCreate(savedInstanceState);
+
+        // 获取传递过来的roomId
         mLiveRoomID = getIntent().getStringExtra(ExtraConstant.EXTRA_ROOM_ID);
+
+        // 这个类没什么作用
         mAppSettings = new AppSettings(this);
 
+        // 获取权限
         if (Build.VERSION.SDK_INT >= 23) {
             permissionCheck();
         }
@@ -210,6 +204,45 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         mPlaySurfaceView.getHolder().setKeepScreenOn(true);
     }
 
+    // **************************************************** 权限请求 ****************************************************
+
+    /**
+     * 变量的描述: 请求权限的Code
+     */
+    private final int PERMISSION_REQUEST_CODE = 1;
+
+    private final String[] permissionManifest = {
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+    };
+
+    private final int[] noPermissionTip = {
+            R.string.no_camera_permission,
+            R.string.no_record_audio_permission,
+            R.string.no_read_phone_state_permission,
+            R.string.no_write_external_storage_permission,
+            R.string.no_read_external_storage_permission
+    };
+
+    /**
+     * 权限检查（适配6.0以上手机）
+     */
+    private void permissionCheck() {
+        int permissionCheck = PackageManager.PERMISSION_GRANTED;
+        for (String permission : permissionManifest) {
+            if (PermissionChecker.checkSelfPermission(this, permission)
+                    != PackageManager.PERMISSION_GRANTED) {
+                permissionCheck = PackageManager.PERMISSION_DENIED;
+            }
+        }
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, permissionManifest, PERMISSION_REQUEST_CODE);
+        }
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -226,6 +259,9 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
                 break;
         }
     }
+
+    // --------------------------------------------------------------------------------------------------------
+
 
     @Override
     protected void onResume() {
@@ -282,23 +318,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         mLogContainer.setVisibility(View.GONE);
         if (mLogInfoFragment != null) {
             getSupportFragmentManager().beginTransaction().remove(mLogInfoFragment).commit();
-        }
-    }
-
-
-    /**
-     * 权限检查（适配6.0以上手机）
-     */
-    private void permissionCheck() {
-        int permissionCheck = PackageManager.PERMISSION_GRANTED;
-        for (String permission : permissionManifest) {
-            if (PermissionChecker.checkSelfPermission(this, permission)
-                    != PackageManager.PERMISSION_GRANTED) {
-                permissionCheck = PackageManager.PERMISSION_DENIED;
-            }
-        }
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, permissionManifest, PERMISSION_REQUEST_CODE);
         }
     }
 
@@ -389,6 +408,19 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             mIvClose = ivClose;
             mIndex = index;
         }
+    }
+
+    private void hideSurfaceView(SurfaceView surfaceView) {
+        Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());
+        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
+        layoutParams.topMargin = DensityUtil.dp2px(WatchLiveActivity.this, 300);
+        surfaceView.requestLayout();
+    }
+
+    private void showSurfaceView(SurfaceView surfaceView) {
+        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
+        layoutParams.topMargin = DensityUtil.dp2px(WatchLiveActivity.this, 0);
+        surfaceView.requestLayout();
     }
 
     private ILivePlayView mView = new ILivePlayView() {
@@ -661,18 +693,4 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             mBottomFragment.hideRecordView();
         }
     };
-
-    private void hideSurfaceView(SurfaceView surfaceView) {
-        Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());
-        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
-        layoutParams.topMargin = DensityUtil.dp2px(WatchLiveActivity.this, 300);
-        surfaceView.requestLayout();
-    }
-
-    private void showSurfaceView(SurfaceView surfaceView) {
-        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
-        layoutParams.topMargin = DensityUtil.dp2px(WatchLiveActivity.this, 0);
-        surfaceView.requestLayout();
-    }
-
 }

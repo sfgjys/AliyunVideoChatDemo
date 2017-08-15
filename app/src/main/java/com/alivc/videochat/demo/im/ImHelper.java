@@ -37,19 +37,19 @@ public class ImHelper {
         void action(T t);
     }
 
-    public ImHelper(MNSClient mnsClient){
+    public ImHelper(MNSClient mnsClient) {
         this.mMNSClient = mnsClient;
     }
 
+    /**
+     * 方法描述: 初始化MNSClient消息客户端
+     */
     public void init(Context context) {
         mMNSClient.init(context);
     }
 
 
-    public void createSession(WebSocketConnectOptions options,
-                              IWebSocketActionListener listener,
-                              MnsControlBody body,
-                              ConnectionStatusCallback callback) {
+    public void createSession(WebSocketConnectOptions options, IWebSocketActionListener listener, MnsControlBody body, ConnectionStatusCallback callback) {
         this.mStatusCallback = callback;
         mMNSClient.createConnect(options, body, listener, mCallback);
         body.toString();
@@ -80,23 +80,23 @@ public class ImHelper {
     };
 
     final Gson gson = new Gson();
+
     public <T> T convert(JsonObject json, Class<T> clazz) {
-       return gson.fromJson(json, clazz);
+        return gson.fromJson(json, clazz);
     }
 
     public <T> void doFunc(Func<T> func, JsonObject json, Class<T> clazz) {
-        if(func != null && clazz != null) {
+        if (func != null && clazz != null) {
             T t = convert(json, clazz);
             func.action(t);
         }
     }
 
 
-
     private WebSocketCallback mCallback = new WebSocketCallback() {
         final int MSG_WHAT_RECEIVED_MESSAGE = 1;
         final int MSG_WHAT_CONNECTION_LOST = 2;
-        private Handler mHandler = new Handler(Looper.getMainLooper()){
+        private Handler mHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
@@ -105,7 +105,7 @@ public class ImHelper {
                         mProcessor.processMessage(BaseMessage.class, (MessageBody) msg.obj);
                         break;
                     case MSG_WHAT_CONNECTION_LOST:
-                        if(mStatusCallback != null) {
+                        if (mStatusCallback != null) {
                             Log.d("WebSocket", "ImHelper-->MSG_WHAT_CONNECTION_LOST");
                             mStatusCallback.onConnectionLost((Throwable) msg.obj);
                         }
@@ -113,6 +113,7 @@ public class ImHelper {
                 }
             }
         };
+
         @Override
         public void connectionLost(Throwable cause) {
             Log.d("WebSocket", "ImHelper.connectionLost");
@@ -121,7 +122,7 @@ public class ImHelper {
 
         @Override
         public void stringMessageArrived(WebSocketStringMessage message) {
-            if(message != null) {
+            if (message != null) {
                 TextMessageBody body = new TextMessageBody(message.getContent());
                 mHandler.obtainMessage(MSG_WHAT_RECEIVED_MESSAGE, body).sendToTarget();
             }

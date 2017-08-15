@@ -19,8 +19,7 @@ import retrofit2.Call;
 /**
  * Created by liujianghao on 16-8-3.
  */
-public class ImManager implements IWebSocketActionListener,
-        ImHelper.ConnectionStatusCallback, ConnectivityMonitor.ConnectivityChangedListener {
+public class ImManager implements IWebSocketActionListener, ImHelper.ConnectionStatusCallback, ConnectivityMonitor.ConnectivityChangedListener {
     private ImHelper mImHelper;
     private ConnectivityMonitor mConnectivityMonitor;
     private ImConnectionStatus mStatus = ImConnectionStatus.UNCONNECT;
@@ -83,7 +82,7 @@ public class ImManager implements IWebSocketActionListener,
     }
 
     private void reconnect() {
-        if(mMnsInfoCall != null && mMnsInfoCall.isExecuted() && !mMnsInfoCall.isCanceled()) {
+        if (mMnsInfoCall != null && mMnsInfoCall.isExecuted() && !mMnsInfoCall.isCanceled()) {
             mMnsInfoCall.cancel();
         }
         mMnsInfoCall = mAccountServiceBI.getMnsConnectionInfo(mControlBody.getTopic(), mMnsCallback);
