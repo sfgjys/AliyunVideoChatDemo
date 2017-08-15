@@ -31,10 +31,7 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
     private LifecyclePublisherMgr mPublisherMgr;
     private ILiveRecordView mView;
 
-    public LifecycleLiveRecordPresenterImpl(Context context,
-                                            ILiveRecordView view,
-                                            String uid,
-                                            ImManager imManager) {
+    public LifecycleLiveRecordPresenterImpl(Context context, ILiveRecordView view, String uid, ImManager imManager) {
         super(context);
         this.mPublisherMgr = new LifecyclePublisherMgr(context, mPublisherCallback, uid, imManager);
         this.mView = view;

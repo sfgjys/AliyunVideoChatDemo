@@ -15,46 +15,58 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by apple on 2016/12/2.
+ * 类的描述: 连通性监听广播，该广播是动态注册的，实例化对象后调用register方法才算开启广播，否则就是一个对象，如果需要监听广播内容就调用addConnectivityStatusChangedListener方法
  */
-
 public class ConnectivityMonitor extends BroadcastReceiver {
+
     private static final String TAG = ConnectivityMonitor.class.getName();
 
-    private static final int MSG_WHAT_NETWORK_ONLINE = 1;
-    private static final int MSG_WHAT_NETWORK_OFFLINE = 2;
+    /**
+     * 类的描述: 用于返回连通性变化的监听回调
+     */
+    public interface ConnectivityChangedListener {
+        void onConnectivityStatusChanged(boolean isOnline);
+    }
 
-    private List<ConnectivityChangedListener> mChangedListeners = new ArrayList<>();
+    // --------------------------------------------------------------------------------------------------------
+
     private IntentFilter mFilter = new IntentFilter();
 
+    /**
+     * 方法描述: 连通性监听广播构造，在构造时就将action添加IntentFilter去
+     */
     public ConnectivityMonitor() {
         mFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
     }
 
+    /**
+     * 方法描述: 广播的动态注册
+     */
     public void register(Context context) {
         context.registerReceiver(this, mFilter);
     }
 
+    /**
+     * 方法描述: 广播的动态解绑
+     */
     public void unRegister(Context context) {
         context.unregisterReceiver(this);
     }
 
-    public void addConnectivityStatusChangedListener(ConnectivityChangedListener listener) {
-        this.mChangedListeners.add(listener);
-    }
+    // --------------------------------------------------------------------------------------------------------
 
-    public void removeConnectivityStatusChangedListener(ConnectivityChangedListener listener) {
-        this.mChangedListeners.remove(listener);
-    }
+    private static final int MSG_WHAT_NETWORK_ONLINE = 1;
+    private static final int MSG_WHAT_NETWORK_OFFLINE = 2;
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        ConnectivityManager cm =
-                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        // 网络链接状态管理
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
+        // 获取包含了网络的连接情况的对象
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        boolean isConnected = activeNetwork != null &&
-                activeNetwork.isConnectedOrConnecting();
+        // 如果网络连接存在或者正在被建立的过程中则返回true，其他为false
+        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
 
         if (isConnected) {
             Log.d(TAG, "网络链接畅通");
@@ -93,6 +105,9 @@ public class ConnectivityMonitor extends BroadcastReceiver {
         }
     }
 
+    /**
+     * 方法描述: 手机的网络又可以分为好多种
+     */
     private void detectMobileNetworkType(NetworkInfo activeNetwork) {
         String strSubTypeName = activeNetwork.getSubtypeName();
         switch (activeNetwork.getSubtype()) {
@@ -130,22 +145,41 @@ public class ConnectivityMonitor extends BroadcastReceiver {
         }
     }
 
-    public interface ConnectivityChangedListener {
-        void onConnectivityStatusChanged(boolean isOnline);
+    // --------------------------------------------------------------------------------------------------------
+
+    private List<ConnectivityChangedListener> mChangedListeners = new ArrayList<>();
+
+    /**
+     * 方法描述: 实例化连通性变化监听回调接口，并将实例化的对象添加进监听集合
+     */
+    public void addConnectivityStatusChangedListener(ConnectivityChangedListener listener) {
+        this.mChangedListeners.add(listener);
     }
+
+    /**
+     * 方法描述: 从集合中移除实例化连通性变化监听回调接口
+     */
+    public void removeConnectivityStatusChangedListener(ConnectivityChangedListener listener) {
+        this.mChangedListeners.remove(listener);
+    }
+
+    // --------------------------------------------------------------------------------------------------------
 
     private Handler eventHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            // 监听集合要有监听对象，才能进行回调
             if (!mChangedListeners.isEmpty()) {
                 switch (msg.what) {
                     case MSG_WHAT_NETWORK_ONLINE:
+                        // 通知网络正在链接(主要是用于MSN)
                         for (ConnectivityChangedListener listener : mChangedListeners) {
                             listener.onConnectivityStatusChanged(true);
                         }
                         break;
                     case MSG_WHAT_NETWORK_OFFLINE:
+                        // 通知网路断开了(主要是用于MSN)
                         for (ConnectivityChangedListener listener : mChangedListeners) {
                             listener.onConnectivityStatusChanged(false);
                         }
@@ -154,5 +188,6 @@ public class ConnectivityMonitor extends BroadcastReceiver {
             }
         }
     };
+
 
 }
