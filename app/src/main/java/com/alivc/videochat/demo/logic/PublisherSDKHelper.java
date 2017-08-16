@@ -65,14 +65,29 @@ public class PublisherSDKHelper {
      * 变量的描述: 存储正在参与连麦的URL的集合
      */
     private List<String> mChattingUrls = new ArrayList<>();
-
-
+    /**
+     * 变量的描述: 初始状态值
+     */
     private static final int STATUS_MASK = 0;
-    private static final int STATUS_PAUSED = 1 << 1;
-    private static final int STATUS_CHATTING = 1 << 2;
-    private static final int STATUS_PUBLISHING = 1 << 3;
-    private static final int STATUS_PREVIEW = 1 << 4;
-
+    /**
+     * 变量的描述: 暂停中 左移1位：2
+     */
+    private static final int STATUS_PAUSED = 1 << 1;//
+    /**
+     * 变量的描述: 聊天中 左移2位：4
+     */
+    private static final int STATUS_CHATTING = 1 << 2;//
+    /**
+     * 变量的描述: 推流中 左移3位：8
+     */
+    private static final int STATUS_PUBLISHING = 1 << 3;//
+    /**
+     * 变量的描述: 预览中 左移4位：16
+     */
+    private static final int STATUS_PREVIEW = 1 << 4;//
+    /**
+     * 变量的描述: 已int数值的二进制形式，各个位是否为1来判断状态
+     */
     private int mStatus = STATUS_MASK;
 
     /**
@@ -124,6 +139,7 @@ public class PublisherSDKHelper {
             // 备注：目前视频编码采用的是软编码，软编码条件下只支持两种分辨率：360x640/180x320（横屏推流的时候为640x360,320x180）。
             // 本接口是同步接口。
             mChatHost.prepareToPublish(surf, 360, 640, mMediaParam);
+            // 两者转换为二进制，按位或 赋值
             mStatus |= STATUS_PREVIEW;
             if (mCameraFacing == AlivcMediaFormat.CAMERA_FACING_FRONT) {
                 // 设置滤镜的相关参数
@@ -196,7 +212,6 @@ public class PublisherSDKHelper {
             mChatHost.setFilterParam(mFilterMap);
             isBeautyOn = !isBeautyOn;
         }
-
         return isBeautyOn;
     }
 
@@ -245,7 +260,7 @@ public class PublisherSDKHelper {
     /**
      * 方法描述: 连麦（适用于多人）,方法内容有开启第一次连麦，也有在连麦的基础上在添加连麦
      *
-     * @param urlSurfaceMap 多个副麦url播放地址所对应的窗口数组。
+     * @param urlSurfaceMap 多个副麦url播放地址所对应的窗口集合。
      */
     public void launchChats(Map<String, SurfaceView> urlSurfaceMap) {
         if ((mStatus & STATUS_CHATTING) == STATUS_MASK && mChattingUrls.size() == 0) {
@@ -290,6 +305,7 @@ public class PublisherSDKHelper {
         if (mChatHost != null && (mStatus & STATUS_PAUSED) == STATUS_PAUSED) {
             Log.d(TAG, "Call mChatHost.resume()");
             mChatHost.resume();
+            // 两个值转换为二进制，进行异或位运算，相同取0，不同取1
             mStatus ^= STATUS_PAUSED;
         }
     }
@@ -297,7 +313,9 @@ public class PublisherSDKHelper {
     /**
      * 方法描述:结束连麦（可以是选择多个连麦中的一个结束，也可以是结束所有连麦）
      *
-     * @param urls 所有退出连麦的副麦的播放地址，NSURL数组。退出连麦的可以是选择多个中的一个url，也可以是所有连麦url
+     * @param urls 所有退出连麦的副麦的播放地址，NSURL数组。退出连麦的可以是选择多个中的一个url，也可以是所有连麦url。
+     *             参数集合传null或者空数据代表清空所有连麦，集合有数据则是指定连麦结束
+     * @return 值为-1代表结束连麦异常
      */
     public int abortChat(List<String> urls) {
         Log.d(TAG, "abort chat status " + mStatus);
