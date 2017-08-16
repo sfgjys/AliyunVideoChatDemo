@@ -48,8 +48,6 @@ public interface IPublisherMgr {
     int TYPE_PLAYER_READ_PACKET_TIMEOUT = 0x0035;
 
 
-
-
     String DATA_KEY_PUBLISHER_INFO_CODE = "publisher_info_code";
     String DATA_KEY_PUBLISHER_ERROR_CODE = "publisher_error_code";
     String DATA_KEY_CREATE_LIVE_RESULT = "create_live_result";
@@ -59,43 +57,70 @@ public interface IPublisherMgr {
 
     String DATA_KEY_PLAYER_ERROR_MSG = "player_error_msg";
 
-    //开始预览
-    void asyncStartPreview(SurfaceView holder, AsyncCallback callback);
-
-    //创建直播
+    /**
+     * 方法描述: 创建直播
+     */
     void asyncCreateLive(String desc, AsyncCallback callback);
 
-    //邀请观众连麦（某一个观众）
+
+    /**
+     * 方法描述: 开始连麦
+     */
+    void launchChat(SurfaceView parterView, String playerUID);
+
+
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * 方法描述: 开始预览
+     */
+    void asyncStartPreview(SurfaceView holder, AsyncCallback callback);
+
+    /**
+     * 方法描述: 邀请观众连麦（某一个观众）
+     */
     void asyncInviteChatting(List<String> inviteeUIDs, AsyncCallback callback);
+
+    /**
+     * 方法描述: 切换摄像头
+     */
+    void switchCamera();
+
+    /**
+     * 方法描述: 开关美颜
+     */
+    boolean switchBeauty();
+
+    /**
+     * 方法描述: 切换闪光灯
+     */
+    boolean switchFlash();
+
+    /**
+     * 方法描述: 缩放
+     */
+    void zoom(float scaleFlator);
+
+    /**
+     * 方法描述: 对焦
+     */
+    void autoFocus(float xRatio, float yRatio);
+
+    /**
+     * 方法描述: 结束直播
+     */
+    void asyncCloseLive(AsyncCallback callback);
+
+    /**
+     * 方法描述: 结束连麦(某一个观众)
+     */
+    void asyncTerminateChatting(String playerUID, AsyncCallback callback);
+
+    /**
+     * 方法描述: 结束连麦（所有观众）
+     */
+    void asyncTerminateAllChatting(AsyncCallback callback);
 
     //反馈邀请
 //    void asyncFeedbackInviting(String playerUID, int status);
-
-    //结束直播
-    void asyncCloseLive(AsyncCallback callback);
-
-    //切换摄像头
-    void switchCamera();
-
-    //切换闪光灯
-    boolean switchFlash();
-
-    //开关美颜
-    boolean switchBeauty();
-
-    //缩放
-    void zoom(float scaleFlator);
-
-    //对焦
-    void autoFocus(float xRatio, float yRatio);
-
-    //开始连麦
-    void launchChat(SurfaceView parterView, String playerUID);
-
-    //结束连麦(某一个观众)
-    void asyncTerminateChatting(String playerUID, AsyncCallback callback);
-
-    //结束连麦（所有观众）
-    void asyncTerminateAllChatting(AsyncCallback callback);
-
 }

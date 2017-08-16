@@ -5,9 +5,8 @@ import android.content.Context;
 import java.lang.ref.SoftReference;
 
 /**
- * Created by apple on 2017/1/6.
+ * 类的描述: 使用软引用的方式将构造时传递进来的Context获取出来
  */
-
 public class ContextBase {
     private SoftReference<Context> mContextRef = null;
 
@@ -16,10 +15,9 @@ public class ContextBase {
     }
 
     public Context getContext() {
-        if(mContextRef != null) {
+        if (mContextRef != null) {
             return mContextRef.get();
         }
         return null;
     }
-
 }

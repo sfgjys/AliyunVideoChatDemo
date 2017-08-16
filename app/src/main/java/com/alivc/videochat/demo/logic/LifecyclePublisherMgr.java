@@ -52,11 +52,10 @@ import java.util.Map;
 import retrofit2.Call;
 
 /**
- * Created by apple on 2017/1/6.
+ * 类的描述:
  */
+public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr, ILifecycleListener {
 
-public class LifecyclePublisherMgr extends ContextBase
-        implements IPublisherMgr, ILifecycleListener {
     private static final String TAG = LifecyclePublisherMgr.class.getName();
 
     public static final String KEY_CHATTING_UID = "chatting_uid";   //正在连麦的用户ID
@@ -117,7 +116,7 @@ public class LifecyclePublisherMgr extends ContextBase
 
     private int mReconnectCount = 0;
 
-
+    // --------------------------------------------------------------------------------------------------------
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -162,20 +161,24 @@ public class LifecyclePublisherMgr extends ContextBase
         }
     };
 
-    public LifecyclePublisherMgr(Context context,
-                                 MgrCallback callback,
-                                 String uid,
-                                 ImManager imManager) {
+    // --------------------------------------------------------------------------------------------------------
+
+    public LifecyclePublisherMgr(Context context, MgrCallback callback, String uid, ImManager imManager) {
         super(context);
+
         this.mSDKHelper = new PublisherSDKHelper();
+
         this.mCallback = callback;
         this.mUID = uid;
         this.mImManager = imManager;
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
     @Override
     public void onCreate() {
         Context context = getContext();
+        // 如果context为空则assert抛出的异常AssertionError
         assert (context != null);
         mSDKHelper.initRecorder(context, mOnErrorListener, mInfoListener); //初始化推流器
     }
@@ -243,62 +246,12 @@ public class LifecyclePublisherMgr extends ContextBase
         mSDKHelper.releaseRecorder();//释放推流器资源
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
     @Override
     public void asyncStartPreview(SurfaceView previewSurfaceView, AsyncCallback callback) {
         this.mPreviewSurfaceView = previewSurfaceView;
         mPreviewSurfaceView.getHolder().addCallback(mPreviewCallback);
-    }
-
-    @Override
-    public void asyncCreateLive(String desc, final AsyncCallback callback) {
-        if (mCreateLiveCall != null && ServiceBI.isCalling(mCreateLiveCall)) {
-            mCreateLiveCall.cancel();
-            mCreateLiveCall = null;
-        }
-        mCreateLiveCall = mLiveServiceBI.createLive(mUID, desc, new ServiceBI.Callback<LiveCreateResult>() {
-            @Override
-            public void onResponse(int code, LiveCreateResult response) {
-                mRoomID = response.getRoomID();
-                Bundle data = new Bundle();
-                data.putSerializable(DATA_KEY_CREATE_LIVE_RESULT, response);
-                if (callback != null) {
-                    callback.onSuccess(data);
-                }
-                if (mCallback != null) {
-                    mCallback.onEvent(TYPE_LIVE_CREATED, data);
-                }
-                mCreateLiveCall = null;
-                //创建成功，开始推流
-                mSDKHelper.startPublishStream(response.getRtmpUrl());
-                //获取IM链接信息
-                mWSConnOpts = new WebSocketConnectOptions();
-                MNSModel mnsModel = response.getMNSModel();
-                MNSConnectModel mnsConnectModel = response.getMnsConnectModel();
-                mWSConnOpts.setServerURI(mnsConnectModel.getTopicWSServerAddress());
-                List<String> tags = new ArrayList<>();
-                tags.add(mnsModel.getRoomTag());
-                tags.add(mnsModel.getUserTag());
-                mControlBody = new MnsControlBody.Builder()
-                        .accessId(mnsConnectModel.getAccessID())
-                        .accountId(mnsConnectModel.getAccountID())
-                        .authorization("MNS " + mnsConnectModel.getAccessID() + ":" + mnsConnectModel.getAuthentication())
-                        .date(mnsConnectModel.getDate())
-                        .subscription(mnsModel.getTopic())
-                        .topic(mnsModel.getTopic())
-                        .messageType(MnsControlBody.MessageType.SUBSCRIBE)
-                        .tags(tags)
-                        .build();
-                initPublishMsgProcessor();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                if (callback != null) {
-                    callback.onFailure(null, t);
-                }
-                mCreateLiveCall = null;
-            }
-        });
     }
 
     @Override
@@ -366,30 +319,29 @@ public class LifecyclePublisherMgr extends ContextBase
         mInviteCalls.add(call);
     }
 
-    //@Override
-    private void asyncFeedbackInviting(final String playerUID) {
-        mInviteServiceBI.feedback(FeedbackForm.INVITE_TYPE_ANCHOR,
-                FeedbackForm.INVITE_TYPE_WATCHER,
-                playerUID,
-                mUID, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.STATUS_AGREE, new ServiceBI.Callback<InviteFeedbackResult>() {
-                    @Override
-                    public void onResponse(int code, InviteFeedbackResult response) {
-                        /**
-                         * 所谓的短延时URL实际上就是未经转码的原始流播放地址也就是，主播连麦观众时，主播端看到的观众的小窗画面，应该使用的播放地址
-                         *
-                         * 注意：这里没有直接就开始播放小窗，是因为这个时候观众端实际上还没有推流成功，需要等到收到推流成功的通知才开始播放
-                         */
-                        ChatSession chatSession = mChatSessionMap.get(playerUID);
-                        if (chatSession != null) {
-                            chatSession.notifyFeedbackSuccess();
-                        }
-                    }
+    @Override
+    public void switchCamera() {
+        mSDKHelper.switchCamera();
+    }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        Log.d(TAG, "Publisher feedback failure", t);
-                    }
-                });
+    @Override
+    public boolean switchBeauty() {
+        return mSDKHelper.switchBeauty();
+    }
+
+    @Override
+    public boolean switchFlash() {
+        return mSDKHelper.switchFlash();
+    }
+
+    @Override
+    public void zoom(float scaleFactor) {
+        mSDKHelper.zoom(scaleFactor);
+    }
+
+    @Override
+    public void autoFocus(float xRatio, float yRatio) {
+        mSDKHelper.autoFocus(xRatio, yRatio);
     }
 
     @Override
@@ -415,53 +367,6 @@ public class LifecyclePublisherMgr extends ContextBase
             mPreviewSurfaceView.getHolder().removeCallback(mPreviewCallback);
         }
     }
-
-    @Override
-    public void switchCamera() {
-        mSDKHelper.switchCamera();
-    }
-
-    @Override
-    public boolean switchFlash() {
-        return mSDKHelper.switchFlash();
-    }
-
-    @Override
-    public boolean switchBeauty() {
-        return mSDKHelper.switchBeauty();
-    }
-
-    @Override
-    public void zoom(float scaleFactor) {
-        mSDKHelper.zoom(scaleFactor);
-    }
-
-    @Override
-    public void autoFocus(float xRatio, float yRatio) {
-        mSDKHelper.autoFocus(xRatio, yRatio);
-    }
-
-    @Override
-    public void launchChat(SurfaceView parterView, String playerUID) {
-        if (mVideoChatApiCalling) {
-            if (mCallback != null) {
-                Bundle data = new Bundle();
-                data.putString(DATA_KEY_PLAYER_ERROR_MSG, mTipString);
-                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
-            }
-            return;
-        }
-
-        final ChatSession chatSession = mChatSessionMap.get(playerUID);
-        Map<String, SurfaceView> urlSurfaceMap = new HashMap<>();
-        urlSurfaceMap.put(chatSession.getChatSessionInfo().getPlayUrl(), parterView);
-        // TODO by xinye : 发起连麦/ADD 连麦
-        mVideoChatApiCalling = true;
-        Log.e("xiongbo07", "开始发起连麦...");
-        mSDKHelper.launchChats(urlSurfaceMap);
-        chatSession.setSurfaceView(parterView);
-    }
-
 
     @Override
     public void asyncTerminateChatting(final String playerUID, final AsyncCallback callback) {
@@ -557,9 +462,110 @@ public class LifecyclePublisherMgr extends ContextBase
         }
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
+    @Override
+    public void asyncCreateLive(String desc, final AsyncCallback callback) {
+        if (mCreateLiveCall != null && ServiceBI.isCalling(mCreateLiveCall)) {
+            mCreateLiveCall.cancel();
+            mCreateLiveCall = null;
+        }
+        mCreateLiveCall = mLiveServiceBI.createLive(mUID, desc, new ServiceBI.Callback<LiveCreateResult>() {
+            @Override
+            public void onResponse(int code, LiveCreateResult response) {
+                mRoomID = response.getRoomID();
+                Bundle data = new Bundle();
+                data.putSerializable(DATA_KEY_CREATE_LIVE_RESULT, response);
+                if (callback != null) {
+                    callback.onSuccess(data);
+                }
+                if (mCallback != null) {
+                    mCallback.onEvent(TYPE_LIVE_CREATED, data);
+                }
+                mCreateLiveCall = null;
+                //创建成功，开始推流
+                mSDKHelper.startPublishStream(response.getRtmpUrl());
+                //获取IM链接信息
+                mWSConnOpts = new WebSocketConnectOptions();
+                MNSModel mnsModel = response.getMNSModel();
+                MNSConnectModel mnsConnectModel = response.getMnsConnectModel();
+                mWSConnOpts.setServerURI(mnsConnectModel.getTopicWSServerAddress());
+                List<String> tags = new ArrayList<>();
+                tags.add(mnsModel.getRoomTag());
+                tags.add(mnsModel.getUserTag());
+                mControlBody = new MnsControlBody.Builder()
+                        .accessId(mnsConnectModel.getAccessID())
+                        .accountId(mnsConnectModel.getAccountID())
+                        .authorization("MNS " + mnsConnectModel.getAccessID() + ":" + mnsConnectModel.getAuthentication())
+                        .date(mnsConnectModel.getDate())
+                        .subscription(mnsModel.getTopic())
+                        .topic(mnsModel.getTopic())
+                        .messageType(MnsControlBody.MessageType.SUBSCRIBE)
+                        .tags(tags)
+                        .build();
+                initPublishMsgProcessor();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (callback != null) {
+                    callback.onFailure(null, t);
+                }
+                mCreateLiveCall = null;
+            }
+        });
+    }
+
+    @Override
+    public void launchChat(SurfaceView parterView, String playerUID) {
+        if (mVideoChatApiCalling) {
+            if (mCallback != null) {
+                Bundle data = new Bundle();
+                data.putString(DATA_KEY_PLAYER_ERROR_MSG, mTipString);
+                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
+            }
+            return;
+        }
+
+        final ChatSession chatSession = mChatSessionMap.get(playerUID);
+        Map<String, SurfaceView> urlSurfaceMap = new HashMap<>();
+        urlSurfaceMap.put(chatSession.getChatSessionInfo().getPlayUrl(), parterView);
+        // TODO by xinye : 发起连麦/ADD 连麦
+        mVideoChatApiCalling = true;
+        Log.e("xiongbo07", "开始发起连麦...");
+        mSDKHelper.launchChats(urlSurfaceMap);
+        chatSession.setSurfaceView(parterView);
+    }
+
+    // --------------------------------------------------------------------------------------------------------
+
+    //@Override
+    private void asyncFeedbackInviting(final String playerUID) {
+        mInviteServiceBI.feedback(FeedbackForm.INVITE_TYPE_ANCHOR, FeedbackForm.INVITE_TYPE_WATCHER, playerUID, mUID,
+                InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.STATUS_AGREE, new ServiceBI.Callback<InviteFeedbackResult>() {
+                    @Override
+                    public void onResponse(int code, InviteFeedbackResult response) {
+                        /**
+                         * 所谓的短延时URL实际上就是未经转码的原始流播放地址也就是，主播连麦观众时，主播端看到的观众的小窗画面，应该使用的播放地址
+                         *
+                         * 注意：这里没有直接就开始播放小窗，是因为这个时候观众端实际上还没有推流成功，需要等到收到推流成功的通知才开始播放
+                         */
+                        ChatSession chatSession = mChatSessionMap.get(playerUID);
+                        if (chatSession != null) {
+                            chatSession.notifyFeedbackSuccess();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        Log.d(TAG, "Publisher feedback failure", t);
+                    }
+                });
+    }
+
 
     /**
-     * 推流器错误回调
+     * 变量的描述: 推流错误监听器回调接口实现
      */
     AlivcVideoChatHost.OnErrorListener mOnErrorListener = new IVideoChatHost.OnErrorListener() {
         @Override
@@ -569,11 +575,13 @@ public class LifecyclePublisherMgr extends ContextBase
             }
             Log.d(TAG, "Live stream connection error-->" + what);
 
+            //
             final Bundle data = new Bundle();
             data.putInt(DATA_KEY_PUBLISHER_ERROR_CODE, what);
 
+            // 区分错误
             switch (what) {
-                case MediaError.ALIVC_ERR_PLAYER_INVALID_INPUTFILE:
+                case MediaError.ALIVC_ERR_PLAYER_INVALID_INPUTFILE:// 播放无效的输入
                     Log.d(TAG, "encounter player invalid input file.");
                     if (mReconnectCount++ < MAX_RECONNECT_COUNT)
                         mSDKHelper.reconnect(url);
@@ -581,7 +589,7 @@ public class LifecyclePublisherMgr extends ContextBase
                         mCallback.onEvent(TYPE_PLAYER_INVALID_INPUTFILE, null);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PLAYER_OPEN_FAILED:
+                case MediaError.ALIVC_ERR_PLAYER_OPEN_FAILED:// 播放打开失败
                     Log.d(TAG, "encounter player open failed.");
                     if (mReconnectCount++ < MAX_RECONNECT_COUNT)
                         mSDKHelper.reconnect(url);
@@ -589,7 +597,7 @@ public class LifecyclePublisherMgr extends ContextBase
                         mCallback.onEvent(TYPE_PLAYER_OPEN_FAILED, null);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PLAYER_NO_NETWORK:
+                case MediaError.ALIVC_ERR_PLAYER_NO_NETWORK:// 播放没有网络连接
                     Log.d(TAG, "encounter player no network.");
                     if (mReconnectCount++ < MAX_RECONNECT_COUNT)
                         mSDKHelper.reconnect(url);
@@ -597,7 +605,7 @@ public class LifecyclePublisherMgr extends ContextBase
                         mCallback.onEvent(TYPE_PLAYER_NO_NETWORK, null);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PLAYER_TIMEOUT:
+                case MediaError.ALIVC_ERR_PLAYER_TIMEOUT:// 播放超时
                     Log.d(TAG, "encounter player timeout, so call restartToPlayer");
                     if (mReconnectCount++ < MAX_RECONNECT_COUNT)
                         mSDKHelper.reconnect(url);
@@ -605,7 +613,7 @@ public class LifecyclePublisherMgr extends ContextBase
                         mCallback.onEvent(TYPE_PLAYER_TIMEOUT, null);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PLAYER_READ_PACKET_TIMEOUT:
+                case MediaError.ALIVC_ERR_PLAYER_READ_PACKET_TIMEOUT:// 播放读取数据超时
                     Log.d(TAG, "encounter player read packet timeout.");
                     if (mReconnectCount++ < MAX_RECONNECT_COUNT)
                         mSDKHelper.reconnect(url);
@@ -614,17 +622,17 @@ public class LifecyclePublisherMgr extends ContextBase
                     }
                     break;
 
-                case MediaError.ALIVC_ERR_PLAYER_NO_MEMORY:
-                case MediaError.ALIVC_ERR_PLAYER_INVALID_CODEC:
-                case MediaError.ALIVC_ERR_PLAYER_NO_SURFACEVIEW:
+                case MediaError.ALIVC_ERR_PLAYER_NO_MEMORY:// 播放无足够内存
+                case MediaError.ALIVC_ERR_PLAYER_INVALID_CODEC:// 播放不支持的解码格式
+                case MediaError.ALIVC_ERR_PLAYER_NO_SURFACEVIEW:// 播放没有设置显示窗口
                     if (mCallback != null) {
                         mCallback.onEvent(TYPE_PLAYER_INTERNAL_ERROR, data);
                     }
                     // TODO by xinye : 退出连麦
 //                    mSDKHelper.abortChat(null);
                     break;
-                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_DISABLED://音频采集关闭
-                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_NO_DATA://音频采集失败
+                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_DISABLED:// 音频采集关闭 音频被禁止
+                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_NO_DATA:// 音频采集失败 音频采集出错
                     if (mChatSessionMap.size() > 0) {
                         //TODO:遍历ChatSession，并且close 连麦
                     }
@@ -634,40 +642,52 @@ public class LifecyclePublisherMgr extends ContextBase
                     }
 
                     break;
-                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_NO_DATA:
+                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_NO_DATA:// 视频采集出错
                     if (mCallback != null) {
                         mCallback.onEvent(TYPE_PUBLISHER_VIDEO_CAPTURE_FAILURE, data);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_DISABLED: //摄像头开启失败
+                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_DISABLED: // 摄像头开启失败 视频被禁止
                     if (mCallback != null) {
                         mCallback.onEvent(TYPE_PUBLISHER_VIDEO_CAPTURE_FAILURE, data);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PUBLISHER_ENCODE_AUDIO_FAILED:
-                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_ENCODER_INIT_FAILED:
-                case MediaError.ALIVC_ERR_PUBLISHER_MALLOC_FAILED:
-                case MediaError.ALIVC_ERR_PUBLISHER_ILLEGAL_ARGUMENT:
+                case MediaError.ALIVC_ERR_PUBLISHER_ENCODE_AUDIO_FAILED:// 音频编码失败
+                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_ENCODER_INIT_FAILED:// 视频初始化失败
+                case MediaError.ALIVC_ERR_PUBLISHER_MALLOC_FAILED:// 内存分配失败
+                case MediaError.ALIVC_ERR_PUBLISHER_ILLEGAL_ARGUMENT:// 无效的参数
                     break;
-                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_POOR:
+                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_POOR:// 网络较慢
                     if (mCallback != null) {
                         mCallback.onEvent(TYPE_PUBLISHER_NETWORK_POOR, data);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_UNCONNECTED:
+                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_UNCONNECTED:// 网络未连接
                     if (mCallback != null) {
                         mCallback.onEvent(TYPE_PUBLISHER_NETWORK_UNCONNECT, data);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PUBLISHER_SEND_DATA_TIMEOUT:
+                case MediaError.ALIVC_ERR_PUBLISHER_SEND_DATA_TIMEOUT:// 发送数据超时
                     if (mCallback != null) {
                         mCallback.onEvent(TYPE_PUBLISHER_NETWORK_TIMEOUT, data);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PLAYER_AUDIO_PLAY:
+                case MediaError.ALIVC_ERR_PLAYER_AUDIO_PLAY:// 音频播放错误
                     if (mCallback != null) {
                         mCallback.onEvent(TYPE_PLAYER_AUDIO_PLAYER_ERROR, data);
                     }
+                    break;
+                case MediaError.ALIVC_ERR_MEMORY_POOR:// 内存不够
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_OPEN_FAILED:// 推流连接失败
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_ENCODER_INIT_FAILED:// 音频初始化失败
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_ENCODE_VIDEO_FAILED:// 视频编码失败
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_FPS_SLOW:// 音频采集较慢
+                    break;
+                case MediaError.ALIVC_ERR_PLAYER_UNSUPPORTED:// 播放不支持的解码
                     break;
                 default:
                     if (mCallback != null) {
@@ -678,9 +698,8 @@ public class LifecyclePublisherMgr extends ContextBase
             return false;
         }
     };
-
     /**
-     * 推流器状态回调
+     * 变量的描述: 推流器状态信息监听器回调接口实现
      */
     AlivcVideoChatHost.OnInfoListener mInfoListener = new AlivcVideoChatHost.OnInfoListener() {
 
@@ -688,45 +707,66 @@ public class LifecyclePublisherMgr extends ContextBase
         public boolean onInfo(IVideoChatHost iVideoChatHost, int what, String url) {
             Log.d(TAG, "LiveActivity --> what = " + what + ", extra = " + url);
             switch (what) {
-                case MediaError.ALIVC_INFO_PUBLISH_NETWORK_GOOD:
+                case MediaError.ALIVC_INFO_PUBLISH_NETWORK_GOOD:// 推流网络较好
                     if (mCallback != null) {
                         mCallback.onEvent(TYPE_PUBLISHER_NETWORK_GOOD, null);
                     }
                     break;
-                case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_FAILURE:
+                case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_FAILURE:// 重连失败
                     if (mCallback != null) {
                         Bundle data = new Bundle();
                         data.putInt(DATA_KEY_PUBLISHER_INFO_CODE, what);
                         mCallback.onEvent(TYPE_PUBLISHER_RECONNECT_FAILURE, data);
                     }
                     break;
-                case MediaError.ALIVC_INFO_LAUNCH_CHAT_END:
+                case MediaError.ALIVC_INFO_LAUNCH_CHAT_END:// launchChat结束
                     mVideoChatApiCalling = false;
                     Log.e("xiongbo07", "结束发起连麦...");
                     break;
-                case MediaError.ALIVC_INFO_ABORT_CHAT_END:
+                case MediaError.ALIVC_INFO_ABORT_CHAT_END:// abortChat结束
                     mVideoChatApiCalling = false;
                     Log.e("xiongbo07", "结束退出连麦...");
                     break;
-                case MediaError.ALIVC_INFO_ADD_CHAT_END:
+                case MediaError.ALIVC_INFO_ADD_CHAT_END:// addChat结束
                     mVideoChatApiCalling = false;
                     Log.e("xiongbo07", "结束ADD连麦...");
                     break;
-                case MediaError.ALIVC_INFO_REMOVE_CHAT_END:
+                case MediaError.ALIVC_INFO_REMOVE_CHAT_END:// removeChat结束
                     mVideoChatApiCalling = false;
                     Log.e("xiongbo07", "结束Remove连麦...");
                     break;
-                case MediaError.ALIVC_INFO_PLAYER_PREPARED_PROCESS_FINISHED:
+                case MediaError.ALIVC_INFO_PLAYER_PREPARED_PROCESS_FINISHED:// 播放准备完成通知
                     mReconnectCount = 0;
                     break;
-                case MediaError.ALIVC_INFO_PLAYER_NETWORK_POOR:
+                case MediaError.ALIVC_INFO_PLAYER_NETWORK_POOR:// 播放器网络差，不能及时下载数据包
                     if (mCallback != null) {
                         Bundle data = new Bundle();
                         data.putString(IPublisherMgr.DATA_KEY_PLAYER_ERROR_MSG, url);
                         mCallback.onEvent(TYPE_PLAYER_NETWORK_POOR, data);
                     }
                     break;
-
+                case MediaError.ALIVC_INFO_ONLINE_CHAT_END:// onlineChat结束
+                    break;
+                case MediaError.ALIVC_INFO_OFFLINE_CHAT_END:// offlineChat结束
+                    break;
+                case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_START:// 重连开始
+                    break;
+                case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_SUCCESS:// 重连成功
+                    break;
+                case MediaError.ALIVC_INFO_PUBLISH_DISPLAY_FIRST_FRAME:// 推流首次显示通知
+                    break;
+                case MediaError.ALIVC_INFO_PUBLISH_START_SUCCESS:// 推流开始成功
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_FIRST_FRAME_RENDERED:// 播放首帧显示
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_BUFFERING_START:// 播放缓冲开始
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_BUFFERING_END:// 播放缓冲结束
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_INTERRUPT_PLAYING:// 播放被中断
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_STOP_PROCESS_FINISHED:// 播放结束通知
+                    break;
             }
             return false;
         }
@@ -1031,6 +1071,8 @@ public class LifecyclePublisherMgr extends ContextBase
             mChatSessionMap.remove(playerUID);
         }
     };
+
+    // --------------------------------------------------------------------------------------------------------
 
     public AlivcPublisherPerformanceInfo getPublisherPerformanceInfo() {
 //        return mSDKHelper.getPublisherPerformanceInfo();

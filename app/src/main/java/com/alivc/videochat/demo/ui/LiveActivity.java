@@ -144,23 +144,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         super.onCreate(savedInstanceState);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         // 这个类没什么作用
         mAppSettings = new AppSettings(this);
 
@@ -419,212 +402,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     };
     // --------------------------------------------------------------------------------------------------------
 
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mLiveRecordPresenter.startPreview(mPreviewSurfaceView); //开启预览
-        mConnectivityMonitor.register(getApplicationContext());        //注册对网络状态的监听
-        mHeadsetMonitor.register(getApplicationContext());        //注册对耳机状态的监听
-
-        //根据设置，判断是否要显示推流性能log
-        if (mAppSettings.isShowLogInfo(true)) {
-            addLogInfoFragment();
-        } else {
-            removeLogInfoFragment();
-        }
-    }
-
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        mConnectivityMonitor.unRegister(getApplicationContext());        //取消对网络状态的监听
-        mHeadsetMonitor.unRegister(getApplicationContext());        //取消对耳机状态的监听
-        removeLogInfoFragment();  //移除性能Log UI
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mFullEventView.setOnTouchListener(null);
-    }
-
-
-    @Override
-    public void onBackPressed() {
-//        if (mLivePresenter != null) {
-//            if (mLivePresenter.isChatting()) {
-//                mLivePresenter.closeLiveChat();
-//                mLivePresenter.abortChat(false);
-//            }
-//            if (mLivePresenter.isLive()) {
-//                mLivePresenter.stopPublish();
-//                mLivePresenter.closeLive();
-//            }
-//        }
-        finish();
-    }
-
-
-    /**
-     * 直播创建成功后即将推流的Listener
-     */
-    public CreateLiveFragment.OnPendingPublishListener mPendingPublishListener
-            = new CreateLiveFragment.OnPendingPublishListener() {
-
-        @Override
-        public void onPendingPublish(String roomID, String name,
-                                     String uid) {
-            mRoomID = roomID;
-            changeUI2Publishing(roomID, name, uid); //将界面从创建直播切换到正在推流
-//
-//            mLivePresenter.initPublishMsgProcessor(roomID, options, body); //初始化推送消息处理器，订阅需要处理的消息类型
-//
-//            mLivePresenter.startPublishStream(publishUrl); //开始推流
-        }
-    };
-
-    /**
-     * UI切换到正在推流状态
-     *
-     * @param name
-     * @param uid
-     */
-    private void changeUI2Publishing(String roomID, String name, String uid) {
-        mIvClose.setVisibility(View.VISIBLE);
-
-        InteractionFragment interactionFragment = InteractionFragment.newInstance(roomID, name, uid);
-        mLiveBottomFragment = LiveBottomFragment.newInstance();
-        interactionFragment.setImManger(mImManager);
-        mLiveBottomFragment.setRecorderUIClickListener(mUIClickListener);
-        mLiveBottomFragment.setOnInviteClickListener(mInviteClickListener);
-        interactionFragment.setBottomFragment(mLiveBottomFragment);
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.root_container, interactionFragment)
-                .commit();
-    }
-
-
-    /**
-     * 底部操作按钮的click事件响应
-     */
-    private LiveBottomFragment.RecorderUIClickListener mUIClickListener = new LiveBottomFragment.RecorderUIClickListener() {
-        @Override
-        public int onSwitchCamera() { //切换摄像头
-            mLiveRecordPresenter.switchCamera();
-            return -1;
-        }
-
-        @Override
-        public boolean onBeautySwitch() {   // 美颜开/关
-            mPreviewSurfaceView.setZOrderOnTop(true);
-            return mLiveRecordPresenter.switchBeauty();
-        }
-
-        @Override
-        public boolean onFlashSwitch() {    // 闪光灯开/关
-            return mLiveRecordPresenter.switchFlash();
-        }
-    };
-
-    /**
-     * 点击邀请按钮的事件响应
-     */
-    private View.OnClickListener mInviteClickListener = new View.OnClickListener() {
-
-        @Override
-        public void onClick(View v) {
-            showAnchorListDialog(mRoomID);
-        }
-    };
-
-    /**
-     * 显示连麦对象(主播/观众)Dialog
-     */
-    private void showAnchorListDialog(String roomID) {
-        if (mAnchorListDialog == null) {
-            mAnchorListDialog = AnchorListDialog.newInstance(roomID);
-        }
-        if (!mAnchorListDialog.isShow()) {
-            mAnchorListDialog.show(getSupportFragmentManager(), AnchorListDialog.class.getName());
-        }
-    }
-
-    /**
-     * 关闭连麦对象Dialog
-     */
-    private void dismissAnchorListDialog() {
-        if (mAnchorListDialog != null) {
-            mAnchorListDialog.dismiss();
-        }
-    }
-
-    private DialogInterface.OnClickListener mImInitFailedListener = new DialogInterface.OnClickListener() {
-
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            finish();
-        }
-    };
-
-    private DialogInterface.OnClickListener mImLoginFailedListener = new DialogInterface.OnClickListener() {
-
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            finish();
-            Intent intent = new Intent(LiveActivity.this, LoginActivity.class);
-            startActivity(intent);
-        }
-    };
-
-
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.iv_close:
-                onBackPressed();
-                break;
-//            case R.id.iv_abort_chat:
-//                showChatCloseConfirmDialog();
-//                break;
-        }
-    }
-
-    /**
-     * 增加性能日志展示
-     */
-    public void addLogInfoFragment() {
-        if (mLogInfoFragment == null) {
-            mLogInfoFragment = new LogInfoFragment();
-            mLogInfoFragment.setRefreshListener(mRefreshListener);
-        }
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.log_container, mLogInfoFragment)
-                .commitAllowingStateLoss();
-    }
-
-    /**
-     * 移除性能日志展示
-     */
-    public void removeLogInfoFragment() {
-        if (mLogInfoFragment != null) {
-            getSupportFragmentManager().beginTransaction().remove(mLogInfoFragment).commit();
-        }
-    }
-
-
-    LogInfoFragment.LogRefreshListener mRefreshListener = new LogInfoFragment.LogRefreshListener() {
-        @Override
-        public void onPendingRefresh() {
-            if (mLogInfoFragment != null && mLiveRecordPresenter != null) {
-                LogInfoFragment.LogHandler logHandler = mLogInfoFragment.getLogHandler();
-                mLiveRecordPresenter.refreshLogInfo(logHandler);
-            }
-        }
-    };
-
+    // **************************************************** 自定义UI更新内容 ****************************************************
     private ILiveRecordView mView = new ILiveRecordView() {
         @Override
         public void hideInterruptUI() {
@@ -856,6 +634,214 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         }
     };
 
+    // --------------------------------------------------------------------------------------------------------
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mLiveRecordPresenter.startPreview(mPreviewSurfaceView); //开启预览
+        mConnectivityMonitor.register(getApplicationContext());        //注册对网络状态的监听
+        mHeadsetMonitor.register(getApplicationContext());        //注册对耳机状态的监听
+
+        //根据设置，判断是否要显示推流性能log
+        if (mAppSettings.isShowLogInfo(true)) {
+            addLogInfoFragment();
+        } else {
+            removeLogInfoFragment();
+        }
+    }
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mConnectivityMonitor.unRegister(getApplicationContext());        //取消对网络状态的监听
+        mHeadsetMonitor.unRegister(getApplicationContext());        //取消对耳机状态的监听
+        removeLogInfoFragment();  //移除性能Log UI
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mFullEventView.setOnTouchListener(null);
+    }
+
+
+    @Override
+    public void onBackPressed() {
+//        if (mLivePresenter != null) {
+//            if (mLivePresenter.isChatting()) {
+//                mLivePresenter.closeLiveChat();
+//                mLivePresenter.abortChat(false);
+//            }
+//            if (mLivePresenter.isLive()) {
+//                mLivePresenter.stopPublish();
+//                mLivePresenter.closeLive();
+//            }
+//        }
+        finish();
+    }
+
+
+    /**
+     * 直播创建成功后即将推流的Listener
+     */
+    public CreateLiveFragment.OnPendingPublishListener mPendingPublishListener
+            = new CreateLiveFragment.OnPendingPublishListener() {
+
+        @Override
+        public void onPendingPublish(String roomID, String name,
+                                     String uid) {
+            mRoomID = roomID;
+            changeUI2Publishing(roomID, name, uid); //将界面从创建直播切换到正在推流
+//
+//            mLivePresenter.initPublishMsgProcessor(roomID, options, body); //初始化推送消息处理器，订阅需要处理的消息类型
+//
+//            mLivePresenter.startPublishStream(publishUrl); //开始推流
+        }
+    };
+
+    /**
+     * UI切换到正在推流状态
+     *
+     * @param name
+     * @param uid
+     */
+    private void changeUI2Publishing(String roomID, String name, String uid) {
+        mIvClose.setVisibility(View.VISIBLE);
+
+        InteractionFragment interactionFragment = InteractionFragment.newInstance(roomID, name, uid);
+        mLiveBottomFragment = LiveBottomFragment.newInstance();
+        interactionFragment.setImManger(mImManager);
+        mLiveBottomFragment.setRecorderUIClickListener(mUIClickListener);
+        mLiveBottomFragment.setOnInviteClickListener(mInviteClickListener);
+        interactionFragment.setBottomFragment(mLiveBottomFragment);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.root_container, interactionFragment)
+                .commit();
+    }
+
+
+    /**
+     * 底部操作按钮的click事件响应
+     */
+    private LiveBottomFragment.RecorderUIClickListener mUIClickListener = new LiveBottomFragment.RecorderUIClickListener() {
+        @Override
+        public int onSwitchCamera() { //切换摄像头
+            mLiveRecordPresenter.switchCamera();
+            return -1;
+        }
+
+        @Override
+        public boolean onBeautySwitch() {   // 美颜开/关
+            mPreviewSurfaceView.setZOrderOnTop(true);
+            return mLiveRecordPresenter.switchBeauty();
+        }
+
+        @Override
+        public boolean onFlashSwitch() {    // 闪光灯开/关
+            return mLiveRecordPresenter.switchFlash();
+        }
+    };
+
+    /**
+     * 点击邀请按钮的事件响应
+     */
+    private View.OnClickListener mInviteClickListener = new View.OnClickListener() {
+
+        @Override
+        public void onClick(View v) {
+            showAnchorListDialog(mRoomID);
+        }
+    };
+
+    /**
+     * 显示连麦对象(主播/观众)Dialog
+     */
+    private void showAnchorListDialog(String roomID) {
+        if (mAnchorListDialog == null) {
+            mAnchorListDialog = AnchorListDialog.newInstance(roomID);
+        }
+        if (!mAnchorListDialog.isShow()) {
+            mAnchorListDialog.show(getSupportFragmentManager(), AnchorListDialog.class.getName());
+        }
+    }
+
+    /**
+     * 关闭连麦对象Dialog
+     */
+    private void dismissAnchorListDialog() {
+        if (mAnchorListDialog != null) {
+            mAnchorListDialog.dismiss();
+        }
+    }
+
+    private DialogInterface.OnClickListener mImInitFailedListener = new DialogInterface.OnClickListener() {
+
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            finish();
+        }
+    };
+
+    private DialogInterface.OnClickListener mImLoginFailedListener = new DialogInterface.OnClickListener() {
+
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            finish();
+            Intent intent = new Intent(LiveActivity.this, LoginActivity.class);
+            startActivity(intent);
+        }
+    };
+
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.iv_close:
+                onBackPressed();
+                break;
+//            case R.id.iv_abort_chat:
+//                showChatCloseConfirmDialog();
+//                break;
+        }
+    }
+
+    /**
+     * 增加性能日志展示
+     */
+    public void addLogInfoFragment() {
+        if (mLogInfoFragment == null) {
+            mLogInfoFragment = new LogInfoFragment();
+            mLogInfoFragment.setRefreshListener(mRefreshListener);
+        }
+        getSupportFragmentManager().beginTransaction()
+                .add(R.id.log_container, mLogInfoFragment)
+                .commitAllowingStateLoss();
+    }
+
+    /**
+     * 移除性能日志展示
+     */
+    public void removeLogInfoFragment() {
+        if (mLogInfoFragment != null) {
+            getSupportFragmentManager().beginTransaction().remove(mLogInfoFragment).commit();
+        }
+    }
+
+
+    LogInfoFragment.LogRefreshListener mRefreshListener = new LogInfoFragment.LogRefreshListener() {
+        @Override
+        public void onPendingRefresh() {
+            if (mLogInfoFragment != null && mLiveRecordPresenter != null) {
+                LogInfoFragment.LogHandler logHandler = mLogInfoFragment.getLogHandler();
+                mLiveRecordPresenter.refreshLogInfo(logHandler);
+            }
+        }
+    };
+
+
     private void hideSurfaceView(SurfaceView surfaceView) {
         Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());
         ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
@@ -868,4 +854,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         layoutParams.topMargin = DensityUtil.dp2px(LiveActivity.this, 0);
         surfaceView.requestLayout();
     }
+
+
 }

@@ -24,11 +24,15 @@ import java.util.List;
 /**
  * Created by apple on 2017/1/7.
  */
-
 public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILifecycleLiveRecordPresenter {
+
     public static final String TAG = LifecycleLiveRecordPresenterImpl.class.getName();
 
     private LifecyclePublisherMgr mPublisherMgr;
+
+    /**
+     * 变量的描述: 根据直播连麦操作的回调接口结果来按需求调用方法更新UI
+     */
     private ILiveRecordView mView;
 
     public LifecycleLiveRecordPresenterImpl(Context context, ILiveRecordView view, String uid, ImManager imManager) {
@@ -36,6 +40,8 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
         this.mPublisherMgr = new LifecyclePublisherMgr(context, mPublisherCallback, uid, imManager);
         this.mView = view;
     }
+
+    // --------------------------------------------------------------------------------------------------------
 
     @Override
     public void onCreate() {
@@ -67,6 +73,8 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
         mPublisherMgr.onDestroy();
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
     @Override
     public void startPreview(SurfaceView previewSurf) {
         mPublisherMgr.asyncStartPreview(previewSurf, new AsyncCallback() {
@@ -81,6 +89,7 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
             }
         });
     }
+
 
     @Override
     public void inviteChat(List<String> mPlayerUIDs) {
@@ -168,11 +177,14 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
         });
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
     @Override
     public LifecyclePublisherMgr getPublisherMgr() {
         return mPublisherMgr;
     }
 
+    @Override
     public void refreshLogInfo(LogInfoFragment.LogHandler logHandler) {
         if (mPublisherMgr != null) {
             AlivcPublisherPerformanceInfo publishInfo = mPublisherMgr.getPublisherPerformanceInfo();
@@ -226,6 +238,11 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
         }
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * 变量的描述: 根据回调接口去更新UI,虽然有的直播连麦的操作有回调接口，但有的没有，这就需要本变量了
+     */
     private MgrCallback mPublisherCallback = new MgrCallback() {
         @Override
         public void onEvent(int eventType, Bundle data) {

@@ -3,9 +3,8 @@ package com.alivc.videochat.demo.presenter.view;
 import android.view.SurfaceView;
 
 /**
- * Created by apple on 2017/1/7.
+ * 类的描述: 用于更新LiveActivity中的UI的接口，在LiveActivity中实现一个自定义的实例对象，在将这个对象传入LifecycleLiveRecordPresenterImpl中就可以根据直播周期去更新界面的UI
  */
-
 public interface ILiveRecordView {
     //隐藏中断的UI
     void hideInterruptUI();
