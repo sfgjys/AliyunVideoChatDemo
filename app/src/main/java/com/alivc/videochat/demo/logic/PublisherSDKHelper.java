@@ -6,9 +6,7 @@ import android.view.SurfaceView;
 
 import com.alibaba.livecloud.live.AlivcMediaFormat;
 import com.alivc.videochat.VideoScalingMode;
-import com.alivc.videochat.player.MediaPlayer;
 import com.alivc.videochat.publisher.AlivcPublisherPerformanceInfo;
-import com.alivc.videochat.publisher.IMediaPublisher;
 import com.alivc.videochat.publisher.MediaConstants;
 import com.alivc.videochat.AlivcPlayerPerformanceInfo;
 import com.alivc.videochat.AlivcVideoChatHost;
