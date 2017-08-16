@@ -132,15 +132,16 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        // MNSClientImpl是MNSClient接口的实现类，而MNSClient 是 MNS 服务的 Android 客户端，它为调用者提供了一系列的方法，可以用来操作，管理队列（queue）和消息（message）
+        // TODO MNSClientImpl是MNSClient接口的实现类，而MNSClient 是 MNS 服务的 Android 客户端，它为调用者提供了一系列的方法，可以用来操作，管理队列（queue）和消息（message）
         mImManager = new ImManager(this, new ImHelper(new MNSClientImpl()), mConnectivityMonitor);
         // 初始化
         mImManager.init();
 
-        //TODO:这里需要优化，上下各两行代码不清楚具体用途
+        // 创建直播模块生命周期管理类，并将其注入倒本Activity
         mLiveRecordPresenter = new LifecycleLiveRecordPresenterImpl(this, mView, getUid(), mImManager);
         setLifecycleListener(mLiveRecordPresenter); //注意：这个方法必须在super.onCreate()之前调用 因为super.onCreate()调用的是父类的，而在父类中mLiveRecordPresenter有设置
 
+        // 内部是调用了PublisherSDKHelper的初始化推流器的方法
         super.onCreate(savedInstanceState);
 
 
@@ -175,6 +176,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
         // TODO
         mRootContainer = (FrameLayout) findViewById(R.id.root_container);
+        // 中断，打断控件 因为inflate方法的参数三是false，所以此代码的意思是在mRootContainer的协助下生成布局参数，并以这个参数获取R.layout.fragment_live_interrupt布局整体控件
         mInterruptView = LayoutInflater.from(this).inflate(R.layout.fragment_live_interrupt, mRootContainer, false);
         mTvInterruptTip = (TextView) mInterruptView.findViewById(R.id.tv_interrupt_tip);
 
@@ -198,7 +200,8 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         parterViewRight.setZOrderMediaOverlay(true);
 
 
-        // 在R.id.root_container上开启Fragment TODO
+        // 在R.id.root_container上开启Fragment
+        // 创建CreateLiveFragment对象，在创建对象的同时通过mLiveRecordPresenter获取LifecyclePublisherMgr对象，并赋值给其成员变量
         CreateLiveFragment createLiveFragment = CreateLiveFragment.newInstance(mLiveRecordPresenter.getPublisherMgr());
         createLiveFragment.setPendingPublishListener(mPendingPublishListener);
         getSupportFragmentManager().beginTransaction().add(R.id.root_container, createLiveFragment).commit();
@@ -686,9 +689,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     /**
      * 直播创建成功后即将推流的Listener
      */
-    public CreateLiveFragment.OnPendingPublishListener mPendingPublishListener
-            = new CreateLiveFragment.OnPendingPublishListener() {
-
+    public CreateLiveFragment.OnPendingPublishListener mPendingPublishListener = new CreateLiveFragment.OnPendingPublishListener() {
         @Override
         public void onPendingPublish(String roomID, String name,
                                      String uid) {

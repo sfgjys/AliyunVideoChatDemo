@@ -22,7 +22,7 @@ import com.alivc.videochat.demo.uitils.ToastUtils;
 import java.util.List;
 
 /**
- * Created by apple on 2017/1/7.
+ * 类的描述: 将生命周期和连麦操作交给LifecyclePublisherMgr对象执行，本类主要是对连麦直播操作的结果进行相对应的UI更新
  */
 public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILifecycleLiveRecordPresenter {
 

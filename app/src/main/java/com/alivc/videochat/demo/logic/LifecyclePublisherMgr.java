@@ -189,9 +189,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
     @Override
     public void onResume() {
-        if (mImManager != null
-                && mControlBody != null
-                && mWSConnOpts != null) {
+        if (mImManager != null && mControlBody != null && mWSConnOpts != null) {
             initPublishMsgProcessor();
         }
 

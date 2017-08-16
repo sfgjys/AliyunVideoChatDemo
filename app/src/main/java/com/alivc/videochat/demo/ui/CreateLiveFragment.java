@@ -20,9 +20,9 @@ import com.alivc.videochat.demo.presenter.view.ICreateLiveView;
 import com.alivc.videochat.demo.uitils.ToastUtils;
 
 /**
- * Created by liujianghao on 16-8-10.
+ * 类的描述: 该Fragment是SurfaceView控件表层的一些控制直播连麦的按钮，礼物等操作的界面
  */
-public class CreateLiveFragment extends Fragment implements View.OnClickListener{
+public class CreateLiveFragment extends Fragment implements View.OnClickListener {
 
     private EditText mEtDesc;
     private Button mBtnStartLive;
@@ -35,6 +35,7 @@ public class CreateLiveFragment extends Fragment implements View.OnClickListener
 
     //TODO：这里如果使用DI来做（比如dagger2）加入注入对象生命周期管理就不需要单独保存一个Mgr对象了，正常情况Mgr应该对UI层透明的
     private LifecyclePublisherMgr mPublisherMgr;
+
     public static CreateLiveFragment newInstance(LifecyclePublisherMgr publisherMgr) {
         CreateLiveFragment fragment = new CreateLiveFragment();
         fragment.mPublisherMgr = publisherMgr;
@@ -84,11 +85,11 @@ public class CreateLiveFragment extends Fragment implements View.OnClickListener
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_start_live:
-                String uid = ((LiveActivity)getActivity()).getUid();
-                if(TextUtils.isEmpty(uid)) {
+                String uid = ((LiveActivity) getActivity()).getUid();
+                if (TextUtils.isEmpty(uid)) {
                     ToastUtils.showToast(getContext(), R.string.not_login_tip);
                     gotoLogin();
-                }else {
+                } else {
                     mBtnStartLive.setEnabled(false);
                     mPresenter.createLive(mEtDesc.getText().toString());
                 }
@@ -97,8 +98,7 @@ public class CreateLiveFragment extends Fragment implements View.OnClickListener
                 getActivity().finish();
             }
             break;
-            case R.id.switch_beauty:
-            {
+            case R.id.switch_beauty: {
                 mPresenter.switchBeauty();
             }
             break;
@@ -115,11 +115,11 @@ public class CreateLiveFragment extends Fragment implements View.OnClickListener
     }
 
 
-    ICreateLiveView mView = new ICreateLiveView(){
+    ICreateLiveView mView = new ICreateLiveView() {
 
         @Override
         public void showPublishStreamUI(String roomID, String name, String uid) {
-            if(mPendingPublishListener != null) {
+            if (mPendingPublishListener != null) {
                 mBtnStartLive.setEnabled(true);
                 mPendingPublishListener.onPendingPublish(roomID, name, uid);
             }
