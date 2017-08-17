@@ -12,7 +12,7 @@
 
     <string name="login_failed">登陆失败</string>
     <string name="live_list_failed">加载直播列表失败</string>
-    <string name="create_live_failed">创建直播失败</string>
+    <string name="create_live_failed">创建直播失败(获取推流地址失败)</string>
 
     <string name="not_login_tip">请先登录</string>
     <string name="close_live_failed">关闭直播失败</string>

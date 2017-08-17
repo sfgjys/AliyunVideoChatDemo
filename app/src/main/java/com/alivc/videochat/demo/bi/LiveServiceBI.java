@@ -19,6 +19,7 @@ import com.alivc.videochat.demo.http.service.ServiceFactory;
 import java.util.List;
 
 import retrofit2.Call;
+import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
@@ -27,59 +28,65 @@ import retrofit2.Response;
 public class LiveServiceBI extends ServiceBI {
 
     /**
-     * @param uid
-     * @param desc
-     * @param callback
+     * 方法描述: 请求网络获取推流地址
+     *
+     * @param uid      登录成功时返回的信息
+     * @param desc     开启请求网络时填写的对这个推流地址的描述直播标题
+     * @param callback 请求结果的回调接口实例
      */
-    public Call createLive(String uid, String desc,
-                           final Callback<LiveCreateResult> callback) {
-
+    public Call createLive(String uid, String desc, final Callback<LiveCreateResult> callback) {
+        // 获取请求推流地址的Call任务
         CreateLiveForm liveForm = new CreateLiveForm(uid, desc);
-        Call createLiveCall;
-        createLiveCall = ServiceFactory.getLiveService()
-                .createLive(liveForm);
-        final LiveCreateResult[] fResult = new LiveCreateResult[1];
-        createLiveCall.enqueue(new retrofit2.Callback<HttpResponse<LiveCreateResult>>() {
+        Call<HttpResponse<LiveCreateResult>> createLiveCall;
+        createLiveCall = ServiceFactory.getLiveService().createLive(liveForm);
 
+        // 用于存储网络请求结果的数组
+        final LiveCreateResult[] fResult = new LiveCreateResult[1];
+
+        // 使用Call任务开启请求
+        createLiveCall.enqueue(new retrofit2.Callback<HttpResponse<LiveCreateResult>>() {
             @Override
             public void onResponse(final Call<HttpResponse<LiveCreateResult>> call, Response<HttpResponse<LiveCreateResult>> response) {
+
                 if (response.body().getCode() == HttpConstant.HTTP_OK) {
-                    MNSConnectionInfoForm form = new MNSConnectionInfoForm(response.body().getData()
-                            .getMNSModel().getTopic(), null);
+                    MNSConnectionInfoForm form = new MNSConnectionInfoForm(response.body().getData().getMNSModel().getTopic(), null);
+                    // 存储网络请求结果
                     fResult[0] = response.body().getData();
+
+                    // TODO MNS请求
                     Call<HttpResponse<MNSConnectModel>> mnsCall = ServiceFactory.getAccountService().getMnsConnectionInfo(form);
-                    processObservable(mnsCall,
-                            new ServiceBI.Callback<MNSConnectModel>() {
 
-                                @Override
-                                public void onResponse(int code, MNSConnectModel response) {
-                                    fResult[0].setMnsConnectModel(response);
-                                    if (callback != null) {
-                                        callback.onResponse(code, fResult[0]);
-                                    }
-                                }
+                    processObservable(mnsCall, new ServiceBI.Callback<MNSConnectModel>() {
+                        @Override
+                        public void onResponse(int code, MNSConnectModel response) {
+                            fResult[0].setMnsConnectModel(response);
+                            if (callback != null) {
+                                callback.onResponse(code, fResult[0]);
+                            }
+                        }
 
-                                @Override
-                                public void onFailure(Throwable t) {
-                                    if (callback != null) {
-                                        callback.onFailure(t);
-                                    }
-                                }
-                            });
+                        @Override
+                        public void onFailure(Throwable t) {
+                            if (callback != null) {
+                                callback.onFailure(t);
+                            }
+                        }
+                    });
                 } else {
+                    // 失败
                     onFailure(call, new APIException(response.body().getMessage(), response.body().getCode()));
                 }
             }
 
             @Override
             public void onFailure(Call<HttpResponse<LiveCreateResult>> call, Throwable t) {
+                // 失败
                 if (callback != null) {
                     callback.onFailure(t);
                 }
             }
         });
         return createLiveCall;
-
     }
 
     /**
@@ -141,8 +148,7 @@ public class LiveServiceBI extends ServiceBI {
      * @param uid
      * @param callback
      */
-    public Call closeLive(String roomID, String uid,
-                          Callback callback) {
+    public Call closeLive(String roomID, String uid, Callback callback) {
         Call call;
         CloseLiveForm form = new CloseLiveForm(roomID, uid);
         call = ServiceFactory.getLiveService()

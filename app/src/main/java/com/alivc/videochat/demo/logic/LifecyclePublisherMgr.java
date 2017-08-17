@@ -219,6 +219,8 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
     @Override
     public void onStop() {
+
+        // 在CreateLiveFragment获取推流地址是，如果用户不想直播了，结束了Fragment，那么这里就用用了可以结束网络请求
         if (mCreateLiveCall != null && ServiceBI.isCalling(mCreateLiveCall)) {
             mCreateLiveCall.cancel();
             mCreateLiveCall = null;
@@ -464,26 +466,38 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
     @Override
     public void asyncCreateLive(String desc, final AsyncCallback callback) {
+        // 先查看下请求网络获取推流地址的Call任务是否存在
         if (mCreateLiveCall != null && ServiceBI.isCalling(mCreateLiveCall)) {
             mCreateLiveCall.cancel();
             mCreateLiveCall = null;
         }
+        // 创建请求网络获取推流地址的Call任务
         mCreateLiveCall = mLiveServiceBI.createLive(mUID, desc, new ServiceBI.Callback<LiveCreateResult>() {
             @Override
             public void onResponse(int code, LiveCreateResult response) {
+                // 获取服务器创建的直播推流的房间号mRoomID
                 mRoomID = response.getRoomID();
+
+                // 将结果Bena封装进Bundle
                 Bundle data = new Bundle();
+
+                // 将Bundle回调给调用本方法的回调接口实例，内部的作用大致是将界面从创建直播切换到正在推流
                 data.putSerializable(DATA_KEY_CREATE_LIVE_RESULT, response);
                 if (callback != null) {
                     callback.onSuccess(data);
                 }
+
                 if (mCallback != null) {
+                    // 这个回调暂时没用
                     mCallback.onEvent(TYPE_LIVE_CREATED, data);
                 }
+
                 mCreateLiveCall = null;
-                //创建成功，开始推流
+
+                // 创建并获取推流地址成功，开始推流
                 mSDKHelper.startPublishStream(response.getRtmpUrl());
-                //获取IM链接信息
+
+                // 获取IM链接信息 TODO MNS
                 mWSConnOpts = new WebSocketConnectOptions();
                 MNSModel mnsModel = response.getMNSModel();
                 MNSConnectModel mnsConnectModel = response.getMnsConnectModel();
@@ -506,6 +520,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
             @Override
             public void onFailure(Throwable t) {
+                // 获取推流地址的Call失败，释放Call，并调用回调接口
                 if (callback != null) {
                     callback.onFailure(null, t);
                 }

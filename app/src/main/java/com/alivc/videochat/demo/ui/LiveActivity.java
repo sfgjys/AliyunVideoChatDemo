@@ -79,8 +79,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
      * 变量的描述: 完整事件控件
      */
     private View mFullEventView;
-    private View mInterruptView;
-    private TextView mTvInterruptTip;
     /**
      * 变量的描述: 根容器
      */
@@ -176,9 +174,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
         // TODO
         mRootContainer = (FrameLayout) findViewById(R.id.root_container);
-        // 中断，打断控件 因为inflate方法的参数三是false，所以此代码的意思是在mRootContainer的协助下生成布局参数，并以这个参数获取R.layout.fragment_live_interrupt布局整体控件
-        mInterruptView = LayoutInflater.from(this).inflate(R.layout.fragment_live_interrupt, mRootContainer, false);
-        mTvInterruptTip = (TextView) mInterruptView.findViewById(R.id.tv_interrupt_tip);
 
         // 三个连麦在主播直播界面上进行播放的SurfaceView
         SurfaceView parterViewLeft = (SurfaceView) findViewById(R.id.parter_view_left);
@@ -409,18 +404,12 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     private ILiveRecordView mView = new ILiveRecordView() {
         @Override
         public void hideInterruptUI() {
-            mRootContainer.removeView(mInterruptView);
         }
 
         @Override
         public void showInterruptUI(int msgResID, int what) {
             if (isFinishing())
                 return;
-//            final String tip = getString(msgResID) + ", ErrorCode:" + what;
-//            if (mInterruptView != null && mInterruptView.getParent() == null) {
-//                mRootContainer.addView(mInterruptView);
-//            }
-//            mTvInterruptTip.setText(tip);
 
             try {
                 AlertDialog.Builder normalDialog =
@@ -640,11 +629,14 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     // --------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void onResume() {
+    protected void onResume() {// 因为在onCreate开启了一个Fragment，所以是先走完了Fragment的onStart后才走Activity的onStart，onResume，接着在走Fragment的onResume
         super.onResume();
+
         mLiveRecordPresenter.startPreview(mPreviewSurfaceView); //开启预览
-        mConnectivityMonitor.register(getApplicationContext());        //注册对网络状态的监听
-        mHeadsetMonitor.register(getApplicationContext());        //注册对耳机状态的监听
+
+        // 本Activity需要两个广播起作用
+        mConnectivityMonitor.register(getApplicationContext());   // 注册对网络状态的监听
+        mHeadsetMonitor.register(getApplicationContext());        // 注册对耳机状态的监听
 
         //根据设置，判断是否要显示推流性能log
         if (mAppSettings.isShowLogInfo(true)) {
@@ -687,40 +679,37 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
 
     /**
-     * 直播创建成功后即将推流的Listener
+     * 变量的描述: 请求网络获取推流地址成功后，回调过来的结果内容
      */
     public CreateLiveFragment.OnPendingPublishListener mPendingPublishListener = new CreateLiveFragment.OnPendingPublishListener() {
         @Override
-        public void onPendingPublish(String roomID, String name,
-                                     String uid) {
+        public void onPendingPublish(String roomID, String name, String uid) {
             mRoomID = roomID;
-            changeUI2Publishing(roomID, name, uid); //将界面从创建直播切换到正在推流
-//
-//            mLivePresenter.initPublishMsgProcessor(roomID, options, body); //初始化推送消息处理器，订阅需要处理的消息类型
-//
-//            mLivePresenter.startPublishStream(publishUrl); //开始推流
+            changeUI2Publishing(roomID, name, uid); // 将界面从创建直播切换到正在推流
         }
     };
 
     /**
-     * UI切换到正在推流状态
+     * 方法描述: 将界面从创建直播切换到正在推流
      *
-     * @param name
-     * @param uid
+     * @param roomID 请求网络获取推流地址的结果LiveCreateResult对象的mRoomID
+     * @param name   请求网络获取推流地址的结果LiveCreateResult对象的mName
+     * @param uid    请求网络获取推流地址的结果LiveCreateResult对象的mUid
      */
     private void changeUI2Publishing(String roomID, String name, String uid) {
         mIvClose.setVisibility(View.VISIBLE);
 
         InteractionFragment interactionFragment = InteractionFragment.newInstance(roomID, name, uid);
         mLiveBottomFragment = LiveBottomFragment.newInstance();
+
         interactionFragment.setImManger(mImManager);
+
         mLiveBottomFragment.setRecorderUIClickListener(mUIClickListener);
         mLiveBottomFragment.setOnInviteClickListener(mInviteClickListener);
+
         interactionFragment.setBottomFragment(mLiveBottomFragment);
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.root_container, interactionFragment)
-                .commit();
+
+        getSupportFragmentManager().beginTransaction().replace(R.id.root_container, interactionFragment).commit();
     }
 
 

@@ -20,22 +20,40 @@ import com.alivc.videochat.demo.presenter.view.ICreateLiveView;
 import com.alivc.videochat.demo.uitils.ToastUtils;
 
 /**
- * 类的描述: 该Fragment是SurfaceView控件表层的一些控制直播连麦的按钮，礼物等操作的界面
+ * 类的描述: 该Fragment是用于请求网络获取直播推流地址的界面，在直播界面上开启的
  */
 public class CreateLiveFragment extends Fragment implements View.OnClickListener {
 
+    /**
+     * 变量的描述: 填写直播主题的对话框
+     */
     private EditText mEtDesc;
+    /**
+     * 变量的描述: 开启直播的按钮
+     */
     private Button mBtnStartLive;
+    /**
+     * 变量的描述: 结束Fragment返回Activity的按钮
+     */
     private ImageView mBackBtn;
+    /**
+     * 变量的描述: 摄像头切换的按钮
+     */
     private ImageView mSwitchCameraBtn;
+    /**
+     * 变量的描述: 开启美颜的按钮
+     */
     private ImageView mSwitchBeautyBtn;
+    private ILifecycleCreateLivePresenter mPresenter;
 
     private OnPendingPublishListener mPendingPublishListener;
-    private ILifecycleCreateLivePresenter mPresenter;
 
     //TODO：这里如果使用DI来做（比如dagger2）加入注入对象生命周期管理就不需要单独保存一个Mgr对象了，正常情况Mgr应该对UI层透明的
     private LifecyclePublisherMgr mPublisherMgr;
 
+    /**
+     * 方法描述: 方法内是创建一个本类对象，并且在将参数赋值给本类对象，方便本类对象去进行创建LifecycleCreateLivePresenterImpl对象
+     */
     public static CreateLiveFragment newInstance(LifecyclePublisherMgr publisherMgr) {
         CreateLiveFragment fragment = new CreateLiveFragment();
         fragment.mPublisherMgr = publisherMgr;
@@ -66,19 +84,6 @@ public class CreateLiveFragment extends Fragment implements View.OnClickListener
         mSwitchBeautyBtn.setOnClickListener(this);
         mSwitchCameraBtn = (ImageView) view.findViewById(R.id.switch_camera);
         mSwitchCameraBtn.setOnClickListener(this);
-    }
-
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        mPresenter.onStop();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        mPresenter = null;
     }
 
     @Override
@@ -116,9 +121,9 @@ public class CreateLiveFragment extends Fragment implements View.OnClickListener
 
 
     ICreateLiveView mView = new ICreateLiveView() {
-
         @Override
         public void showPublishStreamUI(String roomID, String name, String uid) {
+            // 让开启直播的按钮再次可以按，并将结果回调给OnPendingPublishListener接口的实例
             if (mPendingPublishListener != null) {
                 mBtnStartLive.setEnabled(true);
                 mPendingPublishListener.onPendingPublish(roomID, name, uid);
@@ -130,8 +135,22 @@ public class CreateLiveFragment extends Fragment implements View.OnClickListener
         this.mPendingPublishListener = listener;
     }
 
+    /**
+     * 类的描述: 将通过请求网络获取到的推流地址通过回调返回给直播界面进行UI更新
+     */
     public interface OnPendingPublishListener {
-        void onPendingPublish(String roomID, String name,
-                              String uid);
+        void onPendingPublish(String roomID, String name, String uid);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mPresenter.onStop();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mPresenter = null;
     }
 }

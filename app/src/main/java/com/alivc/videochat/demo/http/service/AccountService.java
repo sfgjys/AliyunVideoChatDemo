@@ -13,11 +13,9 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 public interface AccountService {
-    // 请求路径
     @POST(HttpConstant.URL_LOGIN)
     Call<HttpResponse<LoginResult>> login(@Body LoginForm form);// 将带有登录信息的对象参数传入获取Call任务对象
 
-    // 请求路径
     @POST(HttpConstant.URL_WEBSOCKET_INFO)
     Call<HttpResponse<MNSConnectModel>> getMnsConnectionInfo(@Body MNSConnectionInfoForm form);// 获取MNS链接信息
 }

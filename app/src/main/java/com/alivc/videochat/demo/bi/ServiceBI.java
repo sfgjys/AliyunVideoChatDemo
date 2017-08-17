@@ -17,6 +17,12 @@ public class ServiceBI {
      * 接口的描述: 该类是网络请求后的结果监听回调
      */
     public interface Callback<T> {
+        /**
+         * 方法描述: 网络请求成功回调接口
+         *
+         * @param code     Response的code
+         * @param response HttpResponse的data成员变量
+         */
         void onResponse(int code, T response);
 
         void onFailure(Throwable t);

@@ -30,7 +30,7 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:name="com.alivc.videochat.demo.ui.LoginActivity"
+            android:name="com.alivc.videochat.demo.ui.LiveActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -50,7 +50,7 @@
             android:windowSoftInputMode="adjustPan" />
 
         <activity
-            android:name="com.alivc.videochat.demo.ui.LiveActivity"
+            android:name="com.alivc.videochat.demo.ui.LoginActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme"
             android:windowSoftInputMode="adjustPan" />

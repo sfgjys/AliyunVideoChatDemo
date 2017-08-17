@@ -4,7 +4,7 @@ import com.alivc.videochat.demo.http.HttpConstant;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Created by liujianghao on 16-8-2.
+ * 类的描述: 用于请求网络获取获取推流地址的参数Bean类
  */
 public class CreateLiveForm {
     @SerializedName(HttpConstant.KEY_UID)

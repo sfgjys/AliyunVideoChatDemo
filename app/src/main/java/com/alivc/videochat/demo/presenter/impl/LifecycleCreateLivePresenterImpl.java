@@ -14,9 +14,8 @@ import com.alivc.videochat.demo.presenter.view.ICreateLiveView;
 import com.alivc.videochat.demo.uitils.ToastUtils;
 
 /**
- * Created by apple on 2017/1/9.
+ * 类的描述: 该接口实例是用于在LifecyclePublisherMgr中进行获取推流地址相关
  */
-
 public class LifecycleCreateLivePresenterImpl extends ContextBase implements ILifecycleCreateLivePresenter {
     private LifecyclePublisherMgr mPublisherMgr;
     private ICreateLiveView mView;
@@ -33,7 +32,11 @@ public class LifecycleCreateLivePresenterImpl extends ContextBase implements ILi
             @Override
             public void onSuccess(Bundle bundle) {
                 LiveCreateResult result = (LiveCreateResult) bundle.getSerializable(IPublisherMgr.DATA_KEY_CREATE_LIVE_RESULT);
-                mView.showPublishStreamUI(result.getRoomID(), result.getName(), result.getUid());   //显示创建直播成功的UI
+                if (result != null) {
+                    mView.showPublishStreamUI(result.getRoomID(), result.getName(), result.getUid());   // 显示创建直播成功的UI
+                } else {
+                    ToastUtils.showToast(getContext(), R.string.create_live_failed);
+                }
             }
 
             @Override
@@ -53,6 +56,9 @@ public class LifecycleCreateLivePresenterImpl extends ContextBase implements ILi
         mPublisherMgr.switchCamera();
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
+    // 下面的这些生命周期需要与Activity或者Fragment的生命周期联动才有效果，在本APP中暂时没有使用到
     @Override
     public void onCreate() {
         mPublisherMgr.onCreate();

@@ -201,9 +201,7 @@ public class InteractionFragment extends Fragment {
     };
 
 
-    public static InteractionFragment newInstance(String roomID,
-                                                  String anchorName,
-                                                  String anchorUID) {
+    public static InteractionFragment newInstance(String roomID, String anchorName, String anchorUID) {
         InteractionFragment fragment = new InteractionFragment();
         Bundle bundle = new Bundle();
         bundle.putString(ExtraConstant.EXTRA_ROOM_ID, roomID);

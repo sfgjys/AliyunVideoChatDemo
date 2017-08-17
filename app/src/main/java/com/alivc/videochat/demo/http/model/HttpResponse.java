@@ -3,7 +3,7 @@ package com.alivc.videochat.demo.http.model;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * 用与Call<T>的泛型，而HttpResponse<T>的泛型则用于网络请求结果监听回调接口Callback<T>的泛型
+ * 用与Call<T>的泛型，而HttpResponse<T>的泛型则用于 用户自定义的网络请求结果监听回调接口Callback<T>的泛型
  */
 public class HttpResponse<T> {
     @SerializedName("code")

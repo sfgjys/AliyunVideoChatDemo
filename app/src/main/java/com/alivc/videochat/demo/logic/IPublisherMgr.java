@@ -58,7 +58,7 @@ public interface IPublisherMgr {
     String DATA_KEY_PLAYER_ERROR_MSG = "player_error_msg";
 
     /**
-     * 方法描述: 创建直播
+     * 方法描述: 创建直播，其意思是请求服务器获取直播的推流地址
      */
     void asyncCreateLive(String desc, AsyncCallback callback);
 
