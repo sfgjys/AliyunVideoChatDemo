@@ -48,6 +48,9 @@ public class ChatSession {
 
     private static final int MSG_WHAT_MAIN_STREAM_NOT_EXIST = 7;
 
+    /**
+     * 变量的描述: 连麦的最大数
+     */
     public static final int MAX_SESSION_NUM = 3;
 
     private VideoChatStatus mChatStatus = VideoChatStatus.UNCHAT;

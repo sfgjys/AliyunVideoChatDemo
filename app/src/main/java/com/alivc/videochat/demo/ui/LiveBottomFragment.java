@@ -11,9 +11,10 @@ import android.widget.ImageView;
 import com.alivc.videochat.demo.R;
 
 /**
- * Created by liujianghao on 16-8-10.
+ * 类的描述: 直播界面中底部按键
  */
 public class LiveBottomFragment extends Fragment implements View.OnClickListener {
+
     private ImageView mIvBeauty;
     private ImageView mIvCamera;
     private ImageView mIvFlash;
@@ -21,6 +22,10 @@ public class LiveBottomFragment extends Fragment implements View.OnClickListener
 
     private RecorderUIClickListener mUIClickListener;
     private View.OnClickListener mInviteClickListener;
+
+    public static LiveBottomFragment newInstance() {
+        return new LiveBottomFragment();
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -47,9 +52,14 @@ public class LiveBottomFragment extends Fragment implements View.OnClickListener
         mIvInvite.setOnClickListener(this);
     }
 
+    // **************************************************** 调用传递进来的监听接口实例的方法来响应按钮的点击事件 ****************************************************
 
-    public static LiveBottomFragment newInstance() {
-        return new LiveBottomFragment();
+    public void setRecorderUIClickListener(RecorderUIClickListener listener) {
+        this.mUIClickListener = listener;
+    }
+
+    public void setOnInviteClickListener(View.OnClickListener listener) {
+        this.mInviteClickListener = listener;
     }
 
     @Override
@@ -78,13 +88,9 @@ public class LiveBottomFragment extends Fragment implements View.OnClickListener
         }
     }
 
-    public void setRecorderUIClickListener(RecorderUIClickListener listener) {
-        this.mUIClickListener = listener;
-    }
+    // --------------------------------------------------------------------------------------------------------
 
-    public void setOnInviteClickListener(View.OnClickListener listener) {
-        this.mInviteClickListener = listener;
-    }
+    // **************************************************** 让其他地方可以通过本Fragment的实例对象控制按钮的属性 ****************************************************
 
     public void setBeautyUI(boolean beautyOn) {
         if (mIvBeauty != null) {
@@ -98,26 +104,21 @@ public class LiveBottomFragment extends Fragment implements View.OnClickListener
         }
     }
 
+    // --------------------------------------------------------------------------------------------------------
 
     public interface RecorderUIClickListener {
         /**
-         * switch camera
-         *
-         * @return current camera id
+         * 方法描述: 摄像头切换
          */
         int onSwitchCamera();
 
         /**
-         * switch beauty
-         *
-         * @return true: beauty on , false: beauty off
+         * 方法描述: 美颜
          */
         boolean onBeautySwitch();
 
         /**
-         * switch flash
-         *
-         * @return true: flash on, false: flash off;
+         * 方法描述: 闪光灯
          */
         boolean onFlashSwitch();
     }

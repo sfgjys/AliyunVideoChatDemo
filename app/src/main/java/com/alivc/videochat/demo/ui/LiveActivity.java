@@ -51,7 +51,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * 类的描述: 主播直播页面
+ * 类的描述: 主播直播页面---主要是消息显示和冒泡动画，底部按键是另一个Fragment
  */
 public class LiveActivity extends BaseActivity implements View.OnClickListener, FragmentInteraction {
 
@@ -89,24 +89,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
 
     private ILifecycleLiveRecordPresenter mLiveRecordPresenter = null;
-
-
-    @Override
-    public void onPendingAction(int actionType, Bundle bundle) {
-        switch (actionType) {
-            case INTERACTION_TYPE_INVITE://用户选择了连麦对象，并且点击选择了要与其连麦的Action
-                if (bundle != null) {
-                    // 获取从对话框中选择的观众或者直播的数据，从中获取其uid
-                    LiveItemResult userData = (LiveItemResult) bundle.getSerializable(AnchorListFragment.KEY_LIVE_ITEM_DATA);
-                    ArrayList<String> inviteeUIDs = new ArrayList<>();
-                    assert userData != null;
-                    inviteeUIDs.add(userData.getUid());
-                    // 使用uid的集合去发起邀请连麦的请求
-                    mLiveRecordPresenter.inviteChat(inviteeUIDs); //发起连麦邀请
-                }
-//                mLiveBottomFragment.setInviteUIEnable(false);  //禁用邀麦的按钮
-        }
-    }
 
     private int mPreviewWidth = 0;
     private int mPreviewHeight = 0;
@@ -678,6 +660,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         finish();
     }
 
+    // **************************************************** 获取推流地址推流成功后的反应 ****************************************************
 
     /**
      * 变量的描述: 请求网络获取推流地址成功后，回调过来的结果内容
@@ -751,6 +734,10 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         }
     };
 
+    // --------------------------------------------------------------------------------------------------------
+
+    // **************************************************** 邀请连麦的代码 ****************************************************
+
     private AnchorListDialog mAnchorListDialog;
 
     /**
@@ -776,6 +763,25 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
             mAnchorListDialog.dismiss();
         }
     }
+
+    @Override
+    public void onPendingAction(int actionType, Bundle bundle) {
+        switch (actionType) {
+            case INTERACTION_TYPE_INVITE://用户选择了连麦对象，并且点击选择了要与其连麦的Action
+                if (bundle != null) {
+                    // 获取从对话框中选择的观众或者直播的数据，从中获取其uid
+                    LiveItemResult userData = (LiveItemResult) bundle.getSerializable(AnchorListFragment.KEY_LIVE_ITEM_DATA);
+                    ArrayList<String> inviteeUIDs = new ArrayList<>();
+                    assert userData != null;
+                    inviteeUIDs.add(userData.getUid());
+                    // 使用uid的集合去发起邀请连麦的请求
+                    mLiveRecordPresenter.inviteChat(inviteeUIDs); // TODO 发起连麦邀请
+                }
+//                mLiveBottomFragment.setInviteUIEnable(false);  //禁用邀麦的按钮
+        }
+    }
+
+    // --------------------------------------------------------------------------------------------------------
 
     private DialogInterface.OnClickListener mImInitFailedListener = new DialogInterface.OnClickListener() {
 

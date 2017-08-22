@@ -256,6 +256,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
     @Override
     public void asyncInviteChatting(final List<String> playerUIDs, final AsyncCallback callback) {
+        // ChatSession.MAX_SESSION_NUM是写死的最大连麦数
         if (mChatSessionMap.size() > ChatSession.MAX_SESSION_NUM) {//目前最多只支持同时连麦3个观众
             if (callback != null) {
                 callback.onFailure(null, new ChatSessionException(ChatSessionException.ERROR_CHATTING_MAX_NUMBER));
@@ -263,6 +264,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             return;
         }
 
+        // 遍历看playerUIDs判断其元素是否已经连麦
         for (String playerUID : playerUIDs) {
             if (mChatSessionMap.containsKey(playerUID)) {//目前最多只支持同时连麦3个观众
                 if (callback != null) {

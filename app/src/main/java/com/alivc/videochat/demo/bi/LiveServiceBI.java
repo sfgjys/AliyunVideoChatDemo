@@ -18,6 +18,9 @@ import com.alivc.videochat.demo.http.service.ServiceFactory;
 
 import java.util.List;
 
+import okhttp3.HttpUrl;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -43,12 +46,17 @@ public class LiveServiceBI extends ServiceBI {
         // 用于存储网络请求结果的数组
         final LiveCreateResult[] fResult = new LiveCreateResult[1];
 
+        Request request = createLiveCall.request();
+        RequestBody body = request.body();
+        HttpUrl url = request.url();
+
         // 使用Call任务开启请求
         createLiveCall.enqueue(new retrofit2.Callback<HttpResponse<LiveCreateResult>>() {
             @Override
             public void onResponse(final Call<HttpResponse<LiveCreateResult>> call, Response<HttpResponse<LiveCreateResult>> response) {
 
-                if (response.body().getCode() == HttpConstant.HTTP_OK) {
+                int code = response.body().getCode();
+                if (code == HttpConstant.HTTP_OK) {
                     MNSConnectionInfoForm form = new MNSConnectionInfoForm(response.body().getData().getMNSModel().getTopic(), null);
                     // 存储网络请求结果
                     fResult[0] = response.body().getData();

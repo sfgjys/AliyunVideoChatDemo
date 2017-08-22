@@ -23,6 +23,7 @@ import com.alibaba.view.BubblingView;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * Created by liujianghao on 16-7-28.
@@ -50,12 +51,15 @@ public class InteractionFragment extends Fragment {
     LinearLayoutManager mCommentManager;
     private Fragment mBottomFragment;
 
-
+    /**
+     * 变量的描述: 用户登录时保存的数据
+     */
     private String mUID;
+
+    /**
+     * 变量的描述: 请求网络获取推流地址的结果LiveCreateResult对象的mName
+     */
     private String mAnchorName;
-
-
-    private ImManager mImManger;
 
     // --------------------------------------------------------------------------------------------------------
 
@@ -76,11 +80,24 @@ public class InteractionFragment extends Fragment {
         return fragment;
     }
 
+    // --------------------------------------------------------------------------------------------------------
 
+    /**
+     * 方法描述: 获取一些需要用到的数据
+     */
     public void initArgs() {
         Bundle args = getArguments();
         mAnchorName = args.getString(ExtraConstant.EXTRA_NAME);
         mUID = ((BaseActivity) getActivity()).getUid();
+    }
+
+    // **************************************************** 开启一个底部Frgament ****************************************************
+
+    /**
+     * 方法描述: 传递在Fragment要开启的Fragment的实例进来
+     */
+    public void setBottomFragment(Fragment fragment) {
+        this.mBottomFragment = fragment;
     }
 
     @Override
@@ -89,9 +106,12 @@ public class InteractionFragment extends Fragment {
         initArgs();
 
         if (mBottomFragment != null) {
+            // 使用Fragment的管理器去获取事物开启fragment  一个在底部开启的Fragment
             getChildFragmentManager().beginTransaction().add(R.id.bottom_container, mBottomFragment).commit();
         }
     }
+
+    // -------------------------------------------------------------------------------------------------------- 
 
     @Nullable
     @Override
@@ -103,19 +123,31 @@ public class InteractionFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        // 冒泡控件
         mBubblingView = (BubblingView) view.findViewById(R.id.bv_like);
-        mCommentView = (RecyclerView) view.findViewById(R.id.rv_comment);
-        mTvName = (TextView) view.findViewById(R.id.tv_name);
 
+        // 设置直播标题？
+        mTvName = (TextView) view.findViewById(R.id.tv_name);
         mTvName.setText(mAnchorName + "(" + mUID + ")");
 
-        mCommentView.setHasFixedSize(true);
+        // 聊天内容显示控件？？？
+        mCommentView = (RecyclerView) view.findViewById(R.id.rv_comment);
+        mCommentView.setHasFixedSize(true);// 确保尺寸是个常数不变
         mAdapter = new LiveCommentAdapter();
         mCommentManager = new LinearLayoutManager(getActivity());
-        mCommentManager.setStackFromEnd(true);
+        // 下面两行代码应该可以使新添加的item始终显示在列表最底部显示
+        mCommentManager.setStackFromEnd(true);// 可以让最后添加的item始终显示在RecycleView中；
         mCommentManager.setSmoothScrollbarEnabled(true);
         mCommentView.setLayoutManager(mCommentManager);
         mCommentView.setAdapter(mAdapter);
+    }
+
+    // TODO 下面的代码都是消息处理
+
+    private ImManager mImManger;
+
+    public void setImManger(ImManager imManger) {
+        this.mImManger = imManger;
     }
 
     @Override
@@ -142,18 +174,12 @@ public class InteractionFragment extends Fragment {
     }
 
 
-    public void setBottomFragment(Fragment fragment) {
-        this.mBottomFragment = fragment;
-    }
-
-
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
 
     /**
      * 收到点赞消息处理Action
      */
     private ImHelper.Func<MsgDataLike> mLikeFunc = new ImHelper.Func<MsgDataLike>() {
-
         @Override
         public void action(final MsgDataLike o) {
             if (!mUID.equals(o.getUid())) {
@@ -219,9 +245,4 @@ public class InteractionFragment extends Fragment {
 
         }
     };
-
-
-    public void setImManger(ImManager imManger) {
-        this.mImManger = imManger;
-    }
 }
