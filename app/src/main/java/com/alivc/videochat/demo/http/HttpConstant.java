@@ -6,7 +6,7 @@ package com.alivc.videochat.demo.http;
 public class HttpConstant {
     public static final int HTTP_OK = 200;
 
-    public static final String HTTP_BASE_URL = "http://xxxx:xx";
+    public static final String HTTP_BASE_URL = "http://116.62.236.244:4000";
 
     public static final String URL_CREATE_LIVE = "live/create";
     public static final String URL_WATCH_LIVE = "live/play";

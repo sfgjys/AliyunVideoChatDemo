@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by liujianghao on 16-9-13.
+ * 类的描述: 显示多个Fragment的Tab的Adapter
  */
 public class VideoCallListPagerAdapter extends FragmentPagerAdapter {
     private List<Fragment> mFragments = new ArrayList<>();

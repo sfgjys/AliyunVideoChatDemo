@@ -13,7 +13,6 @@ import android.support.v4.content.PermissionChecker;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.GestureDetector;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
@@ -23,7 +22,6 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alibaba.sdk.mns.MNSClientImpl;
@@ -92,14 +90,18 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
     private ILifecycleLiveRecordPresenter mLiveRecordPresenter = null;
 
+
     @Override
     public void onPendingAction(int actionType, Bundle bundle) {
         switch (actionType) {
             case INTERACTION_TYPE_INVITE://用户选择了连麦对象，并且点击选择了要与其连麦的Action
                 if (bundle != null) {
+                    // 获取从对话框中选择的观众或者直播的数据，从中获取其uid
                     LiveItemResult userData = (LiveItemResult) bundle.getSerializable(AnchorListFragment.KEY_LIVE_ITEM_DATA);
                     ArrayList<String> inviteeUIDs = new ArrayList<>();
+                    assert userData != null;
                     inviteeUIDs.add(userData.getUid());
+                    // 使用uid的集合去发起邀请连麦的请求
                     mLiveRecordPresenter.inviteChat(inviteeUIDs); //发起连麦邀请
                 }
 //                mLiveBottomFragment.setInviteUIEnable(false);  //禁用邀麦的按钮
@@ -113,7 +115,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     private LogInfoFragment mLogInfoFragment;
     private LiveBottomFragment mLiveBottomFragment;
     private LiveCloseDialog mLiveCloseDialog;
-    private AnchorListDialog mAnchorListDialog;
     private AlertDialog mImInitFailedDialog;
 
 
@@ -699,22 +700,27 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     private void changeUI2Publishing(String roomID, String name, String uid) {
         mIvClose.setVisibility(View.VISIBLE);
 
+        // 创建InteractionFragment对象
         InteractionFragment interactionFragment = InteractionFragment.newInstance(roomID, name, uid);
-        mLiveBottomFragment = LiveBottomFragment.newInstance();
-
+        // TODO MNS
         interactionFragment.setImManger(mImManager);
 
+        // 创建LiveBottomFragment对象
+        mLiveBottomFragment = LiveBottomFragment.newInstance();
+        // 设置在LiveBottomFragment中进行点击事件的监听回调
         mLiveBottomFragment.setRecorderUIClickListener(mUIClickListener);
         mLiveBottomFragment.setOnInviteClickListener(mInviteClickListener);
 
+        // 将创建设置好属性的LiveBottomFragment对象传入InteractionFragment对象中使用
         interactionFragment.setBottomFragment(mLiveBottomFragment);
 
+        // 开启Fragment
         getSupportFragmentManager().beginTransaction().replace(R.id.root_container, interactionFragment).commit();
     }
 
 
     /**
-     * 底部操作按钮的click事件响应
+     * 变量的描述: 底部操作按钮的click事件响应,具体的就是美颜闪光灯摄像头切换
      */
     private LiveBottomFragment.RecorderUIClickListener mUIClickListener = new LiveBottomFragment.RecorderUIClickListener() {
         @Override
@@ -736,24 +742,28 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     };
 
     /**
-     * 点击邀请按钮的事件响应
+     * 变量的描述: 点击邀请按钮的事件响应
      */
     private View.OnClickListener mInviteClickListener = new View.OnClickListener() {
-
         @Override
         public void onClick(View v) {
             showAnchorListDialog(mRoomID);
         }
     };
 
+    private AnchorListDialog mAnchorListDialog;
+
     /**
-     * 显示连麦对象(主播/观众)Dialog
+     * 方法描述: 显示连麦对象(主播/观众)Dialog
+     *
+     * @param roomID 请求网络获取推流地址的结果LiveCreateResult对象的mRoomID
      */
     private void showAnchorListDialog(String roomID) {
         if (mAnchorListDialog == null) {
             mAnchorListDialog = AnchorListDialog.newInstance(roomID);
         }
         if (!mAnchorListDialog.isShow()) {
+            // 显示对话框
             mAnchorListDialog.show(getSupportFragmentManager(), AnchorListDialog.class.getName());
         }
     }

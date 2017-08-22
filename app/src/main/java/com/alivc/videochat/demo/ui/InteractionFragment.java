@@ -57,6 +57,26 @@ public class InteractionFragment extends Fragment {
 
     private ImManager mImManger;
 
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * 方法描述: 创建InteractionFragment对象。并将参数设置进Bundle，进行传递
+     *
+     * @param roomID     请求网络获取推流地址的结果LiveCreateResult对象的mRoomID
+     * @param anchorName 请求网络获取推流地址的结果LiveCreateResult对象的mName
+     * @param anchorUID  请求网络获取推流地址的结果LiveCreateResult对象的mUid
+     */
+    public static InteractionFragment newInstance(String roomID, String anchorName, String anchorUID) {
+        InteractionFragment fragment = new InteractionFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(ExtraConstant.EXTRA_ROOM_ID, roomID);
+        bundle.putString(ExtraConstant.EXTRA_NAME, anchorName);
+        bundle.putString(ExtraConstant.EXTRA_ANCHOR_UID, anchorUID);
+        fragment.setArguments(bundle);
+        return fragment;
+    }
+
+
     public void initArgs() {
         Bundle args = getArguments();
         mAnchorName = args.getString(ExtraConstant.EXTRA_NAME);
@@ -200,16 +220,6 @@ public class InteractionFragment extends Fragment {
         }
     };
 
-
-    public static InteractionFragment newInstance(String roomID, String anchorName, String anchorUID) {
-        InteractionFragment fragment = new InteractionFragment();
-        Bundle bundle = new Bundle();
-        bundle.putString(ExtraConstant.EXTRA_ROOM_ID, roomID);
-        bundle.putString(ExtraConstant.EXTRA_NAME, anchorName);
-        bundle.putString(ExtraConstant.EXTRA_ANCHOR_UID, anchorUID);
-        fragment.setArguments(bundle);
-        return fragment;
-    }
 
     public void setImManger(ImManager imManger) {
         this.mImManger = imManger;

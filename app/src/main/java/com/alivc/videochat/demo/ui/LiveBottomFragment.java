@@ -13,7 +13,7 @@ import com.alivc.videochat.demo.R;
 /**
  * Created by liujianghao on 16-8-10.
  */
-public class LiveBottomFragment extends Fragment implements View.OnClickListener{
+public class LiveBottomFragment extends Fragment implements View.OnClickListener {
     private ImageView mIvBeauty;
     private ImageView mIvCamera;
     private ImageView mIvFlash;
@@ -48,8 +48,7 @@ public class LiveBottomFragment extends Fragment implements View.OnClickListener
     }
 
 
-
-    public static final LiveBottomFragment newInstance(){
+    public static LiveBottomFragment newInstance() {
         return new LiveBottomFragment();
     }
 
@@ -57,22 +56,22 @@ public class LiveBottomFragment extends Fragment implements View.OnClickListener
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.iv_camera:
-                if(mUIClickListener != null) {
+                if (mUIClickListener != null) {
                     mUIClickListener.onSwitchCamera();
                 }
                 break;
             case R.id.iv_beauty:
-                if(mUIClickListener != null) {
+                if (mUIClickListener != null) {
                     mIvBeauty.setActivated(mUIClickListener.onBeautySwitch());
                 }
                 break;
             case R.id.iv_flash:
-                if(mUIClickListener != null) {
+                if (mUIClickListener != null) {
                     mUIClickListener.onFlashSwitch();
                 }
                 break;
             case R.id.iv_invite:
-                if(mInviteClickListener != null) {
+                if (mInviteClickListener != null) {
                     mInviteClickListener.onClick(v);
                 }
                 break;
@@ -88,33 +87,36 @@ public class LiveBottomFragment extends Fragment implements View.OnClickListener
     }
 
     public void setBeautyUI(boolean beautyOn) {
-        if(mIvBeauty != null) {
+        if (mIvBeauty != null) {
             mIvBeauty.setActivated(beautyOn);
         }
     }
 
     public void setInviteUIEnable(boolean enable) {
-        if(mIvInvite != null) {
+        if (mIvInvite != null) {
             mIvInvite.setEnabled(enable);
         }
     }
 
 
-    public interface RecorderUIClickListener{
+    public interface RecorderUIClickListener {
         /**
          * switch camera
+         *
          * @return current camera id
          */
         int onSwitchCamera();
 
         /**
          * switch beauty
+         *
          * @return true: beauty on , false: beauty off
          */
         boolean onBeautySwitch();
 
         /**
          * switch flash
+         *
          * @return true: flash on, false: flash off;
          */
         boolean onFlashSwitch();

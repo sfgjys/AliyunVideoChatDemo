@@ -7,6 +7,7 @@ import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageView;
 
 import com.alivc.videochat.demo.R;
@@ -16,9 +17,9 @@ import com.alivc.videochat.demo.ui.adapter.VideoCallListPagerAdapter;
 import com.alivc.videochat.demo.uitils.DensityUtil;
 
 /**
- * Created by liujianghao on 16-8-18.
+ * 类的描述: 主要责任是主播从多个观众或者主播中选择邀请进行连麦，这是一个有多个Tab绑定Fragment的对话框
  */
-public class AnchorListDialog extends BaseTransparentDialog implements View.OnClickListener{
+public class AnchorListDialog extends BaseTransparentDialog implements View.OnClickListener {
 
     private ViewPager mViewPager;
     private TabLayout mTabLayout;
@@ -46,10 +47,16 @@ public class AnchorListDialog extends BaseTransparentDialog implements View.OnCl
         mIvClose = (ImageView) view.findViewById(R.id.iv_close);
 
         mIvClose.setOnClickListener(this);
-        getDialog().getWindow().setLayout(DensityUtil.dp2px(getActivity(), 250), DensityUtil.dp2px(getActivity(), 400));
+        Window window = getDialog().getWindow();
+        if (window != null) {
+            window.setLayout(DensityUtil.dp2px(getActivity(), 250), DensityUtil.dp2px(getActivity(), 400));
+        }
         initViewPager();
     }
 
+    /**
+     * 方法描述: 初始化Fragment的ViewPager
+     */
     private void initViewPager() {
         VideoCallListPagerAdapter adapter = new VideoCallListPagerAdapter(getChildFragmentManager());
         adapter.addFragment(AnchorListFragment.newInstance(AnchorListFragment.FLAG_ANCHOR, mRoomID), getString(R.string.anchor));
@@ -58,6 +65,9 @@ public class AnchorListDialog extends BaseTransparentDialog implements View.OnCl
         mTabLayout.setupWithViewPager(mViewPager);
     }
 
+    /**
+     * 方法描述: 关闭对话框
+     */
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -67,7 +77,12 @@ public class AnchorListDialog extends BaseTransparentDialog implements View.OnCl
         }
     }
 
-    public static final AnchorListDialog newInstance(String roomID) {
+    /**
+     * 方法描述: 初始化创建一个对话框对象，并将参数传递下去
+     *
+     * @param roomID 请求网络获取推流地址的结果LiveCreateResult对象的mRoomID
+     */
+    public static AnchorListDialog newInstance(String roomID) {
         AnchorListDialog dialog = new AnchorListDialog();
         Bundle bundle = new Bundle();
         bundle.putString(ExtraConstant.EXTRA_ROOM_ID, roomID);
