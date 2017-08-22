@@ -20,7 +20,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
 
@@ -70,15 +70,13 @@ dependencies {
 //    compile 'com.android.support:design:23.2.0'
 //    compile 'com.android.support:multidex:1.0.1'
 
-
     //依赖的aar包都在aarLibs这个目录中
     compile(name: 'androidasync-2.1.8', ext: 'aar')
     compile(name: 'bubblinganimationview-release', ext: 'aar')
-    compile(name: 'appcompat-v7-23.0.0' , ext: 'aar')
+    compile(name: 'appcompat-v7-23.0.0', ext: 'aar')
     compile(name: 'design-23.0.0', ext: 'aar')
     compile(name: 'recyclerview-v7-23.0.0', ext: 'aar')
     compile(name: 'support-v4-23.0.0', ext: 'aar')
-
 
     //以下注释部分为实际开发中推荐的依赖方式
 //    compile 'com.squareup.retrofit2:retrofit:2.1.0'

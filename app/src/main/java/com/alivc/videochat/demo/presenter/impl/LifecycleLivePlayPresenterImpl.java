@@ -41,7 +41,6 @@ import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PUBLISHER_RECONNECT
 /**
  * Created by apple on 2017/1/9.
  */
-
 public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILifecycleLivePlayPresenter {
     private static final String TAG = LifecycleLivePlayPresenterImpl.class.getName();
     private ILivePlayView mView;
@@ -52,6 +51,8 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
         this.mView = view;
         this.mPlayerMgr = new LifecycledPlayerMgr(context, imManager, mUID, mCallback);
     }
+
+    // --------------------------------------------------------------------------------------------------------
 
     @Override
     public void onCreate() {
@@ -82,6 +83,8 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
     public void onDestroy() {
         mPlayerMgr.onDestroy();
     }
+
+    // --------------------------------------------------------------------------------------------------------
 
     @Override
     public void enterLiveRoom(String liveRoomID) {

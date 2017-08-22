@@ -184,57 +184,55 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
             mEnterRoomCall.cancel();
             mEnterRoomCall = null;
         }
-        mEnterRoomCall = mLiveServiceBI.watchLive(liveRoomID, mUID,
-                new ServiceBI.Callback<WatchLiveResult>() {
-
-                    @Override
-                    public void onResponse(int code, WatchLiveResult result) {
-                        MNSModel mnsModel = result.getMNSModel();
-                        MNSConnectModel mnsConnectModel = result.getConnectModel();
-                        List<String> tags = new ArrayList<>();
-                        tags.add(mnsModel.getRoomTag());
-                        tags.add(mnsModel.getUserTag());
-                        mMnsControlBody = new MnsControlBody.Builder()
-                                .accountId(mnsConnectModel.getAccountID())
-                                .accessId(mnsConnectModel.getAccessID())
-                                .date(mnsConnectModel.getDate())
-                                .messageType(MnsControlBody.MessageType.SUBSCRIBE)
-                                .topic(mnsModel.getTopic())
-                                .subscription(mnsModel.getTopic())
-                                .authorization("MNS " + mnsConnectModel.getAccessID() + ":" + mnsConnectModel.getAuthentication())
-                                .tags(tags)
-                                .build();
-                        mWSConnOpt = new WebSocketConnectOptions();
-                        mWSConnOpt.setServerURI(mnsConnectModel.getTopicWSServerAddress());
-                        mWSConnOpt.setProtocol(MNSClient.SCHEMA);
-                        //TODO:这里需要优化一下
-                        mImManager.createSession(mWSConnOpt, mMnsControlBody);
-                        mImManager.register(MessageType.START_PUSH, mPublishStreamFunc, MsgDataStartPublishStream.class);
+        mEnterRoomCall = mLiveServiceBI.watchLive(liveRoomID, mUID, new ServiceBI.Callback<WatchLiveResult>() {
+            @Override
+            public void onResponse(int code, WatchLiveResult result) {
+                MNSModel mnsModel = result.getMNSModel();
+                MNSConnectModel mnsConnectModel = result.getConnectModel();
+                List<String> tags = new ArrayList<>();
+                tags.add(mnsModel.getRoomTag());
+                tags.add(mnsModel.getUserTag());
+                mMnsControlBody = new MnsControlBody.Builder()
+                        .accountId(mnsConnectModel.getAccountID())
+                        .accessId(mnsConnectModel.getAccessID())
+                        .date(mnsConnectModel.getDate())
+                        .messageType(MnsControlBody.MessageType.SUBSCRIBE)
+                        .topic(mnsModel.getTopic())
+                        .subscription(mnsModel.getTopic())
+                        .authorization("MNS " + mnsConnectModel.getAccessID() + ":" + mnsConnectModel.getAuthentication())
+                        .tags(tags)
+                        .build();
+                mWSConnOpt = new WebSocketConnectOptions();
+                mWSConnOpt.setServerURI(mnsConnectModel.getTopicWSServerAddress());
+                mWSConnOpt.setProtocol(MNSClient.SCHEMA);
+                //TODO:这里需要优化一下
+                mImManager.createSession(mWSConnOpt, mMnsControlBody);
+                mImManager.register(MessageType.START_PUSH, mPublishStreamFunc, MsgDataStartPublishStream.class);
 //                        mImManager.register(MessageType.LIVE_COMPLETE, mLiveCloseFunc, MsgDataLiveClose.class);
-                        mImManager.register(MessageType.AGREE_CALLING, mAgreeFunc, MsgDataAgreeVideoCall.class);
-                        mImManager.register(MessageType.NOT_AGREE_CALLING, mNotAgreeFunc, MsgDataNotAgreeVideoCall.class);
-                        mImManager.register(MessageType.CALLING_SUCCESS, mMergeStreamSuccFunc, MsgDataMergeStream.class);
-                        mImManager.register(MessageType.CALLING_FAILED, mMergeStreamFailedFunc, MsgDataMergeStream.class);
-                        mImManager.register(MessageType.TERMINATE_CALLING, mCloseChatFunc, MsgDataCloseVideoCall.class);
-                        mImManager.register(MessageType.INVITE_CALLING, mInviteFunc, MsgDataInvite.class);
-                        mImManager.register(MessageType.MIX_STATUS_CODE, mMixStatusCodeFunc, MsgDataMixStatusCode.class);
-                        mImManager.register(MessageType.EXIT_CHATTING, mExitingChattingFunc, MsgDataExitChatting.class);
-                        mImManager.register(MessageType.LIVE_COMPLETE, mLiveCloseFunc, MsgDataLiveClose.class);
-                        //缓存直播信息
-                        mPlayUrl = result.getPlayUrl();
-                        mPublisherUID = result.getUid();
-                        if (callback != null) {
-                            callback.onSuccess(null);
-                        }
-                    }
+                mImManager.register(MessageType.AGREE_CALLING, mAgreeFunc, MsgDataAgreeVideoCall.class);
+                mImManager.register(MessageType.NOT_AGREE_CALLING, mNotAgreeFunc, MsgDataNotAgreeVideoCall.class);
+                mImManager.register(MessageType.CALLING_SUCCESS, mMergeStreamSuccFunc, MsgDataMergeStream.class);
+                mImManager.register(MessageType.CALLING_FAILED, mMergeStreamFailedFunc, MsgDataMergeStream.class);
+                mImManager.register(MessageType.TERMINATE_CALLING, mCloseChatFunc, MsgDataCloseVideoCall.class);
+                mImManager.register(MessageType.INVITE_CALLING, mInviteFunc, MsgDataInvite.class);
+                mImManager.register(MessageType.MIX_STATUS_CODE, mMixStatusCodeFunc, MsgDataMixStatusCode.class);
+                mImManager.register(MessageType.EXIT_CHATTING, mExitingChattingFunc, MsgDataExitChatting.class);
+                mImManager.register(MessageType.LIVE_COMPLETE, mLiveCloseFunc, MsgDataLiveClose.class);
+                //缓存直播信息
+                mPlayUrl = result.getPlayUrl();
+                mPublisherUID = result.getUid();
+                if (callback != null) {
+                    callback.onSuccess(null);
+                }
+            }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        if (callback != null) {
-                            callback.onFailure(null, t);
-                        }
-                    }
-                });
+            @Override
+            public void onFailure(Throwable t) {
+                if (callback != null) {
+                    callback.onFailure(null, t);
+                }
+            }
+        });
     }
 
     @Override

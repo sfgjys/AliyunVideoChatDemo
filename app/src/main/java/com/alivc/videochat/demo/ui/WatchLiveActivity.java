@@ -143,22 +143,31 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         }
 
         setContentView(R.layout.activity_watch_live);
+
         mRootContainer = (FrameLayout) findViewById(R.id.root_container);
+
+        // 以根部局activity_watch_live填充出一个加载控件
         mLoadingView = LayoutInflater.from(this).inflate(R.layout.fragment_live_video_loading, mRootContainer, false);
+
+        // 感觉暂时没用
         mInterruptView = LayoutInflater.from(this).inflate(R.layout.fragment_live_interrupt, mRootContainer, false);
         mTvInterruptTip = (TextView) mInterruptView.findViewById(R.id.tv_interrupt_tip);
+
+        // 加载根部局
         mLogContainer = (LinearLayout) findViewById(R.id.log_container);
+
+        // 显示首帧时间
         mTvFirstFrameTime = (TextView) findViewById(R.id.tv_value_first_frame_time);
+
+        // 主播放Surface
         mPlaySurfaceView = (SurfaceView) findViewById(R.id.host_play_surface);
 
-        mLeftChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_left),
-                (ImageView) findViewById(R.id.iv_abort_chat_left), 3);
+        // 连麦的副Surface
+        mLeftChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_left), (ImageView) findViewById(R.id.iv_abort_chat_left), 3);
 //        hideSurfaceView(mLeftChattingHolder.mSurfaceView);
-        mMiddleChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_middle),
-                (ImageView) findViewById(R.id.iv_abort_chat_middle), 2);
+        mMiddleChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_middle), (ImageView) findViewById(R.id.iv_abort_chat_middle), 2);
 //        hideSurfaceView(mMiddleChattingHolder.mSurfaceView);
-        mRightChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_right),
-                (ImageView) findViewById(R.id.iv_abort_chat_right), 1);
+        mRightChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_right), (ImageView) findViewById(R.id.iv_abort_chat_right), 1);
 //        hideSurfaceView(mRightChattingHolder.mSurfaceView);
         mLeftChattingHolder.mSurfaceView.setZOrderMediaOverlay(true);
         mMiddleChattingHolder.mSurfaceView.setZOrderMediaOverlay(true);
@@ -182,20 +191,24 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         mFreeHolderMap.put(mMiddleChattingHolder.mIndex, mMiddleChattingHolder);
         mFreeHolderMap.put(mLeftChattingHolder.mIndex, mLeftChattingHolder);
 
-        InteractionFragment interactionFragment =
-                InteractionFragment.newInstance(getIntent().getStringExtra(ExtraConstant.EXTRA_ROOM_ID),
-                        getIntent().getStringExtra(ExtraConstant.EXTRA_NAME),
-                        getIntent().getStringExtra(ExtraConstant.EXTRA_ANCHOR_UID));
+
+        // 在主播放Surface上面开启交互界面Fragment
+        InteractionFragment interactionFragment = InteractionFragment.newInstance(
+                getIntent().getStringExtra(ExtraConstant.EXTRA_ROOM_ID),
+                getIntent().getStringExtra(ExtraConstant.EXTRA_NAME),
+                getIntent().getStringExtra(ExtraConstant.EXTRA_ANCHOR_UID));
+
         mBottomFragment = WatchBottomFragment.newInstance(
                 getIntent().getStringExtra(ExtraConstant.EXTRA_ROOM_ID),
                 getIntent().getStringExtra(ExtraConstant.EXTRA_ANCHOR_UID));
         mBottomFragment.setRecordUIClickListener(mUIClickListener);
+
         interactionFragment.setImManger(imManager);
-        getSupportFragmentManager()
-                .beginTransaction()
-                .add(R.id.root_container, interactionFragment)
-                .commit();
+
         interactionFragment.setBottomFragment(mBottomFragment);
+
+        getSupportFragmentManager().beginTransaction().add(R.id.root_container, interactionFragment).commit();
+
 
         // 一进入界面就播放主播直播
 //        mPreviewSurfaceView.setZOrderOnTop(false);
@@ -266,7 +279,9 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
+        // 有焦点时就开启播放
         mPresenter.enterLiveRoom(mLiveRoomID);
+
         mConnectivityMonitor.register(this);        //注册对网络状态的监听
         mHeadsetMonitor.register(this);        //注册对耳机状态的监听
 

@@ -110,6 +110,10 @@ public class LiveServiceBI extends ServiceBI {
         WatchLiveForm form = new WatchLiveForm(roomID, uid);
         // 获取LiveService专属的Call任务
         watchLiveCall = ServiceFactory.getLiveService().watchLive(form);
+
+        RequestBody body = watchLiveCall.request().body();
+        HttpUrl url = watchLiveCall.request().url();
+
         // 使用Call开启网络请求
         watchLiveCall.enqueue(new retrofit2.Callback<HttpResponse<WatchLiveResult>>() {
             @Override
