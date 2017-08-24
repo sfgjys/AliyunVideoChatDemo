@@ -101,6 +101,7 @@ public class PublisherSDKHelper {
         mMediaParam.put(MediaConstants.PUBLISHER_PARAM_ORIGINAL_BITRATE, "" + 800000);      // 推流初始码率，单位Kbps。默认500。
         mMediaParam.put(MediaConstants.PUBLISHER_PARAM_MIN_BITRATE, "" + 600000);           // 推流最小码率，单位Kbps。默认200。
         mMediaParam.put(MediaConstants.PUBLISHER_PARAM_MAX_BITRATE, "" + 1000000);          // 推流最大码率，单位Kbps。默认1500。
+        mMediaParam.put(MediaConstants.PUBLISHER_PARAM_AUDIO_SAMPLE_RATE, "" + 32000);
 
         mChatHost = new AlivcVideoChatHost();
 

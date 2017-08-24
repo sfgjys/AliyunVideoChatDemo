@@ -8,6 +8,9 @@ import android.support.v4.app.Fragment;
  * 类的描述: 该类的主要作用是从开启Fragment的Activity中获取实例化的FragmentInteraction接口
  */
 public class ActionFragment extends Fragment {
+    /**
+     * 变量的描述: 获取该实例化对象的前提是Activity实现FragmentInteraction接口
+     */
     protected FragmentInteraction mActionListener;
 
     @Override

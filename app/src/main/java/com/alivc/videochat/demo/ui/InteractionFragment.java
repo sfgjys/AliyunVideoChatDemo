@@ -26,8 +26,7 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * Created by liujianghao on 16-7-28.
- * 交互操作的Fragment（评论、点赞等）
+ * 类的描述: 直播和观看使用的交互界面Fragment，该界面有聊天室控件，点赞冒泡控件，还有一个FrameLayout控件用来开启底部按钮Fragment
  */
 public class InteractionFragment extends Fragment {
     private static final String TAG = "ActionFragment";

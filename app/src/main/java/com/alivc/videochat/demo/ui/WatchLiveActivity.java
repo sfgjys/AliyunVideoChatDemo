@@ -76,20 +76,42 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
     private static final String TAG = "WatchLivePresenter";
 
-    // TODO 预览surface view
+    /**
+     * 变量的描述: 封装了连麦副麦 上
+     */
     private ChattingViewHolder mLeftChattingHolder;
+    /**
+     * 变量的描述: 封装了连麦副麦 中
+     */
     private ChattingViewHolder mMiddleChattingHolder;
+    /**
+     * 变量的描述: 封装了连麦副麦 下
+     */
     private ChattingViewHolder mRightChattingHolder;
+    /**
+     * 变量的描述: 用来存储刚封装好的ChattingViewHolder对象，且这里的ChattingViewHolder对象都是暂时没有使用的，使用后就存储在这了
+     */
     private TreeMap<Integer, ChattingViewHolder> mFreeHolderMap = new TreeMap<>();  //连麦小窗View容器，用来管理连麦的小窗
     private Map<String, ChattingViewHolder> mUsedViewHolderMap = new HashMap<>();   //在使用的ViewHolder
-    // TODO 播放surface view
+    /**
+     * 变量的描述: 主播放Surface
+     */
     private SurfaceView mPlaySurfaceView;
     private FrameLayout mRootContainer;
+    /**
+     * 变量的描述: 一个正在加载中的显示界面控件
+     */
     private View mLoadingView = null;
     private View mInterruptView = null;
     private TextView mTvInterruptTip;
 
+    /**
+     * 变量的描述: 展示性能的控件
+     */
     private LinearLayout mLogContainer;
+    /**
+     * 变量的描述: 显示首帧耗时的时间
+     */
     private TextView mTvFirstFrameTime;
 
 
@@ -109,6 +131,22 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     private ILifecycleLivePlayPresenter mPresenter;
     private String mLiveRoomID;
 
+
+    /**
+     * 类的描述: 存储连麦副麦的SurfaceView，对应的关闭ImageView，以及对应的indexF
+     */
+    public static class ChattingViewHolder {
+        SurfaceView mSurfaceView;
+        ImageView mIvClose;
+        int mIndex;
+
+        public ChattingViewHolder(SurfaceView surfaceView, ImageView ivClose, int index) {
+            mSurfaceView = surfaceView;
+            mIvClose = ivClose;
+            mIndex = index;
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // 屏幕常量
@@ -116,16 +154,16 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         // 全屏
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
+        // TODO MNS
         // MNSClientImpl是MNSClient接口的实现类 参数二ImManager的帮助类，参数三网络链接状态广播
         ImManager imManager = new ImManager(this, new ImHelper(new MNSClientImpl()), mConnectivityMonitor);
         // 初始化
         imManager.init();
-        // TODO 上下各两行代码不清楚
 
         mPresenter = new LifecycleLivePlayPresenterImpl(this, mView, imManager, getUid());
         setLifecycleListener(mPresenter);
 
-        // 以上代码必须在onCreate上面先写
+        // 以上代码必须在onCreate上面先写,代码内部功能是初始化播放器
         super.onCreate(savedInstanceState);
 
         // 获取传递过来的roomId
@@ -143,29 +181,37 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
         mRootContainer = (FrameLayout) findViewById(R.id.root_container);
 
-        // 以根部局activity_watch_live填充出一个加载控件
+        // --------------------------------------------------------------------------------------------------------
+
+        // 以根部局root_container填充出一个 正在加载的转圈 控件
         mLoadingView = LayoutInflater.from(this).inflate(R.layout.fragment_live_video_loading, mRootContainer, false);
 
         // 感觉暂时没用
         mInterruptView = LayoutInflater.from(this).inflate(R.layout.fragment_live_interrupt, mRootContainer, false);
         mTvInterruptTip = (TextView) mInterruptView.findViewById(R.id.tv_interrupt_tip);
 
-        // 加载根部局
+        // --------------------------------------------------------------------------------------------------------
+
+        // 展示性能的控件
         mLogContainer = (LinearLayout) findViewById(R.id.log_container);
 
-        // 显示首帧时间
+        // 显示首帧耗时的时间
         mTvFirstFrameTime = (TextView) findViewById(R.id.tv_value_first_frame_time);
 
         // 主播放Surface
         mPlaySurfaceView = (SurfaceView) findViewById(R.id.host_play_surface);
 
-        // 连麦的副Surface
+        // --------------------------------------------------------------------------------------------------------
+
+        // 初始化连麦的副Surface,并用ChattingViewHolder进行封装
         mLeftChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_left), (ImageView) findViewById(R.id.iv_abort_chat_left), 3);
 //        hideSurfaceView(mLeftChattingHolder.mSurfaceView);
         mMiddleChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_middle), (ImageView) findViewById(R.id.iv_abort_chat_middle), 2);
 //        hideSurfaceView(mMiddleChattingHolder.mSurfaceView);
         mRightChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_right), (ImageView) findViewById(R.id.iv_abort_chat_right), 1);
 //        hideSurfaceView(mRightChattingHolder.mSurfaceView);
+
+        // 设置副麦Surface将其覆盖在其他媒体上面
         mLeftChattingHolder.mSurfaceView.setZOrderMediaOverlay(true);
         mMiddleChattingHolder.mSurfaceView.setZOrderMediaOverlay(true);
         mRightChattingHolder.mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
@@ -185,16 +231,21 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             }
         });
         mRightChattingHolder.mSurfaceView.setZOrderMediaOverlay(true);
+
+        // 存储已经刚封装好的ChattingViewHolder
         mFreeHolderMap.put(mMiddleChattingHolder.mIndex, mMiddleChattingHolder);
         mFreeHolderMap.put(mLeftChattingHolder.mIndex, mLeftChattingHolder);
+        // TODO 此处是不是少存储一个？？？？？？？？？？？？？？？？？？？？
 
+        // --------------------------------------------------------------------------------------------------------
 
-        // 在主播放Surface上面开启交互界面Fragment
+        // 在主播放Surface上面开启交互界面Fragment ，开启的Fragment和主播的交互界面一样
         InteractionFragment interactionFragment = InteractionFragment.newInstance(
                 getIntent().getStringExtra(ExtraConstant.EXTRA_ROOM_ID),
                 getIntent().getStringExtra(ExtraConstant.EXTRA_NAME),
                 getIntent().getStringExtra(ExtraConstant.EXTRA_ANCHOR_UID));
 
+        // 交互界面底部按钮用一个有别于主播交互底部Fragment显示F
         mBottomFragment = WatchBottomFragment.newInstance(
                 getIntent().getStringExtra(ExtraConstant.EXTRA_ROOM_ID),
                 getIntent().getStringExtra(ExtraConstant.EXTRA_ANCHOR_UID));
@@ -206,12 +257,15 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
         getSupportFragmentManager().beginTransaction().add(R.id.root_container, interactionFragment).commit();
 
+        // --------------------------------------------------------------------------------------------------------
 
         // 一进入界面就播放主播直播
 //        mPreviewSurfaceView.setZOrderOnTop(false);
 //        mHeadsetMonitor.setHeadsetStatusChangedListener(mWatchLivePresenter);
-        mPlaySurfaceView.getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
-        mPlaySurfaceView.getHolder().setKeepScreenOn(true);
+        // 设置这个已经被废弃了，现在是在需要的时候会自动设置
+        mPlaySurfaceView.getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);// 适用于GPU加速的Surface
+        mPlaySurfaceView.getHolder().setKeepScreenOn(true);// 设置控件常量
+
     }
 
     // **************************************************** 权限请求 ****************************************************
@@ -276,7 +330,7 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        // 有焦点时就开启播放
+        // 有焦点时代码中就获取播放流，成功后开启播放
         mPresenter.enterLiveRoom(mLiveRoomID);
 
         mConnectivityMonitor.register(this);        //注册对网络状态的监听
@@ -346,7 +400,9 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         }
     }
 
-
+    /**
+     * 变量的描述: 观看界面的底部按钮监听回调实例
+     */
     private LiveBottomFragment.RecorderUIClickListener mUIClickListener = new LiveBottomFragment.RecorderUIClickListener() {
         @Override
         public int onSwitchCamera() {
@@ -409,18 +465,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             }
         }
     };
-
-    public static class ChattingViewHolder {
-        SurfaceView mSurfaceView;
-        ImageView mIvClose;
-        int mIndex;
-
-        public ChattingViewHolder(SurfaceView surfaceView, ImageView ivClose, int index) {
-            mSurfaceView = surfaceView;
-            mIvClose = ivClose;
-            mIndex = index;
-        }
-    }
 
     private void hideSurfaceView(SurfaceView surfaceView) {
         Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());

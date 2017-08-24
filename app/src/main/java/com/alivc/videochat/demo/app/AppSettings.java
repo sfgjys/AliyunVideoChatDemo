@@ -9,7 +9,7 @@ import android.util.Log;
 import com.alivc.videochat.demo.R;
 
 /**
- * Created by liujianghao on 16-9-8.
+ * 类的描述: 这个类暂时没什么用
  */
 public class AppSettings {
     private static final String TAG = "AppSettings";
