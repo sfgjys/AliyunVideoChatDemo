@@ -62,7 +62,6 @@ public interface IPlayerMgr {
     int TYPE_PUBLISHER_NETWORK_POOR = 0x0043;
 
 
-
     String DATA_KEY_PLAYER_ERROR_CODE = "player_error_code";
     String DATA_KEY_PLAYER_ERROR_MSG = "player_error_msg";
     String DATA_KEY_PUBLISHER_INFO_CODE = "publisher_info_code";
@@ -70,10 +69,16 @@ public interface IPlayerMgr {
     String DATA_KEY_INVITEE_UID = "invitee_uid";    //被邀请者的UID
     String DATA_KEY_INVITEE_UID_LIST = "invitee_uid";
 
-    //进入直播间
+    /**
+     * 方法描述: 进入直播间,实质是请求网络获取播放url和播放信息等
+     *
+     * @param liveRoomID 直播列表Item的数据源LiveItemResult对象包含的roomId
+     */
     void asyncEnterLiveRoom(String liveRoomID, AsyncCallback callback);
 
-    //开始播放
+    /**
+     * 方法描述: 如果成功通过asyncEnterLiveRoom方法获取了播放信息，则使用主播播放url开始播放
+     */
     void startPlay(SurfaceView playSurf);
 
     //邀请主播连麦

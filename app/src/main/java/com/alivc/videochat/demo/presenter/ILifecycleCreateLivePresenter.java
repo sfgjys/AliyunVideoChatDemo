@@ -3,9 +3,8 @@ package com.alivc.videochat.demo.presenter;
 import com.alivc.videochat.demo.base.ILifecycleListener;
 
 /**
- * Created by apple on 2017/1/9.
+ * 类的描述: 该接口用于请求网络获取直播推流Url的界面时的操作者实例，也就是在创建直播间时的界面
  */
-
 public interface ILifecycleCreateLivePresenter extends ILifecycleListener {
     /**
      * 方法描述: 请求网络获取直播推流URL

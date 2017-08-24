@@ -55,11 +55,7 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     /**
      * 方法描述: 跳转至本界面的方法
      */
-    public static void startActivity(Context context,
-                                     String playUrl,
-                                     String roomID,
-                                     String anchorName,
-                                     String anchorUID) {
+    public static void startActivity(Context context, String playUrl, String roomID, String anchorName, String anchorUID) {
         Intent intent = new Intent(context, WatchLiveActivity.class);
         Bundle bundle = new Bundle();
         // 直播列表Item的数据源LiveItemResult对象包含的roomId
@@ -125,6 +121,7 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         // 初始化
         imManager.init();
         // TODO 上下各两行代码不清楚
+
         mPresenter = new LifecycleLivePlayPresenterImpl(this, mView, imManager, getUid());
         setLifecycleListener(mPresenter);
 

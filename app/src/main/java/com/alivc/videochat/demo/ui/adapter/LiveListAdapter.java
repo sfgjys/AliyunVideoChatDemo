@@ -98,12 +98,8 @@ public class LiveListAdapter extends RecyclerView.Adapter<LiveListAdapter.LiveVi
      * 方法描述: 点击列表item调用本方法开启观看直播界面
      */
     private void gotoWatchLive(final Context context, final String playUrl, final LiveItemResult itemResult) {
-        WatchLiveActivity.startActivity(context,
-                playUrl,
-                itemResult.getRoomID(),
-                itemResult.getName(),
-                itemResult.getUid());
-        ServiceBIFactory.getLiveServiceBI().watchLive(itemResult.getRoomID(), mUID,
+        WatchLiveActivity.startActivity(context, playUrl, itemResult.getRoomID(), itemResult.getName(), itemResult.getUid());
+        /*ServiceBIFactory.getLiveServiceBI().watchLive(itemResult.getRoomID(), mUID,
                 new ServiceBI.Callback<WatchLiveResult>() {
                     @Override
                     public void onResponse(int code, WatchLiveResult result) {
@@ -120,7 +116,7 @@ public class LiveListAdapter extends RecyclerView.Adapter<LiveListAdapter.LiveVi
                     public void onFailure(Throwable t) {
 
                     }
-                });
+                });*/
     }
 
     @Override

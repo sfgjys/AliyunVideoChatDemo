@@ -9,6 +9,140 @@ public void changeEarPhoneWhenChat(boolean hasEarPhone);
 
 -----------------------------------------------------------------------------------------------------------------------------------------
 
+onlineChat
+
+public int onlineChat(String publisherUrl, int width, int height, SurfaceView previewSurface, Map<String, String> publisherParam, String playUrl);
+功能：开始单人连麦。调用该函数将开启音视频的采集设备、启动预览功能、启动音视频编码功能并将压缩后的音视频流上传。同时将播放地址切换到具备短延时功能的新地址。
+
+参数：
+
+publisherUrl：连麦时推流的地址。
+
+playerUrl：连麦时切换到的短延时播放地址。
+
+width，height：编码视频的宽和高。
+
+previewSurface：连麦时推流的预览窗口。
+
+publisherParam：连麦时推流的参数。使用Map的方式，以便于后续的扩展。目前可以设置的参数如下（在类MediaConstants中）：
+
+MediaConstants.PUBLISHER_PARAM_UPLOAD_TIMEOUT：推流上传超时时间，单位ms。
+MediaConstants.PUBLISHER_PARAM_CAMERA_POSITION ：选择前后摄像头。
+MediaConstants.PUBLISHER_PARAM_AUDIO_SAMPLE_RATE：推流音频采样率，单位Hz。固定32000，暂不可调。
+MediaConstants.PUBLISHER_PARAM_ORIGINAL_BITRATE：推流初始码率，单位Kbps。默认500。
+MediaConstants.PUBLISHER_PARAM_MAX_BITRATE：推流最大码率，单位Kbps。默认1500。
+MediaConstants.PUBLISHER_PARAM_MIN_BITRATE：推流最小码率，单位Kbps。默认200。
+MediaConstants.PUBLISHER_PARAM_AUDIO_BITRATE：推流音频码率，单位Kbps。固定96，暂不可调。
+MediaConstants.PUBLISHER_PARAM_VIDEO_FPS：推流视频码率。
+MediaConstants.PUBLISHER_PARAM_SCREEN_ROTATION ：推流横屏/竖屏。
+MediaConstants.PUBLISHER_PARAM_FRONT_CAMERA_MIRROR：前置摄像头是否镜像。
+备注：目前视频编码采用的是软编码，软编码条件下只支持两种分辨率：360x640、180x320（横屏推流的时候为640x360、180x320）。多人连麦建议使用180x320分辨率（横屏推流的时候为320x180）。
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+setPlayerParam
+
+public void setPlayerParam(Map<String, String> param);
+功能：设置播放器相关的配置参数。
+
+参数：
+
+param：播放器相关的配置参数。使用Map的方式，以便于后续的扩展。目前可以设置的参数如下：
+
+MediaConstants.PLAYER_PARAM_DOWNLOAD_TIMEOUT： 播放器缓冲超时时间，单位ms。默认15000。
+MediaConstants.PLAYER_PARAM_DROP_BUFFER_DURATION：播放器开始丢帧阈值，单位ms。连麦过程中默认值为1000，非连麦过程中默认值为8000。
+MediaConstants.PLAYER_PARAM_ENABLE_NATIVE_LOG：是否打开native log。
+MediaConstants.PLAYER_PARAM_MUTE_MODE： 设置是否静音。
+MediaConstants.PLAYER_PARAM_SCALING_MODE： 播放器显示模式，目前支持2种。VideoScalingMode.VIDEO_SCALING_MODE_SCALE_TO_FIT：适应屏幕显示，VideoScalingMode.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING：充满屏幕显示，保持比例，如果屏幕比例不对，则进行裁剪
+备注：与类AlivcVideoChatHost中接口函数setPlayerParam功能与参数设置相同。
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+setPublisherParam
+
+public void setPublisherParam(Map<String, String> param);
+功能：设置推流相关的配置参数。
+
+参数：
+
+param：播放器相关的配置参数。使用Map的方式，以便于后续的扩展。目前可以设置的参数如下（在类MediaConstants中）：
+
+MediaConstants.PUBLISHER_PARAM_UPLOAD_TIMEOUT：推流上传超时时间，单位ms。
+MediaConstants.PUBLISHER_PARAM_CAMERA_POSITION ：选择前后摄像头。
+MediaConstants.PUBLISHER_PARAM_AUDIO_SAMPLE_RATE：推流音频采样率，单位Hz。固定32000，暂不可调。
+MediaConstants.PUBLISHER_PARAM_ORIGINAL_BITRATE：推流初始码率，单位Kbps。默认500。
+MediaConstants.PUBLISHER_PARAM_MAX_BITRATE：推流最大码率，单位Kbps。默认1500。
+MediaConstants.PUBLISHER_PARAM_MIN_BITRATE：推流最小码率，单位Kbps。默认200。
+MediaConstants.PUBLISHER_PARAM_AUDIO_BITRATE：推流音频码率，单位Kbps。固定96，暂不可调。
+MediaConstants.PUBLISHER_PARAM_VIDEO_FPS：推流视频码率。
+MediaConstants.PUBLISHER_PARAM_SCREEN_ROTATION ：推流横屏/竖屏。
+MediaConstants.PUBLISHER_PARAM_FRONT_CAMERA_MIRROR：前置摄像头是否镜像。
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+zoomCamera
+
+public void zoomCamera(float scaleFactor);
+功能：摄像头放大倍率。调用该函数将对当前视频进行光学放大。放大后的视频将显示在预览窗口。
+
+参数：
+
+scaleFactor：大于0（大于0小于1，表示缩小，最小为原始大小；大于1表示放大）
+
+备注：该函数仅对后置摄像头有效。
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+focusCameraAtAdjustedPoint
+
+public void focusCameraAtAdjustedPoint(float xRatio, float yRatio);
+功能：聚焦到某个设置的点。调用该函数可以聚焦到预览窗口上人为指定的某个点。
+
+参数：
+
+xRatio：点所在屏幕x轴的位置/屏幕宽度
+
+yRatio：点所在的屏幕y轴的位置/屏幕的长度
+
+备注：无。
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+setAutoFocusOn
+
+public void setAutoFocusOn(boolean autoFocus);
+功能：设置是否自动聚焦。
+
+参数：
+
+autoFocus：true为打开自动聚焦，否则为关闭。
+
+备注：该函数可以在连麦过程中随时进行调用。
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+setPublisherMuteModeOn
+
+public void setPublisherMuteModeOn(boolean silent);
+功能：设置推流端的静音模式，仅在连麦过程中使用。
+
+参数： silent：true为静音。
+
+备注：无
+
+*******************************************************************************下面的是主播端，上面的是观众端*******************************************************************************
+
+changeEarPhoneWhenChat
+
+public void changeEarPhoneWhenChat(boolean hasEarPhone);
+功能：当插入或者拔出耳机的时候调用该函数。
+
+参数： hasEarPhone：是否插入耳机
+
+备注：插入或者拔出耳机对连麦的回音消除有影响，此函数必须在连麦的时候调用。
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
 launchChat
 
 public int launchChat(String url, SurfaceView parterView);

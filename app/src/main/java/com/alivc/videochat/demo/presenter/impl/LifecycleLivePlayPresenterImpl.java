@@ -91,7 +91,7 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
         mPlayerMgr.asyncEnterLiveRoom(liveRoomID, new AsyncCallback() {
             @Override
             public void onSuccess(Bundle bundle) {
-                //成功则开始播放
+                // 成功则开始播放
                 mPlayerMgr.startPlay(mView.getPlaySurfaceView());
             }
 

@@ -17,8 +17,7 @@ import retrofit2.http.POST;
 public interface InviteService {
 
     @POST(HttpConstant.URL_INVITE_VIDEO)
-    Call<HttpResponse<Object>>
-    invite(@Body InviteForm form);
+    Call<HttpResponse<Object>> invite(@Body InviteForm form);//
 
     @POST(HttpConstant.URL_INVITE_FEEDBACK)
     Call<HttpResponse<InviteFeedbackResult>>

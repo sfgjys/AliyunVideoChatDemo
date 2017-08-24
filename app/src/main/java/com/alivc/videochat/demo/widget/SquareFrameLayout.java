@@ -4,6 +4,9 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
 
+/**
+ * 类的描述: 暂时没有用到
+ */
 public class SquareFrameLayout extends FrameLayout {
 
     public SquareFrameLayout(Context context) {

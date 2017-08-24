@@ -22,12 +22,7 @@ public class InviteServiceBI extends ServiceBI {
      * @param inviteeUIDs
      * @param callback
      */
-    public Call inviteCall(String inviterUID,
-                                         List<String> inviteeUIDs,
-                                         String type,
-                                         int inviterType,
-                                         String liveRoomId,
-                                         Callback callback) {
+    public Call inviteCall(String inviterUID, List<String> inviteeUIDs, String type, int inviterType, String liveRoomId, Callback callback) {
         Call call;
         InviteForm form = new InviteForm(inviterUID, inviteeUIDs, type, inviterType, liveRoomId);
         call = ServiceFactory.getInviteService().invite(form);
@@ -79,6 +74,7 @@ public class InviteServiceBI extends ServiceBI {
 
     /**
      * 观众退出连麦
+     *
      * @param uid
      * @param liveRoomID
      * @return

@@ -4,10 +4,10 @@ import com.alivc.videochat.demo.base.ILifecycleListener;
 import com.alivc.videochat.demo.ui.LogInfoFragment;
 
 /**
- * Created by apple on 2017/1/9.
+ * 类的描述:
  */
-
 public interface ILifecycleLivePlayPresenter extends ILifecycleListener {
+
     void enterLiveRoom(String liveRoomID);
 
     void invite();

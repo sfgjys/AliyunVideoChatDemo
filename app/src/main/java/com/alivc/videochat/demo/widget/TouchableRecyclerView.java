@@ -8,10 +8,11 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 
 /**
- * Created by Administrator on 2016/1/22.
+ * 类的描述: 暂时没有用到
  */
 public class TouchableRecyclerView extends RecyclerView {
     private boolean mTouchable = true;
+
     public TouchableRecyclerView(Context context) {
         super(context);
     }
@@ -26,14 +27,14 @@ public class TouchableRecyclerView extends RecyclerView {
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        if(mTouchable) {
+        if (mTouchable) {
             switch (MotionEventCompat.getActionMasked(e)) {
                 case MotionEvent.ACTION_UP:
                     performClick();
                     break;
             }
             return super.onTouchEvent(e);
-        }else {
+        } else {
             return false;
         }
     }

@@ -92,14 +92,15 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 
     private int mReconnectCount = 0;
 
-    public LifecycledPlayerMgr(Context context, ImManager imManager, String uid,
-                               MgrCallback callback) {
+    public LifecycledPlayerMgr(Context context, ImManager imManager, String uid, MgrCallback callback) {
         super(context);
         this.mSDKHelper = new PlayerSDKHelper();
         this.mImManager = imManager;
         this.mUID = uid;
         this.mCallback = callback;
     }
+
+    // --------------------------------------------------------------------------------------------------------
 
     @Override
     public void onCreate() {
@@ -177,6 +178,8 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         mSDKHelper.releaseChatParter(); //释放播放器资源
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
     @Override
     public void asyncEnterLiveRoom(String liveRoomID, final AsyncCallback callback) {
         this.mLiveRoomID = liveRoomID;
@@ -218,6 +221,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
                 mImManager.register(MessageType.MIX_STATUS_CODE, mMixStatusCodeFunc, MsgDataMixStatusCode.class);
                 mImManager.register(MessageType.EXIT_CHATTING, mExitingChattingFunc, MsgDataExitChatting.class);
                 mImManager.register(MessageType.LIVE_COMPLETE, mLiveCloseFunc, MsgDataLiveClose.class);
+
                 //缓存直播信息
                 mPlayUrl = result.getPlayUrl();
                 mPublisherUID = result.getUid();
@@ -261,24 +265,23 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         inviteeUIDs.add(mPublisherUID);
         mChatSession = new ChatSession(mSessionHandler);
         mChatSession.invite(mPublisherUID, mUID);
-        mInviteCall = mInviteServiceBI.inviteCall(mUID, inviteeUIDs,
-                InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.INVITE_TYPE_WATCHER, mLiveRoomID, new ServiceBI.Callback() {
-                    @Override
-                    public void onResponse(int code, Object response) {
-                        mChatSession.notifyInviteSuccess();
-                        if (callback != null) {
-                            callback.onSuccess(null);
-                        }
-                    }
+        mInviteCall = mInviteServiceBI.inviteCall(mUID, inviteeUIDs, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.INVITE_TYPE_WATCHER, mLiveRoomID, new ServiceBI.Callback() {
+            @Override
+            public void onResponse(int code, Object response) {
+                mChatSession.notifyInviteSuccess();
+                if (callback != null) {
+                    callback.onSuccess(null);
+                }
+            }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        mChatSession.notifyInviteFailure();
-                        if (callback != null) {
-                            callback.onFailure(null, t);
-                        }
-                    }
-                });
+            @Override
+            public void onFailure(Throwable t) {
+                mChatSession.notifyInviteFailure();
+                if (callback != null) {
+                    callback.onFailure(null, t);
+                }
+            }
+        });
     }
 
     @Override
@@ -475,236 +478,6 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
             }
         });
     }
-
-
-    /**
-     * 播放器错误回调处理
-     */
-    AlivcVideoChatParter.OnErrorListener mPlayerErrorListener = new AlivcVideoChatParter.OnErrorListener() {
-
-        @Override
-        public boolean onError(IVideoChatParter iVideoChatParter, int what, String url) {
-            Log.d(TAG, "WatchLiveActivity-->error what = " + what + ", url = " + url);
-
-            if (what == 0) {
-                return false;
-            }
-            if (mChatSession != null) {
-                mTipString = null;
-//                mChatSession.setOperationCompleted();
-            }
-            switch (what) {
-                case MediaError.ALIVC_ERR_PLAYER_INVALID_INPUTFILE:
-                    Log.d(TAG, "encounter player invalid input file.");
-                    if (mReconnectCount++ < MAX_RECONNECT_COUNT)
-                        mSDKHelper.reconnect(url);
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_INVALID_INPUTFILE, null);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PLAYER_OPEN_FAILED:
-                    Log.d(TAG, "encounter player open failed.");
-                    if (mReconnectCount++ < MAX_RECONNECT_COUNT)
-                        mSDKHelper.reconnect(url);
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_OPEN_FAILED, null);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PLAYER_NO_NETWORK:
-                    Log.d(TAG, "encounter player no network.");
-                    if (mReconnectCount++ < MAX_RECONNECT_COUNT)
-                        mSDKHelper.reconnect(url);
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_NO_NETWORK, null);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PLAYER_TIMEOUT:
-                    Log.d(TAG, "encounter player timeout, so call restartToPlayer");
-                    if (mReconnectCount++ < MAX_RECONNECT_COUNT)
-                        mSDKHelper.reconnect(url);
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_TIMEOUT, null);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PLAYER_READ_PACKET_TIMEOUT:
-                    Log.d(TAG, "encounter player read packet timeout.");
-                    if (mReconnectCount++ < MAX_RECONNECT_COUNT)
-                        mSDKHelper.reconnect(url);
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_READ_PACKET_TIMEOUT, null);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PLAYER_NO_MEMORY:
-                case MediaError.ALIVC_ERR_PLAYER_INVALID_CODEC:
-                case MediaError.ALIVC_ERR_PLAYER_NO_SURFACEVIEW:
-                case MediaError.ALIVC_ERR_PLAYER_UNSUPPORTED:
-                case MediaError.ALIVC_ERR_PLAYER_UNKNOW:
-                    if (mCallback != null) {
-                        Bundle data = new Bundle();
-                        data.putInt(DATA_KEY_PLAYER_ERROR_CODE, what);
-                        mCallback.onEvent(TYPE_PLAYER_INTERNAL_ERROR, data);
-                    }
-                    if (mChatSession != null && mChatSession.isMixing()) {  //如果正在连麦则结束连麦
-                        asyncTerminateChatting(null);   //结束连麦
-                        if (mCallback != null) {
-                            mCallback.onEvent(TYPE_CHATTING_FINISHED, null);
-                        }
-                    }
-                    asyncTerminatePlaying(null);
-
-                    break;
-                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_DISABLED://音频采集失败
-                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_NO_DATA:
-                    if (mChatSession != null) {
-                        Log.d(TAG, "音频采集失败，结束连麦");
-                        if (mCallback != null) {
-                            Bundle data = new Bundle();
-                            data.putInt(DATA_KEY_PLAYER_ERROR_CODE, what);
-                            mCallback.onEvent(TYPE_PUBLISHER_NO_AUDIO_DATA, data);
-                        }
-                    } else {
-                        Log.d(TAG, "音频采集失败，但是当前没有处于连麦状态");
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_NO_DATA:
-                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_DISABLED:
-                    // TODO
-                    if (mChatSession != null) {
-                        Log.d(TAG, "视频采集失败，结束连麦");
-                        if (mCallback != null) {
-                            Bundle data = new Bundle();
-                            data.putInt(DATA_KEY_PLAYER_ERROR_CODE, what);
-                            mCallback.onEvent(TYPE_PUBLISHER_NO_VIDEO_DATA, data);
-                        }
-                    } else {
-                        Log.d(TAG, "视频采集失败，但是当前没有处于连麦状态");
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PUBLISHER_ENCODE_AUDIO_FAILED:
-                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_ENCODER_INIT_FAILED:
-                case MediaError.ALIVC_ERR_PUBLISHER_MALLOC_FAILED:
-                case MediaError.ALIVC_ERR_PUBLISHER_ENCODE_VIDEO_FAILED:
-                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_ENCODER_INIT_FAILED:
-                case MediaError.ALIVC_ERR_PUBLISHER_ILLEGAL_ARGUMENT:
-//                    mView.showLiveInterruptUI(R.string.network_busy, what);
-                    break;
-                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_POOR:
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_NETWORK_POOR, null);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_UNCONNECTED:
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_NETWORK_UNCONNECT, null);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PUBLISHER_SEND_DATA_TIMEOUT:
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_NETWORK_TIMEOUT, null);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PLAYER_AUDIO_PLAY:
-                    if (mCallback != null) {
-                        Bundle data = new Bundle();
-                        data.putInt(DATA_KEY_PLAYER_ERROR_CODE, what);
-                        mCallback.onEvent(TYPE_PLAYER_AUDIO_PLAYER_ERROR, data);
-                    }
-                    break;
-                default:
-//                    mView.showLiveInterruptUI(R.string.error_unknown, what);
-            }
-            return true;
-        }
-    };
-
-
-    /**
-     * 播放器状态回调处理
-     */
-    AlivcVideoChatParter.OnInfoListener mPlayerInfoListener = new AlivcVideoChatParter.OnInfoListener() {
-
-        @Override
-        public boolean onInfo(IVideoChatParter iVideoChatParter, int what, String url) {
-            Log.d(TAG, "WatchLiveActivity-->info what = " + what + ", url = " + url);
-            switch (what) {
-                case MediaPlayer.MEDIA_INFO_UNKNOW:
-                    // 未知
-                    break;
-                case MediaPlayer.MEDIA_INFO_BUFFERING_START:
-                    //开始缓冲
-//                        if (!isLoading) {
-//                            mHandler.postDelayed(mShowInterruptRun, INTERRUPT_DELAY);
-//                            isLoading = true;
-//                        }
-
-                    break;
-                case MediaPlayer.MEDIA_INFO_BUFFERING_END:
-//                        if (isLoading) {
-//                            mHandler.removeCallbacks(mShowInterruptRun);
-//                             结束缓冲
-//                            mView.hideLiveInterruptUI();
-//                            isLoading = false;
-//                        }
-                    break;
-                case MediaError.ALIVC_INFO_PLAYER_FIRST_FRAME_RENDERED:
-                    // 首帧显示时间
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_FIRST_FRAME_RENDER_SUCCESS, null);
-                        mCallback.onEvent(TYPE_PARTER_OPT_END, null);
-                    }
-                    break;
-                case MediaError.ALIVC_INFO_PUBLISH_DISPLAY_FIRST_FRAME:
-                    break;
-                case MediaError.ALIVC_INFO_PUBLISH_NETWORK_GOOD:
-                case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_START:
-                case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_SUCCESS:
-                    break;
-                case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_FAILURE:
-                    if (mCallback != null) {
-                        Bundle data = new Bundle();
-                        data.putInt(DATA_KEY_PUBLISHER_INFO_CODE, what);
-                        mCallback.onEvent(TYPE_PUBLISHER_RECONNECT_FAILURE, data);
-                    }
-                    break;
-                case MediaError.ALIVC_INFO_PLAYER_PREPARED_PROCESS_FINISHED:
-                    mReconnectCount = 0;
-                    break;
-                case MediaError.ALIVC_INFO_PLAYER_INTERRUPT_PLAYING:
-                case MediaError.ALIVC_INFO_PLAYER_STOP_PROCESS_FINISHED:
-                    break;
-                case MediaError.ALIVC_INFO_ONLINE_CHAT_END:
-                    mTipString = null;
-                    mVideoChatApiCalling = false;
-                    Log.e("xiongbo07", "发起连麦成功...");
-                    break;
-                case MediaError.ALIVC_INFO_OFFLINE_CHAT_END:
-                    mTipString = null;
-                    mVideoChatApiCalling = false;
-                    Log.e("xiongbo07", "退出连麦成功...");
-                    break;
-                case MediaError.ALIVC_INFO_ADD_CHAT_END:
-                    mTipString = null;
-                    mVideoChatApiCalling = false;
-                    Log.e("xiongbo07", "ADD连麦成功...");
-                    break;
-                case MediaError.ALIVC_INFO_REMOVE_CHAT_END:
-                    mTipString = null;
-                    mVideoChatApiCalling = false;
-                    Log.e("xiongbo07", "Remove连麦成功...");
-                    break;
-                case MediaError.ALIVC_INFO_PLAYER_NETWORK_POOR:
-                    if (mCallback != null) {
-                        Bundle data = new Bundle();
-                        data.putString(IPublisherMgr.DATA_KEY_PLAYER_ERROR_MSG, url);
-                        mCallback.onEvent(TYPE_PLAYER_NETWORK_POOR, data);
-                    }
-                    break;
-
-            }
-            Log.d(TAG, "MediaPlayer onInfo, what =" + what + ", url = " + url);
-            return false;
-        }
-    };
 
     private Handler mHandler = new Handler();
 
@@ -1077,4 +850,245 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 //        return mSDKHelper.getPlayerPerformanceInfo(url);
         return new AlivcPlayerPerformanceInfo();
     }
+
+    /**
+     * 变量的描述: 播放器错误回调处理，错误监听器
+     */
+    AlivcVideoChatParter.OnErrorListener mPlayerErrorListener = new AlivcVideoChatParter.OnErrorListener() {
+        /**
+         * @param what what为错误代码
+         */
+        @Override
+        public boolean onError(IVideoChatParter iVideoChatParter, int what, String url) {
+            Log.d(TAG, "WatchLiveActivity-->error what = " + what + ", url = " + url);
+
+            if (what == 0) {// 错误代码中没有0
+                return false;
+            }
+            // TODO 做什么？
+            if (mChatSession != null) {
+                mTipString = null;
+                // mChatSession.setOperationCompleted();
+            }
+
+            switch (what) {
+                case MediaError.ALIVC_ERR_PLAYER_INVALID_INPUTFILE:// 播放无效的输入
+                    Log.d(TAG, "encounter player invalid input file.");
+                    if (mReconnectCount++ < MAX_RECONNECT_COUNT)
+                        mSDKHelper.reconnect(url);
+                    if (mCallback != null) {
+                        mCallback.onEvent(TYPE_PLAYER_INVALID_INPUTFILE, null);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PLAYER_OPEN_FAILED:// 播放打开失败
+                    Log.d(TAG, "encounter player open failed.");
+                    if (mReconnectCount++ < MAX_RECONNECT_COUNT)
+                        mSDKHelper.reconnect(url);
+                    if (mCallback != null) {
+                        mCallback.onEvent(TYPE_PLAYER_OPEN_FAILED, null);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PLAYER_NO_NETWORK:// 播放没有网络连接
+                    Log.d(TAG, "encounter player no network.");
+                    if (mReconnectCount++ < MAX_RECONNECT_COUNT)
+                        mSDKHelper.reconnect(url);
+                    if (mCallback != null) {
+                        mCallback.onEvent(TYPE_PLAYER_NO_NETWORK, null);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PLAYER_TIMEOUT:// 播放超时
+                    Log.d(TAG, "encounter player timeout, so call restartToPlayer");
+                    if (mReconnectCount++ < MAX_RECONNECT_COUNT)
+                        mSDKHelper.reconnect(url);
+                    if (mCallback != null) {
+                        mCallback.onEvent(TYPE_PLAYER_TIMEOUT, null);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PLAYER_READ_PACKET_TIMEOUT:// 播放读取数据超时
+                    Log.d(TAG, "encounter player read packet timeout.");
+                    if (mReconnectCount++ < MAX_RECONNECT_COUNT)
+                        mSDKHelper.reconnect(url);
+                    if (mCallback != null) {
+                        mCallback.onEvent(TYPE_PLAYER_READ_PACKET_TIMEOUT, null);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PLAYER_NO_MEMORY:// 播放无足够内存
+                case MediaError.ALIVC_ERR_PLAYER_INVALID_CODEC:// 播放不支持的解码格式
+                case MediaError.ALIVC_ERR_PLAYER_NO_SURFACEVIEW:// 播放没有设置显示窗口
+                case MediaError.ALIVC_ERR_PLAYER_UNSUPPORTED:// 播放不支持的解码
+                case MediaError.ALIVC_ERR_PLAYER_UNKNOW:// 播放出现未知的错误？？？？？？
+                    if (mCallback != null) {
+                        Bundle data = new Bundle();
+                        data.putInt(DATA_KEY_PLAYER_ERROR_CODE, what);
+                        mCallback.onEvent(TYPE_PLAYER_INTERNAL_ERROR, data);
+                    }
+                    if (mChatSession != null && mChatSession.isMixing()) {  //如果正在连麦则结束连麦
+                        asyncTerminateChatting(null);   //结束连麦
+                        if (mCallback != null) {
+                            mCallback.onEvent(TYPE_CHATTING_FINISHED, null);
+                        }
+                    }
+                    asyncTerminatePlaying(null);
+
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_DISABLED:// 音频采集失败。音频被禁止
+                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_NO_DATA:// 音频采集出错
+                    if (mChatSession != null) {
+                        Log.d(TAG, "音频采集失败，结束连麦");
+                        if (mCallback != null) {
+                            Bundle data = new Bundle();
+                            data.putInt(DATA_KEY_PLAYER_ERROR_CODE, what);
+                            mCallback.onEvent(TYPE_PUBLISHER_NO_AUDIO_DATA, data);
+                        }
+                    } else {
+                        Log.d(TAG, "音频采集失败，但是当前没有处于连麦状态");
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_NO_DATA:// 视频采集出错
+                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_DISABLED:// 视频被禁止
+                    // TODO
+                    if (mChatSession != null) {
+                        Log.d(TAG, "视频采集失败，结束连麦");
+                        if (mCallback != null) {
+                            Bundle data = new Bundle();
+                            data.putInt(DATA_KEY_PLAYER_ERROR_CODE, what);
+                            mCallback.onEvent(TYPE_PUBLISHER_NO_VIDEO_DATA, data);
+                        }
+                    } else {
+                        Log.d(TAG, "视频采集失败，但是当前没有处于连麦状态");
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_ENCODE_AUDIO_FAILED:// 音频编码失败
+                case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_ENCODER_INIT_FAILED:// 音频初始化失败
+                case MediaError.ALIVC_ERR_PUBLISHER_MALLOC_FAILED:// 内存分配失败
+                case MediaError.ALIVC_ERR_PUBLISHER_ENCODE_VIDEO_FAILED:// 视频编码失败
+                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_ENCODER_INIT_FAILED:// 视频初始化失败
+                case MediaError.ALIVC_ERR_PUBLISHER_ILLEGAL_ARGUMENT:// 无效的参数
+                    // mView.showLiveInterruptUI(R.string.network_busy, what);
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_POOR:// 网络较慢
+                    if (mCallback != null) {
+                        mCallback.onEvent(TYPE_PUBLISHER_NETWORK_POOR, null);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_UNCONNECTED:// 网络未连接
+                    if (mCallback != null) {
+                        mCallback.onEvent(TYPE_PUBLISHER_NETWORK_UNCONNECT, null);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_SEND_DATA_TIMEOUT:// 发送数据超时
+                    if (mCallback != null) {
+                        mCallback.onEvent(TYPE_PUBLISHER_NETWORK_TIMEOUT, null);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PLAYER_AUDIO_PLAY:// 音频播放错误
+                    if (mCallback != null) {
+                        Bundle data = new Bundle();
+                        data.putInt(DATA_KEY_PLAYER_ERROR_CODE, what);
+                        mCallback.onEvent(TYPE_PLAYER_AUDIO_PLAYER_ERROR, data);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_MEMORY_POOR:// 内存不够
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_OPEN_FAILED:// 推流连接失败
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_FPS_SLOW:// 音频采集较慢
+                    break;
+                default:
+                    // mView.showLiveInterruptUI(R.string.error_unknown, what);
+            }
+            return true;
+        }
+    };
+
+    /**
+     * 变量的描述: 播放器状态回调处理，信息监听器：what为信息代码
+     */
+    AlivcVideoChatParter.OnInfoListener mPlayerInfoListener = new AlivcVideoChatParter.OnInfoListener() {
+
+        @Override
+        public boolean onInfo(IVideoChatParter iVideoChatParter, int what, String url) {
+            Log.d(TAG, "WatchLiveActivity-->info what = " + what + ", url = " + url);
+            switch (what) {
+                case MediaPlayer.MEDIA_INFO_UNKNOW:// 未知
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_FIRST_FRAME_RENDERED:// 播放首帧显示
+                    // 首帧显示时间
+                    if (mCallback != null) {
+                        mCallback.onEvent(TYPE_PLAYER_FIRST_FRAME_RENDER_SUCCESS, null);
+                        mCallback.onEvent(TYPE_PARTER_OPT_END, null);
+                    }
+                    break;
+                case MediaError.ALIVC_INFO_PUBLISH_DISPLAY_FIRST_FRAME:// 推流首次显示通知
+                    break;
+                case MediaError.ALIVC_INFO_PUBLISH_NETWORK_GOOD:// 推流网络较好
+                case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_START:// 重连开始
+                case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_SUCCESS:// 重连成功
+                    break;
+                case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_FAILURE:// 重连失败
+                    if (mCallback != null) {
+                        Bundle data = new Bundle();
+                        data.putInt(DATA_KEY_PUBLISHER_INFO_CODE, what);
+                        mCallback.onEvent(TYPE_PUBLISHER_RECONNECT_FAILURE, data);
+                    }
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_PREPARED_PROCESS_FINISHED:// 播放准备完成通知
+                    mReconnectCount = 0;
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_INTERRUPT_PLAYING:// 播放被中断
+                case MediaError.ALIVC_INFO_PLAYER_STOP_PROCESS_FINISHED:// 播放结束通知
+                    break;
+                case MediaError.ALIVC_INFO_ONLINE_CHAT_END:// onlineChat结束
+                    mTipString = null;
+                    mVideoChatApiCalling = false;
+                    Log.e("xiongbo07", "发起连麦成功...");
+                    break;
+                case MediaError.ALIVC_INFO_OFFLINE_CHAT_END:// offlineChat结束
+                    mTipString = null;
+                    mVideoChatApiCalling = false;
+                    Log.e("xiongbo07", "退出连麦成功...");
+                    break;
+                case MediaError.ALIVC_INFO_ADD_CHAT_END:// addChat结束
+                    mTipString = null;
+                    mVideoChatApiCalling = false;
+                    Log.e("xiongbo07", "ADD连麦成功...");
+                    break;
+                case MediaError.ALIVC_INFO_REMOVE_CHAT_END:// removeChat结束
+                    mTipString = null;
+                    mVideoChatApiCalling = false;
+                    Log.e("xiongbo07", "Remove连麦成功...");
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_NETWORK_POOR:// 播放器网络差，不能及时下载数据包
+                    if (mCallback != null) {
+                        Bundle data = new Bundle();
+                        data.putString(IPublisherMgr.DATA_KEY_PLAYER_ERROR_MSG, url);
+                        mCallback.onEvent(TYPE_PLAYER_NETWORK_POOR, data);
+                    }
+                    break;
+                case MediaError.ALIVC_INFO_LAUNCH_CHAT_END:// launchChat结束
+                    break;
+                case MediaError.ALIVC_INFO_ABORT_CHAT_END:// abortChat结束
+                    break;
+                case MediaError.ALIVC_INFO_PUBLISH_START_SUCCESS:// 推流开始成功
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_BUFFERING_START:// 播放缓冲开始
+                    //                        if (!isLoading) {
+//                            mHandler.postDelayed(mShowInterruptRun, INTERRUPT_DELAY);
+//                            isLoading = true;
+//                        }
+                    break;
+                case MediaError.ALIVC_INFO_PLAYER_BUFFERING_END:// 播放缓冲结束
+                    //                        if (isLoading) {
+//                            mHandler.removeCallbacks(mShowInterruptRun);
+//                             结束缓冲
+//                            mView.hideLiveInterruptUI();
+//                            isLoading = false;
+//                        }
+                    break;
+
+            }
+            Log.d(TAG, "MediaPlayer onInfo, what =" + what + ", url = " + url);
+            return false;
+        }
+    };
 }

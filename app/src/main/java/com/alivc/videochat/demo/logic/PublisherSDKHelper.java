@@ -19,7 +19,7 @@ import java.util.Map;
 
 
 /**
- * 类的描述: 本类初始化AlivcVideoChatHost连麦操作控制类，并封装了连麦中的各种方法
+ * 类的描述: 本类初始化AlivcVideoChatHost连麦操作主播端控制类，并封装了连麦中的各种方法
  */
 public class PublisherSDKHelper {
     private static final String TAG = PublisherSDKHelper.class.getName();
