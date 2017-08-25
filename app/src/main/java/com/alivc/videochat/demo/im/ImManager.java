@@ -68,7 +68,9 @@ public class ImManager implements IWebSocketActionListener, ImHelper.ConnectionS
     /**
      * 方法描述: 注册
      *
-     * @param
+     * @param type  消息类型
+     * @param func  MNS发送的消息最终会在该参数中的action方法中获得
+     * @param clazz 消息类型对应的类的类型
      */
     public <T> void register(int type, ImHelper.Func<T> func, Class<T> clazz) {
         mImHelper.register(type, func, clazz);
@@ -77,7 +79,7 @@ public class ImManager implements IWebSocketActionListener, ImHelper.ConnectionS
     /**
      * 方法描述: 注销
      *
-     * @param
+     * @param type 消息类型
      */
     public void unRegister(int type) {
         mImHelper.unRegister(type);
