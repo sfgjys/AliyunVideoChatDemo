@@ -363,6 +363,18 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         Log.d(TAG, "WatchLiveActivity--> onDestroy");
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
+    LogInfoFragment.LogRefreshListener mRefreshListener = new LogInfoFragment.LogRefreshListener() {
+        @Override
+        public void onPendingRefresh() {
+            if (mPresenter != null && mLogInfoFragment != null) {
+                LogInfoFragment.LogHandler logHandler = mLogInfoFragment.getLogHandler();
+                mPresenter.updateLog(logHandler);
+            }
+        }
+    };
+
     /**
      * 展示性能日志信息
      */
@@ -387,18 +399,57 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         }
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
     /**
-     * Fragment中的Action事件， 比如点击邀请按钮
+     * 方法描述: Fragment中的Action事件，比如点击邀请按钮
      *
-     * @param actionType
+     * @param actionType 用于区分Action事件
      */
     @Override
     public void onPendingAction(int actionType, Bundle bundle) {
         switch (actionType) {
-            case INTERACTION_TYPE_INVITE:
+            case INTERACTION_TYPE_INVITE:// 这里是WatchBottomFragment中发起的Action事件
                 mPresenter.invite(); //发起连麦邀请
         }
     }
+
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * 显示IM消息通信初始化失败的Dialog
+     *
+     * @param message
+     * @param listener
+     */
+    private void showImInitFailedDialog(String message, DialogInterface.OnClickListener listener) {
+        mIMFailedListener = listener;
+        mIMFailedMessage = message;
+        if (mImInitFailedDialog == null) {
+            mImInitFailedDialog = new AlertDialog.Builder(WatchLiveActivity.this)
+                    .setTitle(R.string.prompt)
+                    .create();
+            mImInitFailedDialog.setCanceledOnTouchOutside(false);
+        }
+        mImInitFailedDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.sure), mIMFailedListener);
+        mImInitFailedDialog.setMessage(mIMFailedMessage);
+        mImInitFailedDialog.show();
+    }
+
+    private void hideSurfaceView(SurfaceView surfaceView) {
+        Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());
+        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
+        layoutParams.topMargin = DensityUtil.dp2px(WatchLiveActivity.this, 300);
+        surfaceView.requestLayout();
+    }
+
+    private void showSurfaceView(SurfaceView surfaceView) {
+        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
+        layoutParams.topMargin = DensityUtil.dp2px(WatchLiveActivity.this, 0);
+        surfaceView.requestLayout();
+    }
+
+    // --------------------------------------------------------------------------------------------------------
 
     /**
      * 变量的描述: 观看界面的底部按钮监听回调实例
@@ -421,26 +472,7 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         }
     };
 
-
-    /**
-     * 显示IM消息通信初始化失败的Dialog
-     *
-     * @param message
-     * @param listener
-     */
-    private void showImInitFailedDialog(String message, DialogInterface.OnClickListener listener) {
-        mIMFailedListener = listener;
-        mIMFailedMessage = message;
-        if (mImInitFailedDialog == null) {
-            mImInitFailedDialog = new AlertDialog.Builder(WatchLiveActivity.this)
-                    .setTitle(R.string.prompt)
-                    .create();
-            mImInitFailedDialog.setCanceledOnTouchOutside(false);
-        }
-        mImInitFailedDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.sure), mIMFailedListener);
-        mImInitFailedDialog.setMessage(mIMFailedMessage);
-        mImInitFailedDialog.show();
-    }
+    // --------------------------------------------------------------------------------------------------------
 
     @Override
     public void onClick(View v) {
@@ -455,29 +487,7 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         }
     }
 
-
-    LogInfoFragment.LogRefreshListener mRefreshListener = new LogInfoFragment.LogRefreshListener() {
-        @Override
-        public void onPendingRefresh() {
-            if (mPresenter != null && mLogInfoFragment != null) {
-                LogInfoFragment.LogHandler logHandler = mLogInfoFragment.getLogHandler();
-                mPresenter.updateLog(logHandler);
-            }
-        }
-    };
-
-    private void hideSurfaceView(SurfaceView surfaceView) {
-        Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());
-        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
-        layoutParams.topMargin = DensityUtil.dp2px(WatchLiveActivity.this, 300);
-        surfaceView.requestLayout();
-    }
-
-    private void showSurfaceView(SurfaceView surfaceView) {
-        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
-        layoutParams.topMargin = DensityUtil.dp2px(WatchLiveActivity.this, 0);
-        surfaceView.requestLayout();
-    }
+    // --------------------------------------------------------------------------------------------------------
 
     private ILivePlayView mView = new ILivePlayView() {
         @Override

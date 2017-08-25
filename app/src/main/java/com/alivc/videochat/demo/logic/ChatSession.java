@@ -15,8 +15,10 @@ import com.alivc.videochat.demo.ui.VideoChatStatus;
 public class ChatSession {
     public static final int RESULT_OK = 1;
     public static final int RESULT_INVALID_STATUS = -1;
-
-    private static final long INVITE_CHAT_TIMEOUT_DELAY = 10 * 1000;   //连麦邀请等待响应超时时间——10秒
+    /**
+     * 变量的描述: 连麦邀请等待响应超时时间——10秒
+     */
+    private static final long INVITE_CHAT_TIMEOUT_DELAY = 10 * 1000;   //
     private static final long MIX_STREAM_TIMEOUT = 15 * 1000;       //同意连麦后，等待混流成功的超时时间——30秒
     private static final long WAITING_FOR_MIX_SUCCESS_DELAY = 15 * 1000; //混流错误时等待重新混流成功的时间，超过这个时间会结束连麦
 
@@ -52,7 +54,9 @@ public class ChatSession {
      * 变量的描述: 连麦的最大数
      */
     public static final int MAX_SESSION_NUM = 3;
-
+    /**
+     * 变量的描述: 连麦各个状态的表现，其值用VideoChatStatus枚举来赋值，初始是未连麦
+     */
     private VideoChatStatus mChatStatus = VideoChatStatus.UNCHAT;
     private SessionHandler mSessionHandler;
     private ChatSessionInfo mChatSessionInfo;
@@ -67,12 +71,20 @@ public class ChatSession {
         this.mSessionHandler = handler;
     }
 
+    /**
+     * 方法描述:
+     *
+     * @param publisherUID 主播的UID
+     * @param playerUID    观众自己的UID
+     */
     public int invite(String publisherUID, String playerUID) {
         if (mChatStatus == VideoChatStatus.UNCHAT) {
+
             if (mChatSessionInfo != null) {
                 mChatSessionInfo.setPublisherUID(publisherUID);
                 mChatSessionInfo.setPlayerUID(playerUID);
             }
+            // 改变连麦状态
             mChatStatus = VideoChatStatus.INVITE_FOR_RES;
             return RESULT_OK;
         } else {
@@ -93,27 +105,39 @@ public class ChatSession {
     }
 
 
+    /**
+     * 方法描述: 成功请求网络，邀请对方进行连麦，等待对方是否同意连麦，
+     */
     public void notifyInviteSuccess() {
         mChatStatus = VideoChatStatus.INVITE_RES_SUCCESS;
-        //开始响应倒计时
+        // 开始响应倒计时，等待对方是否同意连麦，10秒中有回应，会移除该消息，否则10秒后发送自动认为对方拒绝的消息
         mHandler.sendEmptyMessageDelayed(MSG_WHAT_INVITE_CHAT_TIMEOUT, INVITE_CHAT_TIMEOUT_DELAY);//倒计时，10s后未收到回复，自动认为对方决绝。
     }
 
+    /**
+     * 方法描述: 请求网络邀请对方进行连麦，请求网络失败
+     */
     public void notifyInviteFailure() {
         mChatStatus = VideoChatStatus.UNCHAT;
     }
 
+    /**
+     * 方法描述: ？？？？？？？？？？？？？？？？？？？无内容
+     */
     public void launchChat() {
 //        mChatStatus = VideoChatStatus.UNCHAT;
     }
 
+    /**
+     * 方法描述: 中止连麦，将mChatStatus状态改为未连麦
+     */
     public void abortChat() {
         mChatStatus = VideoChatStatus.UNCHAT;
     }
 
     public int notifyAgreeInviting() {
         mHandler.removeMessages(MSG_WHAT_INVITE_CHAT_TIMEOUT);//TODO:移除邀请等待响应超时倒计时的消息
-        if (mChatStatus == VideoChatStatus.INVITE_RES_SUCCESS) {        //如果当前是已经发送邀请，等待对方反馈的状态，则处理这个消息，否则视为无效的消息，不作处理
+        if (mChatStatus == VideoChatStatus.INVITE_RES_SUCCESS) {  // 如果当前是已经发送邀请，等待对方反馈的状态，则处理这个消息，否则视为无效的消息，不作处理
             mChatStatus = VideoChatStatus.TRY_MIX;   //更新当前状态为开始混流，等待混流成功
             return RESULT_OK;
         }
@@ -129,10 +153,13 @@ public class ChatSession {
         return RESULT_INVALID_STATUS;
     }
 
+    /**
+     * 方法描述: 对方不同意进行连麦，所以调用此方法进行处理，此处的不同意可以是超时的，也可以是对方认定的
+     */
     public int notifyNotAgreeInviting(MsgDataNotAgreeVideoCall notAgreeVideoCall) {
-        if (mChatStatus == VideoChatStatus.INVITE_RES_SUCCESS) {//如果当前是已经发送邀请，等待对方反馈的状态，则处理这个消息，否则视为无效的消息，不作处理
-            mHandler.removeMessages(MSG_WHAT_INVITE_CHAT_TIMEOUT);//移除邀请等待响应超时倒计时的消息
-            mChatStatus = VideoChatStatus.UNCHAT;    //更新当前状态为未混流
+        if (mChatStatus == VideoChatStatus.INVITE_RES_SUCCESS) {// 如果当前是已经发送邀请，等待对方反馈的状态，则处理这个消息，否则视为无效的消息，不作处理
+            mHandler.removeMessages(MSG_WHAT_INVITE_CHAT_TIMEOUT);// 移除邀请等待响应超时倒计时的消息
+            mChatStatus = VideoChatStatus.UNCHAT;    // 更新当前状态为未混流
             return RESULT_OK;
         }
         return RESULT_INVALID_STATUS;
@@ -217,7 +244,7 @@ public class ChatSession {
                 /**
                  * 自己发送邀请，对方超时未响应，则自己更新本地的连麦状态为未连麦
                  */
-                case MSG_WHAT_INVITE_CHAT_TIMEOUT://连麦响应超时
+                case MSG_WHAT_INVITE_CHAT_TIMEOUT:// 连麦响应超时
                     if (mSessionHandler != null) {
                         mSessionHandler.onInviteChatTimeout();
                     }

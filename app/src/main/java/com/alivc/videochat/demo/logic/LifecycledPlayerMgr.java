@@ -71,7 +71,10 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     private Call mInviteCall;
     private Call mFeedbackCall;
 
-    private SurfaceView mHostPlaySurf;      //渲染主播流的SurfaceView
+    /**
+     * 变量的描述: 从startPlay方法中获取渲染主播流的SurfaceView
+     */
+    private SurfaceView mHostPlaySurf;
 
     private ImManager mImManager;
     private MnsControlBody mMnsControlBody;
@@ -80,6 +83,9 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     private String mUID;
     private Map<String, String> mUidMap = new HashMap<>();
     private String mPublisherUID;
+    /**
+     * 变量的描述: 从业务服务器中获取的主播播放地址
+     */
     private String mPlayUrl;
     private String mLiveRoomID;
 
@@ -247,8 +253,26 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     }
 
     @Override
+    public void switchCamera() {
+        mSDKHelper.switchCamera();
+    }
+
+    @Override
+    public boolean switchBeauty() {
+        return mSDKHelper.switchBeauty();
+    }
+
+    @Override
+    public boolean switchFlash() {
+        return mSDKHelper.switchFlash();
+    }
+
+    @Override
     public void asyncInviteChatting(final AsyncCallback callback) throws ChatSessionException {
         mUidMap.clear();
+        System.out.println();
+
+        // TODO
         if (mChatSession != null && mChatSession.isActive()) {//当前有正在进行的连麦（or 邀请）
             if (mCallback != null) {
                 Bundle data = new Bundle();
@@ -257,13 +281,19 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
                 throw new ChatSessionException(ChatSessionException.ERROR_CURR_CHATTING);
             }
         }
+
         List<String> inviteeUIDs = new ArrayList<>();
+
+        // 清空连麦请求网络任务
         if (mInviteCall != null && ServiceBI.isCalling(mInviteCall)) {
             mInviteCall.cancel();
             mInviteCall = null;
         }
+        // 将主播的uid添加进uid集合中
         inviteeUIDs.add(mPublisherUID);
+
         mChatSession = new ChatSession(mSessionHandler);
+
         mChatSession.invite(mPublisherUID, mUID);
         mInviteCall = mInviteServiceBI.inviteCall(mUID, inviteeUIDs, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.INVITE_TYPE_WATCHER, mLiveRoomID, new ServiceBI.Callback() {
             @Override
@@ -374,20 +404,6 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
                 });
     }
 
-    @Override
-    public void switchCamera() {
-        mSDKHelper.switchCamera();
-    }
-
-    @Override
-    public boolean switchBeauty() {
-        return mSDKHelper.switchBeauty();
-    }
-
-    @Override
-    public boolean switchFlash() {
-        return mSDKHelper.switchFlash();
-    }
 
     @Override
     public void asyncTerminateChatting(final AsyncCallback callback) {
@@ -785,6 +801,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         public void onInviteChatTimeout() {
             // 发起连麦邀请之后，10秒之内还收不到反馈，则按照超时处理，认为对方已经拒绝
             mVideoChatApiCalling = false;
+
             if (mChatSession != null) {
                 mChatSession.notifyNotAgreeInviting(null);
             }

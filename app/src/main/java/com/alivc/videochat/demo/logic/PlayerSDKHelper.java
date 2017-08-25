@@ -71,7 +71,7 @@ public class PlayerSDKHelper {
      */
     Map<String, String> mFilterMap = new HashMap<>();
     /**
-     * 方法描述: 将本类操作结果回调给 MgrCallback接口的实例
+     * 方法描述: 将本类操作结果回调给 MgrCallback接口的实例 该接口实例是要根据播放核心类操作结果去更新Ui的，所以实例在LifecycleLivePlayPresenterImpl中实现
      */
     MgrCallback mCallback;
 

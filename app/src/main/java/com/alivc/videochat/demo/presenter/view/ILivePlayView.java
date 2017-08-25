@@ -14,7 +14,9 @@ import java.util.Stack;
 
 public interface ILivePlayView {
 
-    // 获取渲染主播流使用的SurfaceView
+    /**
+     * 方法描述: 获取渲染主播流使用的SurfaceView
+     */
     SurfaceView getPlaySurfaceView();
 
     //显示进入直播间失败的UI

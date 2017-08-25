@@ -9,7 +9,13 @@ import java.util.List;
  * Created by liujianghao on 16-8-2.
  */
 public class InviteForm {
+    /**
+     * 变量的描述: 并排
+     */
     public static final String TYPE_SIDE_BY_SIDE = "side_by_side";
+    /**
+     * 变量的描述: 画中画
+     */
     public static final String TYPE_PIC_BY_PIC = "picture_in_picture";
 
     @SerializedName(HttpConstant.KEY_INVITER_UID)
@@ -29,24 +35,22 @@ public class InviteForm {
     @SerializedName(HttpConstant.KEY_LIVE_ROOM_ID)
     private String liveRoomId;
 
-    public InviteForm(String inviterUID,
-                      List<String> inviteeUIDList,
-                      String type,
-                      int inviterType,
-                      String liveRoomId) {
+    public InviteForm(String inviterUID, List<String> inviteeUIDList, String type, int inviterType, String liveRoomId) {
         this.inviterUID = inviterUID;
         this.inviteeUIDList = inviteeUIDList;
+        // 将inviteeUIDList中的String进行拼接
         StringBuilder builder = new StringBuilder("");
-        if(inviteeUIDList != null && inviteeUIDList.size() > 0) {
-            for(String item:inviteeUIDList) {
+        if (inviteeUIDList != null && inviteeUIDList.size() > 0) {
+            for (String item : inviteeUIDList) {
                 builder.append(item);
                 builder.append("|");
             }
             int index = builder.lastIndexOf("|");
-            if(index > 0) {
+            if (index > 0) {
                 builder.delete(index, builder.length());
             }
         }
+
         mInviteeUIDs = builder.toString();
         this.type = type;
         this.inviterType = inviterType;

@@ -3,6 +3,7 @@ package com.alivc.videochat.demo.bi;
 import com.alivc.videochat.demo.http.form.CloseVideoForm;
 import com.alivc.videochat.demo.http.form.FeedbackForm;
 import com.alivc.videochat.demo.http.form.InviteForm;
+import com.alivc.videochat.demo.http.model.HttpResponse;
 import com.alivc.videochat.demo.http.model.InviteFeedbackResult;
 import com.alivc.videochat.demo.http.service.ServiceFactory;
 
@@ -23,7 +24,7 @@ public class InviteServiceBI extends ServiceBI {
      * @param callback
      */
     public Call inviteCall(String inviterUID, List<String> inviteeUIDs, String type, int inviterType, String liveRoomId, Callback callback) {
-        Call call;
+        Call<HttpResponse<Object>> call;
         InviteForm form = new InviteForm(inviterUID, inviteeUIDs, type, inviterType, liveRoomId);
         call = ServiceFactory.getInviteService().invite(form);
         processObservable(call, callback);

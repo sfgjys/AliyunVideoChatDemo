@@ -59,6 +59,7 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
         mPlayerMgr.onCreate();
     }
 
+    // 啥也没写
     @Override
     public void onStart() {
         mPlayerMgr.onStart();
@@ -74,6 +75,7 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
         mPlayerMgr.onPause();
     }
 
+    // 啥也没写
     @Override
     public void onStop() {
         mPlayerMgr.onStop();
@@ -97,10 +99,25 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
 
             @Override
             public void onFailure(Bundle bundle, Throwable e) {
-                //显示进入直播间失败的UI
+                // 显示进入直播间失败的UI
                 mView.showEnterLiveRoomFailure();
             }
         });
+    }
+
+    @Override
+    public void switchCamera() {
+        mPlayerMgr.switchCamera();
+    }
+
+    @Override
+    public boolean switchBeauty() {
+        return mPlayerMgr.switchBeauty();
+    }
+
+    @Override
+    public boolean switchFlash() {
+        return mPlayerMgr.switchFlash();
     }
 
     @Override
@@ -121,21 +138,6 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
         } catch (ChatSessionException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public void switchCamera() {
-        mPlayerMgr.switchCamera();
-    }
-
-    @Override
-    public boolean switchBeauty() {
-        return mPlayerMgr.switchBeauty();
-    }
-
-    @Override
-    public boolean switchFlash() {
-        return mPlayerMgr.switchFlash();
     }
 
     @Override

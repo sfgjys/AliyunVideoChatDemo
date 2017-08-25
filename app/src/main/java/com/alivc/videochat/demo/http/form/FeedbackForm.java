@@ -10,7 +10,13 @@ public class FeedbackForm {
     public static final int STATUS_NOT_AGREE = 2;
     public static final int STATUS_AGREE = 1;
 
+    /**
+     * 变量的描述: 观看者
+     */
     public static final int INVITE_TYPE_WATCHER = 1;
+    /**
+     * 变量的描述: 主播
+     */
     public static final int INVITE_TYPE_ANCHOR = 2;
 
     @SerializedName(HttpConstant.KEY_INVITER_UID)
@@ -79,7 +85,7 @@ public class FeedbackForm {
         this.inviteeType = inviteeType;
     }
 
-    public static class Builder{
+    public static class Builder {
         String inviterUID;
         String inviteeUID;
         String type;
@@ -98,7 +104,7 @@ public class FeedbackForm {
             return feedbackForm;
         }
 
-        public Builder status(int status){
+        public Builder status(int status) {
             this.status = status;
             return this;
         }

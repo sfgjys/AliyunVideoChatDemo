@@ -264,7 +264,7 @@ public class WatchBottomFragment extends ActionFragment implements View.OnClickL
          */
         @Override
         public void onGlobalLayout() {
-            // 创建一个矩形类对象，其left,top,right,bottom如图(res->drawable-hdpi->20140701085338156)所示
+            // 创建一个矩形类对象，其left,top,right,bottom如图(res->drawable-hdpi->)所示
             Rect rootRect = new Rect();
             // decorView是window中的最顶层view
             View decorView = getActivity().getWindow().getDecorView();

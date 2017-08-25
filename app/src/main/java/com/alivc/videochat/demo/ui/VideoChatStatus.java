@@ -4,13 +4,37 @@ package com.alivc.videochat.demo.ui;
  * Created by apple on 2016/12/5.
  */
 
-public enum  VideoChatStatus {
-    UNCHAT,              //未连麦
-    INVITE_FOR_RES,      //邀请连麦成功等待对方响应
+public enum VideoChatStatus {
+    /**
+     * 变量的描述: 未连麦
+     */
+    UNCHAT,              //
+    /**
+     * 变量的描述: 请求网络邀请对方连麦
+     */
+    INVITE_FOR_RES,      //
+    /**
+     * 变量的描述: 请求网络成功，邀请连麦成功，等待对方响应
+     */
     INVITE_RES_SUCCESS,
+    /**
+     * 变量的描述: 请求网络失败，邀请连麦失败
+     */
     INVITE_RES_FAILURE,
-    RECEIVED_INVITE,     //收到邀请等待回复状态
-    TRY_MIX,            //开始连麦等待混流成功
-    MIX_SUCC,           //混流成功
-    CLOSE_FOR_REQ;      //结束连麦请求
+    /**
+     * 变量的描述: 收到邀请等待回复状态
+     */
+    RECEIVED_INVITE,     //
+    /**
+     * 变量的描述: 开始连麦等待混流成功
+     */
+    TRY_MIX,            //
+    /**
+     * 变量的描述: 混流成功
+     */
+    MIX_SUCC,           //
+    /**
+     * 变量的描述: 结束连麦请求
+     */
+    CLOSE_FOR_REQ;      //
 }
