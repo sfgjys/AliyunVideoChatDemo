@@ -27,6 +27,9 @@ import com.alivc.videochat.demo.presenter.WatchBottomPresenter;
  */
 public class WatchBottomFragment extends ActionFragment implements View.OnClickListener {
 
+    // TODO 软键盘把视频界面上顶了
+
+
     /**
      * 方法描述: 创建WatchBottomFragment对象。并将参数设置进Bundle，进行传递
      *
@@ -256,18 +259,25 @@ public class WatchBottomFragment extends ActionFragment implements View.OnClickL
          */
         boolean hasShowInputMethod = false;
 
+        /**
+         * 方法描述: 当mEtComment的布局位置发送了改变，会回调这个方法
+         */
         @Override
         public void onGlobalLayout() {
-            // TODO  Rect  getDecorView(); getWindowVisibleDisplayFrame(rootRect);
+            // 创建一个矩形类对象，其left,top,right,bottom如图(res->drawable-hdpi->20140701085338156)所示
             Rect rootRect = new Rect();
-            View view = getActivity().getWindow().getDecorView();
-            view.getWindowVisibleDisplayFrame(rootRect);
+            // decorView是window中的最顶层view
+            View decorView = getActivity().getWindow().getDecorView();
+            // getWindowVisibleDisplayFrame方法可以使得方法的参数获取到程序显示的区域，包括标题栏，但不包括状态栏。
+            // 这里就是为了获取软键盘显示后程序剩余面积的高度
+            decorView.getWindowVisibleDisplayFrame(rootRect);
 
-            int rootInvisibleHeight = view.getRootView().getHeight() - rootRect.bottom;
+            int rootInvisibleHeight = decorView.getRootView().getHeight() - rootRect.bottom;
 
-            Log.d("GlobalLayout", "decorView.top = " + view.getTop() + ", decorView.bottom = " + view.getBottom() + ", viewHeight = " + rootInvisibleHeight);
+            Log.d("GlobalLayout", "decorView.top = " + decorView.getTop() + ", decorView.bottom = " + decorView.getBottom() + ", viewHeight = " + rootInvisibleHeight);
 
-            if (hasShowInputMethod && rootInvisibleHeight == 0) {//软件盘隐藏
+            // 如果rootInvisibleHeight等于0，说明软键盘隐藏了，就要隐藏mEtComment编辑框
+            if (hasShowInputMethod && rootInvisibleHeight == 0) {
                 hideCommentEditUI();
                 hasShowInputMethod = false;
             } else if (rootInvisibleHeight > 0) {
