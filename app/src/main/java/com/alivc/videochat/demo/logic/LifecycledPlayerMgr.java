@@ -196,24 +196,32 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         mEnterRoomCall = mLiveServiceBI.watchLive(liveRoomID, mUID, new ServiceBI.Callback<WatchLiveResult>() {
             @Override
             public void onResponse(int code, WatchLiveResult result) {
+                // WatchLiveResult中的数据是通过两次网络请求获取的，其中MNSConnectModel是单独一次网络请求获取的结果，最后传递给了WatchLiveResult
                 MNSModel mnsModel = result.getMNSModel();
                 MNSConnectModel mnsConnectModel = result.getConnectModel();
+
+                // 添加房间标记和用户标记
                 List<String> tags = new ArrayList<>();
                 tags.add(mnsModel.getRoomTag());
                 tags.add(mnsModel.getUserTag());
+
+                // 建造MnsControlBody对象
                 mMnsControlBody = new MnsControlBody.Builder()
-                        .accountId(mnsConnectModel.getAccountID())
-                        .accessId(mnsConnectModel.getAccessID())
+                        .accountId(mnsConnectModel.getAccountID())// 账户id？
+                        .accessId(mnsConnectModel.getAccessID())// 访问id？
                         .date(mnsConnectModel.getDate())
-                        .messageType(MnsControlBody.MessageType.SUBSCRIBE)
-                        .topic(mnsModel.getTopic())
-                        .subscription(mnsModel.getTopic())
-                        .authorization("MNS " + mnsConnectModel.getAccessID() + ":" + mnsConnectModel.getAuthentication())
-                        .tags(tags)
+                        .messageType(MnsControlBody.MessageType.SUBSCRIBE)// 消息类型：订阅？
+                        .topic(mnsModel.getTopic())// 主题名称？
+                        .subscription(mnsModel.getTopic())// 订阅名称？
+                        .authorization("MNS " + mnsConnectModel.getAccessID() + ":" + mnsConnectModel.getAuthentication())// 授权？
+                        .tags(tags)// 标记
                         .build();
+
+                // 创建WebSocketConnectOptions对象并进行配置
                 mWSConnOpt = new WebSocketConnectOptions();
-                mWSConnOpt.setServerURI(mnsConnectModel.getTopicWSServerAddress());
-                mWSConnOpt.setProtocol(MNSClient.SCHEMA);
+                mWSConnOpt.setServerURI(mnsConnectModel.getTopicWSServerAddress());// 主题ws服务地址
+                mWSConnOpt.setProtocol(MNSClient.SCHEMA);// 设定协议
+
                 //TODO:这里需要优化一下
                 mImManager.createSession(mWSConnOpt, mMnsControlBody);
                 mImManager.register(MessageType.START_PUSH, mPublishStreamFunc, MsgDataStartPublishStream.class);

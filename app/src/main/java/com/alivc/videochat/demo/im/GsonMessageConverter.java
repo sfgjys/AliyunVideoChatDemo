@@ -5,13 +5,17 @@ import com.alivc.videochat.demo.im.model.TextMessageBody;
 import com.google.gson.Gson;
 
 /**
- * Created by liujianghao on 16-8-5.
+ * 类的描述: 将json数据转换一个类对象
  */
-public class GsonMessageConverter implements MessageConverter{
+public class GsonMessageConverter implements MessageConverter {
+
+    /**
+     * 方法描述: 这个方法使用的前提是参数二是TextMessageBody类型，从参数二中获取json数据字符串，将json字符串转换为参数一类型的对象
+     */
     @Override
     public <T> T converter(Class<T> clazz, MessageBody m) {
-        if(m != null) {
-            if(m instanceof TextMessageBody) {
+        if (m != null) {
+            if (m instanceof TextMessageBody) {
                 return converter(clazz, (TextMessageBody) m);
             }
         }
@@ -24,6 +28,4 @@ public class GsonMessageConverter implements MessageConverter{
         T t = gson.fromJson(message, clazz);
         return t;
     }
-
-
 }

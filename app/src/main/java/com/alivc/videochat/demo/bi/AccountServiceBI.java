@@ -33,7 +33,7 @@ public class AccountServiceBI extends ServiceBI {
     }
 
     /**
-     * 获取MNS链接信息
+     * 方法描述: 阿里MNS管理 获取web socket链接信息  这里是在重连时用的 不需要先获取MNSModel，因为已经有了请求网络需要的参数了
      */
     public Call<HttpResponse<MNSConnectModel>> getMnsConnectionInfo(String topic, Callback<MNSConnectModel> callback) {
         Call<HttpResponse<MNSConnectModel>> call;

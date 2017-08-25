@@ -1,10 +1,11 @@
 package com.alivc.videochat.demo.im.model;
 
 /**
- * Created by liujianghao on 16-8-3.
+ * 类的描述: 类的方法暂时无用，现在只有这个类的类名有用
  */
 public class MessageBody {
     private Object topicID;
+
     public Object getTopicID() {
         return topicID;
     }

@@ -27,7 +27,7 @@ public interface LiveService {
     Call<HttpResponse<LiveCreateResult>> createLive(@Body CreateLiveForm form);// 获取推流地址
 
     @POST(HttpConstant.URL_WATCH_LIVE)
-    Call<HttpResponse<WatchLiveResult>> watchLive(@Body WatchLiveForm form);
+    Call<HttpResponse<WatchLiveResult>> watchLive(@Body WatchLiveForm form);// 请求直播播放地址
 
     @POST(HttpConstant.URL_CLOSE_LIVE)
     Call<HttpResponse<Object>> closeLive(@Body CloseLiveForm form);

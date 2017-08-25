@@ -17,5 +17,5 @@ public interface AccountService {
     Call<HttpResponse<LoginResult>> login(@Body LoginForm form);// 将带有登录信息的对象参数传入获取Call任务对象
 
     @POST(HttpConstant.URL_WEBSOCKET_INFO)
-    Call<HttpResponse<MNSConnectModel>> getMnsConnectionInfo(@Body MNSConnectionInfoForm form);// 获取MNS链接信息
+    Call<HttpResponse<MNSConnectModel>> getMnsConnectionInfo(@Body MNSConnectionInfoForm form);// 阿里MNS管理 获取web socket链接信息
 }

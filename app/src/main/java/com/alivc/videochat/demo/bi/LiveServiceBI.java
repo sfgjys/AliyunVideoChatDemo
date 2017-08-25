@@ -118,17 +118,53 @@ public class LiveServiceBI extends ServiceBI {
         watchLiveCall.enqueue(new retrofit2.Callback<HttpResponse<WatchLiveResult>>() {
             @Override
             public void onResponse(final Call<HttpResponse<WatchLiveResult>> call, Response<HttpResponse<WatchLiveResult>> response) {
-                fResult[0] = response.body().getData();
+                /*
+                返回的json数据
+                {
+                    "code": 200,        HttpResponse的code
+                    "message": "成功",  HttpResponse的message
+                    "data": {           HttpResponse的data
+                            "uid": "2",                         WatchLiveResult的uid
+                            "name": "test5",                    WatchLiveResult的name
+                            "roomId": 230178951253721540,       WatchLiveResult的roomid
+                            "playUrl": "http://videocall.play.danqoo.com/DemoApp/230178951253721540.flv",  WatchLiveResult的播放地址
+                            "mns":{             WatchLiveResult的MNSModel
+                                "topic":'474c7658805b798814',
+                                "topicLocation": "http://125277.mns.cn-hangzhou.aliyuncs.com/topics/229820386403942828",
+                                "roomTag": "474c7658805b798814",
+                                "userRoomTag": "474c7658805b798814_2" #当前观众过滤消息的tag
+                            }
+                    }
+                }
+                */
+                fResult[0] = response.body().getData();// 获取存入的是WatchLiveResult对象
 
                 // 这里是获取topic和subscriptionName参数分装成MNSConnectionInfoForm对象，然后去请求获取MNS链接信息
                 if (fResult[0] != null && fResult[0].getMNSModel() != null) {
+
                     String topic = fResult[0].getMNSModel().getTopic();//subscriptionName = topic;
+
                     MNSConnectionInfoForm form = new MNSConnectionInfoForm(topic, topic);
+
                     Call<HttpResponse<MNSConnectModel>> mnsCall = ServiceFactory.getAccountService().getMnsConnectionInfo(form);
+
                     processObservable(mnsCall, new Callback<MNSConnectModel>() {
                         @Override
                         public void onResponse(int code, MNSConnectModel response) {
-                            // 将包含MNS链接信息的MNSConnectModel对象设置进WatchLiveResult回调给接口
+                            /*
+                            返回的json数据
+                            {
+                                "code":200,
+                                "message":"成功",
+                                "data":{     HttpResponse的data
+                                    "authentication": "Fa91Q+YDqsa7CQOMHyYXE7OFw=",      // 授权
+                                    "topicWebsocketServerAddress": "ws://125277.mns-websocket.cn-shanghai.aliyuncs.com/mns", // 主题ws服务地址
+                                    "accountId":"12277",
+                                    "accessId":"Q1dfW3pJSOJf6"
+                                }
+                             }
+                            */
+                            // 将包含MNS链接信息的MNSConnectModel对象设置进WatchLiveResult对象中
                             fResult[0].setConnectModel(response);
                             if (callback != null) {
                                 callback.onResponse(code, fResult[0]);

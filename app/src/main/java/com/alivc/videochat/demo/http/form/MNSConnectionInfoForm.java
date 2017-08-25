@@ -29,6 +29,10 @@ public class MNSConnectionInfoForm {
         mSubscriptionName = subscriptionName;
     }
 
+    /**
+     * @param topic            主题
+     * @param subscriptionName 订阅名字 默认和topic名字一样    订阅 是 主题 下级
+     */
     public MNSConnectionInfoForm(String topic, String subscriptionName) {
         mTopic = topic;
         mSubscriptionName = subscriptionName;
