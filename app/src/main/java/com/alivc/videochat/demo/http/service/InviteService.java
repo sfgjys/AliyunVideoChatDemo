@@ -17,17 +17,15 @@ import retrofit2.http.POST;
 public interface InviteService {
 
     @POST(HttpConstant.URL_INVITE_VIDEO)
-    Call<HttpResponse<Object>> invite(@Body InviteForm form);//
+    Call<HttpResponse<Object>> invite(@Body InviteForm form);// 邀请对方进行连麦
 
     @POST(HttpConstant.URL_INVITE_FEEDBACK)
-    Call<HttpResponse<InviteFeedbackResult>>
-    feedback(@Body FeedbackForm form);
+    Call<HttpResponse<InviteFeedbackResult>> feedback(@Body FeedbackForm form);
 
     @POST(HttpConstant.URL_CLOSE_VIDEO_CALL)
     Call<HttpResponse<Object>>
     closeVideoCall(@Body CloseVideoForm form);
 
     @POST(HttpConstant.URL_LEAVE_VIDEO_CALL)
-    Call<HttpResponse<Object>>
-    leaveChatting(@Body CloseVideoForm form);
+    Call<HttpResponse<Object>> leaveChatting(@Body CloseVideoForm form);// 观众离开连麦
 }

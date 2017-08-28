@@ -9,9 +9,9 @@ import com.google.gson.annotations.SerializedName;
 
 public class ParterInfo {
     @SerializedName(HttpConstant.KEY_UID)
-    private String mUID;
+    private String mUID;// 其他连麦观众uid
     @SerializedName(HttpConstant.KEY_URL)
-    private String mPlayUrl;
+    private String mPlayUrl;// 其他连麦观众短延迟播放地址
 
     public String getUID() {
         return mUID;

@@ -13,13 +13,13 @@ public class MsgDataAgreeVideoCall {
     private String inviteeUID;
     @SerializedName(HttpConstant.KEY_INVITEE_NAME)
     private String inviteeName;
-    @SerializedName(HttpConstant.KEY_RTMP_URL)          //副麦推流地址
+    @SerializedName(HttpConstant.KEY_RTMP_URL)          // 副麦推流地址
     private String rtmpUrl;
     @SerializedName(HttpConstant.KEY_INVITEE_ROOM_ID)
     private String inviteeRoomID;
     @SerializedName(HttpConstant.KEY_INVITER_ROOM_ID)
     private String inviterRoomID;
-    @SerializedName(HttpConstant.KEY_MAIN_PLAY_URL)  //主流播放地址
+    @SerializedName(HttpConstant.KEY_MAIN_PLAY_URL)  // 主流播放地址
     private String mMainPlayUrl;
     @SerializedName(HttpConstant.KEY_PLAY_URLS)
     private List<ParterInfo> mParterInfos;

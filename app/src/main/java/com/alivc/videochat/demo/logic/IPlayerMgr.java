@@ -81,10 +81,18 @@ public interface IPlayerMgr {
      */
     void startPlay(SurfaceView playSurf);
 
-    //邀请主播连麦
+    /**
+     * 方法描述: 请求网络向主播请求连麦，根据网络请求结果改变ChatSession状态为（邀请连麦成功，等待对方响应）或者（未连麦）
+     * 剩下的是通过MNS返回是否同意连麦，根据结果在进行接下来的操作
+     */
     void asyncInviteChatting(AsyncCallback asyncCallback) throws ChatSessionException;
 
-    //开始连麦
+    /**
+     * 方法描述: 真正开始连麦的方法，该方法中先把参数二的数据进行处理下，在正式调用开启连麦的核心方法startLaunchChat
+     *
+     * @param previewSurface 观众进行推流的SurfaceView
+     * @param uidSurfaceMap  其他连麦观众用于播放短延迟的Surface和uid的集合
+     */
     void launchChat(SurfaceView previewSurface, Map<String, SurfaceView> uidSurfaceMap);
 
     //切换摄像头
@@ -99,7 +107,10 @@ public interface IPlayerMgr {
     //结束连麦
     void asyncTerminateChatting(AsyncCallback callback);
 
-    //停止播放
+    /**
+     * 方法描述: 结束观看直播。调用该函数将关闭直播播放器，并销毁所有资源。
+     * 备注: 若当前处在连麦状态下，需要先调用PlayerSDKHelper的offlineChat函数结束连麦，然后在调用该函数结束观看直播
+     */
     void asyncTerminatePlaying(AsyncCallback callback);
 
     //退出观看

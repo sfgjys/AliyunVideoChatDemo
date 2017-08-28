@@ -39,5 +39,5 @@ public interface LiveService {
     Call<HttpResponse<List<WatcherModel>>> watcherList(@Body WatcherListForm form);
 
     @POST(HttpConstant.URL_EXIT_WATCHING)
-    Call<HttpResponse<Object>> exitWatching(@Body ExitWatchingForm form);
+    Call<HttpResponse<Object>> exitWatching(@Body ExitWatchingForm form);// 结束观看直播
 }

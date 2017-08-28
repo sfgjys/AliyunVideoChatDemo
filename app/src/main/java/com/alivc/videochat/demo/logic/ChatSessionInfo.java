@@ -7,10 +7,17 @@ package com.alivc.videochat.demo.logic;
 public class ChatSessionInfo {
     private String mPublisherUID;
     private String mPlayerUID;
-    private String mRtmpUrl;        //推流地址
-    private String mPlayUrl;       //短延时播放地址
+    /**
+     * 变量的描述: 推流地址
+     */
+    private String mRtmpUrl;        //
+    /**
+     * 变量的描述: 短延时播放地址
+     */
+    private String mPlayUrl;       //
 
-    protected ChatSessionInfo(){}
+    protected ChatSessionInfo() {
+    }
 
     public String getPublisherUID() {
         return mPublisherUID;
@@ -44,8 +51,12 @@ public class ChatSessionInfo {
         mPlayUrl = playUrl;
     }
 
+    /**
+     * 类的描述: 貌似没用
+     */
     public static class Builder {
         private ChatSessionInfo mInstance = new ChatSessionInfo();
+
         public ChatSessionInfo build() {
             return mInstance;
         }

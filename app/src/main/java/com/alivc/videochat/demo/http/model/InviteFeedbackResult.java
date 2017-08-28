@@ -12,9 +12,9 @@ import java.util.List;
 public class InviteFeedbackResult {
 
     @SerializedName(HttpConstant.KEY_MAIN_PLAY_URL)
-    private String mMainPlayUrl;
+    private String mMainPlayUrl; //主流播放地址
     @SerializedName(HttpConstant.KEY_RTMP_URL)
-    private String rtmpUrl;
+    private String rtmpUrl; // 本观众副流推流地址
     @SerializedName(HttpConstant.KEY_PLAY_URLS)
     private List<ParterInfo> mOtherParterInfos;
 

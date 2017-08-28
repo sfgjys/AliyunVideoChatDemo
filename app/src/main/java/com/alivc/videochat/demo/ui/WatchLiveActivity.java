@@ -77,21 +77,24 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     private static final String TAG = "WatchLivePresenter";
 
     /**
-     * 变量的描述: 封装了连麦副麦 上
+     * 变量的描述: 封装了连麦副麦 上 此控件用来显示其他连麦观众的短延迟播放
      */
     private ChattingViewHolder mLeftChattingHolder;
     /**
-     * 变量的描述: 封装了连麦副麦 中
+     * 变量的描述: 封装了连麦副麦 中 此控件用来显示其他连麦观众的短延迟播放
      */
     private ChattingViewHolder mMiddleChattingHolder;
     /**
-     * 变量的描述: 封装了连麦副麦 下
+     * 变量的描述: 封装了连麦副麦 下 此控件是用来给本观众进行推流用的
      */
     private ChattingViewHolder mRightChattingHolder;
     /**
      * 变量的描述: 用来存储刚封装好的ChattingViewHolder对象，且这里的ChattingViewHolder对象都是暂时没有使用的，使用后就存储在这了
      */
     private TreeMap<Integer, ChattingViewHolder> mFreeHolderMap = new TreeMap<>();  //连麦小窗View容器，用来管理连麦的小窗
+    /**
+     * 变量的描述: 用来存储已经被使用的ChattingViewHolder，key值为对应的其他连麦uid
+     */
     private Map<String, ChattingViewHolder> mUsedViewHolderMap = new HashMap<>();   //在使用的ViewHolder
     /**
      * 变量的描述: 主播放Surface
@@ -436,6 +439,9 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         mImInitFailedDialog.show();
     }
 
+    /**
+     * 方法描述: 修改参数控件topMargin属性为300 。为的是让参数控件部在手机屏幕上显示
+     */
     private void hideSurfaceView(SurfaceView surfaceView) {
         Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());
         ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
@@ -443,10 +449,13 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         surfaceView.requestLayout();
     }
 
+    /**
+     * 方法描述: 修改SurfaceView的topMargin属性为0.让其显示在手机屏幕上
+     */
     private void showSurfaceView(SurfaceView surfaceView) {
         ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
         layoutParams.topMargin = DensityUtil.dp2px(WatchLiveActivity.this, 0);
-        surfaceView.requestLayout();
+        surfaceView.requestLayout();// 来实现重绘当前View和父View，甚至更上层的View
     }
 
     // --------------------------------------------------------------------------------------------------------
@@ -539,10 +548,12 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
         }
 
+        /**
+         * 方法描述: 将方法的参数作为消息提示显示对话框
+         */
         @Override
         public void showInfoDialog(String msg) {
-            AlertDialog.Builder normalDialog =
-                    new AlertDialog.Builder(WatchLiveActivity.this);
+            AlertDialog.Builder normalDialog = new AlertDialog.Builder(WatchLiveActivity.this);
             normalDialog.setTitle("消息提示");
             if (msg != null) {
                 normalDialog.setMessage(msg);
@@ -586,6 +597,9 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             mRootContainer.removeView(mInterruptView);
         }
 
+        /**
+         * 方法描述: 显示直播界面的UI
+         */
         @Override
         public void showLiveCloseUI() {
             hideLoading();
@@ -675,9 +689,13 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             ToastUtils.showToast(WatchLiveActivity.this, R.string.close_video_chatting_failed);
         }
 
+        /**
+         * 方法描述: 获取本观众用来推流的SurfaceView，该SurfaceView设置了点击右上角的关闭，可以退出连麦的操作
+         */
         @Override
         public SurfaceView showLaunchChatUI() {
             showSurfaceView(mRightChattingHolder.mSurfaceView);
+            // 设置右上角的关闭，可以退出连麦的操作
             mRightChattingHolder.mIvClose.setVisibility(View.VISIBLE);
             mRightChattingHolder.mIvClose.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -710,15 +728,23 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             if (inviteeUIDs == null || inviteeUIDs.size() == 0) {
                 return uidSurfaceMap;
             }
-            //显示
             synchronized (mFreeHolderMap) {
                 String inviteeUID;
                 if (inviteeUIDs.size() <= mFreeHolderMap.size()) {
                     for (int i = 0; i < inviteeUIDs.size(); i++) {
                         inviteeUID = inviteeUIDs.get(i);
+
+                        // 移除First的一对ChattingViewHolder,并作为返回值返回
                         holder = mFreeHolderMap.pollFirstEntry().getValue();
+
+                        // 存储以确定使用的
                         mUsedViewHolderMap.put(inviteeUID, holder);
+
+                        // 修改属性
                         showSurfaceView(holder.mSurfaceView);
+
+
+                        // 以其他连麦观众的id为key，存储对应的SurfaceView
                         uidSurfaceMap.put(inviteeUID, holder.mSurfaceView);
                     }
                 }
@@ -726,6 +752,9 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             return uidSurfaceMap;
         }
 
+        /**
+         * 方法描述: 根据参数uid去移除对应的连麦UI
+         */
         @Override
         public void showExitChattingUI(String inviteeUID) {
             ChattingViewHolder holder = mUsedViewHolderMap.get(inviteeUID);
@@ -737,6 +766,9 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             }
         }
 
+        /**
+         * 方法描述: 隐藏连麦使用的Surface
+         */
         @Override
         public void showSelfExitChattingUI() {
             String key;
@@ -744,6 +776,7 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             //隐藏右下角的surface和小叉按钮
             mRightChattingHolder.mIvClose.setVisibility(View.GONE);
             hideSurfaceView(mRightChattingHolder.mSurfaceView);
+
             //其他正在连麦用户的界面也要隐藏
             if (mUsedViewHolderMap.size() > 0) {
                 Iterator<String> keySetIt = mUsedViewHolderMap.keySet().iterator();

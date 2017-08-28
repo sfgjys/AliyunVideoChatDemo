@@ -56,7 +56,7 @@ public interface ILivePlayView {
 
     void showCloseChatFailedUI();
 
-    //显示连麦的UI,返回预览的SurfaceView
+    // 显示连麦的UI,返回预览的SurfaceView
     SurfaceView showLaunchChatUI();
 
     void showOfflineChatBtn();

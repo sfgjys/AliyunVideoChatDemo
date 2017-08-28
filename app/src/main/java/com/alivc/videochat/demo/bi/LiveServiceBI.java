@@ -229,8 +229,8 @@ public class LiveServiceBI extends ServiceBI {
     /**
      * 退出观看直播
      *
-     * @param roomID
-     * @param uid
+     * @param roomID 直播间ID
+     * @param uid 用户ID
      */
     public Call exitWatching(String roomID, String uid, Callback callback) {
         Call<HttpResponse<Object>> call;

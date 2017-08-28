@@ -170,12 +170,13 @@ public class PlayerSDKHelper {
         //TODO:这里需要SDK支持？？？？？
         if (!hasOnlineChats && !isChatting) {
             Log.d(TAG, "Call mChatParter.onlineChats() surface is valid ? " + previewSurface.getHolder().getSurface().isValid());
-            mCallback.onEvent(IPlayerMgr.TYPE_PARTER_OPT_START, null);
+            mCallback.onEvent(IPlayerMgr.TYPE_PARTER_OPT_START, null);// 回调内容暂时被注释了
             // 参数二三代表编码视频的宽和高。
             mChatParter.onlineChats(publisherUrl, 180, 320, previewSurface, mMediaParam, hostPlayUrl, urlSurfaceMap);// 返回值： 0表示成功；非0表示失败。
             hasOnlineChats = true;
             isChatting = true;
         } else if (isChatting) {
+            // 增加连麦人数
             addChats(urlSurfaceMap);
         }
     }
@@ -218,7 +219,7 @@ public class PlayerSDKHelper {
 
     /**
      * 方法描述: 增加连麦人数。在此之前，主播正在当前观众正在连麦。新增的连麦人数可以是一个人，也可以是多个人。
-     * 备注：必须调用函数onlineChats后才能调用该函数。
+     * 备注：必须调用函数onlineChats后才能调用该函数。这里增加的是其他连麦的观众
      *
      * @param urlSurfaceMap url所对应的SurfaceView窗口数组。
      */
@@ -233,7 +234,7 @@ public class PlayerSDKHelper {
 
     /**
      * 方法描述: 减少连麦人数。在此之前，主播正在当前观众连麦。减少的连麦人数可以是一个人，也可以是多个人。
-     * 备注：必须调用函数onlineChats后才能调用该函数。
+     * 备注：必须调用函数onlineChats后才能调用该函数。这里减少的是其他连麦观众
      *
      * @param playUrls 其他连麦流的地址，String集合
      */
@@ -245,6 +246,20 @@ public class PlayerSDKHelper {
             return mChatParter.removeChats(playUrls);// 返回值： 0表示成功；非0表示失败。
         }
         return -1;
+    }
+
+    /**
+     * 方法描述: 结束连麦。调用该函数将结束观众的推流，销毁推流的所有资源，并将  ★ 播放地址切换到连麦之前的地址。
+     * 备注: 结束本观众的连麦，
+     */
+    public void abortChat() {
+        if (mChatParter != null && isChatting) {
+            Log.d(TAG, "Call mChatParter.offlineChat()");
+            mCallback.onEvent(IPlayerMgr.TYPE_PARTER_OPT_START, null);
+            mChatParter.offlineChat();// 返回值： 0表示成功；非0表示失败。
+            isChatting = false;
+            hasOnlineChats = false;
+        }
     }
 
     /**
@@ -261,19 +276,6 @@ public class PlayerSDKHelper {
     }
 
     /**
-     * 方法描述: 结束连麦。调用该函数将结束观众的推流，销毁推流的所有资源，并将  ★ 播放地址切换到连麦之前的地址。
-     */
-    public void abortChat() {
-        if (mChatParter != null && isChatting) {
-            Log.d(TAG, "Call mChatParter.offlineChat()");
-            mCallback.onEvent(IPlayerMgr.TYPE_PARTER_OPT_START, null);
-            mChatParter.offlineChat();// 返回值： 0表示成功；非0表示失败。
-            isChatting = false;
-            hasOnlineChats = false;
-        }
-    }
-
-    /**
      * 方法描述: 释放AlivcVideoChatParter类。
      */
     public void releaseChatParter() {
@@ -281,7 +283,6 @@ public class PlayerSDKHelper {
             Log.d(TAG, "Call mChatParter.release()");
             mChatParter.release();
         }
-
     }
 
 

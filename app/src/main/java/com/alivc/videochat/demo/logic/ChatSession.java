@@ -92,9 +92,12 @@ public class ChatSession {
         }
     }
 
+    /**
+     * 方法描述: 更新连麦状态为未连麦状态
+     */
     public void feedbactInviting(boolean isAgree) {
         if (!isAgree) {
-            mChatStatus = VideoChatStatus.UNCHAT;        //更新连麦状态为未连麦状态
+            mChatStatus = VideoChatStatus.UNCHAT;        //
         }
     }
 
@@ -144,10 +147,13 @@ public class ChatSession {
         return RESULT_INVALID_STATUS;
     }
 
+    /**
+     * 方法描述: 观众发起连麦，主播同意了，观众这里才更新当前状态为开始混流，等待混流成功
+     */
     public int notifyParterAgreeInviting() {
-        mHandler.removeMessages(MSG_WHAT_INVITE_CHAT_TIMEOUT);//TODO:移除邀请等待响应超时倒计时的消息
+        mHandler.removeMessages(MSG_WHAT_INVITE_CHAT_TIMEOUT);// TODO:移除邀请等待响应超时倒计时的消息
         if (mChatStatus == VideoChatStatus.INVITE_RES_SUCCESS) {        //如果当前是已经发送邀请，等待对方反馈的状态，则处理这个消息，否则视为无效的消息，不作处理
-            mChatStatus = VideoChatStatus.MIX_SUCC;   //更新当前状态为开始混流，等待混流成功
+            mChatStatus = VideoChatStatus.MIX_SUCC;   // 更新当前状态为开始混流，等待混流成功
             return RESULT_OK;
         }
         return RESULT_INVALID_STATUS;
@@ -165,7 +171,11 @@ public class ChatSession {
         return RESULT_INVALID_STATUS;
     }
 
+    /**
+     * 方法描述: 主播端或者观众端被邀请时调用
+     */
     public void notifyReceivedInviting(String publisherUID, String playerUID) {
+        // 设置进去，但是没有调用取出代码，而且mChatSessionInfo不可能有值
         if (mChatSessionInfo != null) {
             mChatSessionInfo.setPublisherUID(publisherUID);
             mChatSessionInfo.setPlayerUID(playerUID);

@@ -188,7 +188,7 @@ public class ImHelper {
         public void stringMessageArrived(WebSocketStringMessage message) {
             if (message != null) {
                 TextMessageBody body = new TextMessageBody(message.getContent());
-                // TODO Step 1 MNS发送消息
+                // TODO Step 1 将MNS发送的消息，向下一级发送
                 // 通过Handler发送消息
                 mHandler.obtainMessage(MSG_WHAT_RECEIVED_MESSAGE, body).sendToTarget();
                 // sendToTarget发送给指定的目标，在这就是mHandler，因为Message就是从mHandler中获取的

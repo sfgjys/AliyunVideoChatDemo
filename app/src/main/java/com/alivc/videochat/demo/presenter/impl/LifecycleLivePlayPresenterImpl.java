@@ -145,6 +145,7 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
         mPlayerMgr.asyncTerminateChatting(new AsyncCallback() {
             @Override
             public void onSuccess(Bundle bundle) {
+                // 退出连麦操作成功，所以隐藏ui
                 mView.showSelfExitChattingUI();
             }
 
@@ -155,6 +156,9 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
         });
     }
 
+    /**
+     * 方法描述: 该方法暂时没人用
+     */
     @Override
     public void exitLiveRoom() {
         mPlayerMgr.asyncExitRoom(new AsyncCallback() {
@@ -170,6 +174,8 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
         });
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
     private MgrCallback mCallback = new MgrCallback() {
         @Override
         public void onEvent(int eventType, Bundle data) {
@@ -180,14 +186,16 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
                 case IPlayerMgr.TYPE_CHATTING_FINISHED:
 //                    mView.showChattingFinishedUI();
                     break;
-                case IPlayerMgr.TYPE_START_CHATTING:
+                case IPlayerMgr.TYPE_START_CHATTING:// 本观众请求连麦，主播也同意了，所以从MNS那里获取了本观众进行连麦的信息，和其他连麦观众的信息
                 case IPlayerMgr.TYPE_OTHER_PEOPLE_JOIN_IN_CHATTING:
-                    //开始连麦
+
+                    // 正式开始连麦
                     ArrayList<String> inviteeUIDList = data.getStringArrayList(IPlayerMgr.DATA_KEY_INVITEE_UID_LIST);
                     if (inviteeUIDList == null) {
                         inviteeUIDList = new ArrayList<>();
                     }
                     mPlayerMgr.launchChat(mView.showLaunchChatUI(), mView.getOtherParterViews(inviteeUIDList));
+
                     break;
                 case IPlayerMgr.TYPE_OTHER_PEOPLE_EXIT_CHATTING:    //其他人退出连麦
                     String inviteeUID = data.getString(IPlayerMgr.DATA_KEY_INVITEE_UID);
