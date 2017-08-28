@@ -3,9 +3,8 @@ package com.alivc.videochat.demo.base;
 import android.os.Bundle;
 
 /**
- * Created by apple on 2017/1/6.
+ * 类的描述: 成功与失败接口
  */
-
 public interface AsyncCallback {
     void onSuccess(Bundle bundle);
 
