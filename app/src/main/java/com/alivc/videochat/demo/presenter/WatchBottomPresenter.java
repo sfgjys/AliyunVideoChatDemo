@@ -10,7 +10,7 @@ import com.alivc.videochat.demo.bi.ServiceBIFactory;
 import com.alivc.videochat.demo.uitils.ToastUtils;
 
 /**
- * Created by liujianghao on 16-8-12.
+ * 类的描述: 发送评论和进行点赞的网络请求
  */
 public class WatchBottomPresenter extends ContextBase {
     private static final String TAG = "WatchBottomPresenter";
@@ -22,6 +22,7 @@ public class WatchBottomPresenter extends ContextBase {
 
     /**
      * 发送评论
+     *
      * @param uid
      * @param roomID
      * @param comment
@@ -30,7 +31,7 @@ public class WatchBottomPresenter extends ContextBase {
         ServiceBIFactory.getInteractionServiceBI().sendComment(uid, roomID, comment, mCommentCallback);
     }
 
-    private ServiceBI.Callback mCommentCallback = new ServiceBI.Callback(){
+    private ServiceBI.Callback mCommentCallback = new ServiceBI.Callback() {
 
         @Override
         public void onResponse(int code, Object response) {
@@ -42,7 +43,7 @@ public class WatchBottomPresenter extends ContextBase {
             t.printStackTrace();
             Log.e(TAG, "send comment failed");
             Context context = getContext();
-            if(context != null) {
+            if (context != null) {
                 ToastUtils.showToast(context, R.string.send_comment_failed);
             }
         }
@@ -51,10 +52,11 @@ public class WatchBottomPresenter extends ContextBase {
 
     /**
      * 发送赞
+     *
      * @param roomID
      * @param uid
      */
-    public void sendLike(String roomID, String uid){
+    public void sendLike(String roomID, String uid) {
         ServiceBIFactory.getInteractionServiceBI().sendLike(roomID, uid, mLikeCallback);
     }
 
@@ -69,7 +71,7 @@ public class WatchBottomPresenter extends ContextBase {
             t.printStackTrace();
             Log.e(TAG, "send like failed");
             Context context = getContext();
-            if(context != null) {
+            if (context != null) {
                 ToastUtils.showToast(context, R.string.send_like_failed);
             }
         }
