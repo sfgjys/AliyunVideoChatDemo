@@ -238,7 +238,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         // 存储已经刚封装好的ChattingViewHolder
         mFreeHolderMap.put(mMiddleChattingHolder.mIndex, mMiddleChattingHolder);
         mFreeHolderMap.put(mLeftChattingHolder.mIndex, mLeftChattingHolder);
-        // TODO 此处是不是少存储一个？？？？？？？？？？？？？？？？？？？？
 
         // --------------------------------------------------------------------------------------------------------
 
@@ -421,9 +420,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
     /**
      * 显示IM消息通信初始化失败的Dialog
-     *
-     * @param message
-     * @param listener
      */
     private void showImInitFailedDialog(String message, DialogInterface.OnClickListener listener) {
         mIMFailedListener = listener;

@@ -90,7 +90,6 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
         });
     }
 
-
     @Override
     public void inviteChat(List<String> mPlayerUIDs) {
         mPublisherMgr.asyncInviteChatting(mPlayerUIDs, new AsyncCallback() {
@@ -132,21 +131,6 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
     }
 
     @Override
-    public void terminateLive() {
-        mPublisherMgr.asyncCloseLive(new AsyncCallback() {
-            @Override
-            public void onSuccess(Bundle bundle) {
-
-            }
-
-            @Override
-            public void onFailure(Bundle bundle, Throwable e) {
-
-            }
-        });
-    }
-
-    @Override
     public void terminateChatting(final String playerUID) {
         mPublisherMgr.asyncTerminateChatting(playerUID, new AsyncCallback() {
             @Override
@@ -162,6 +146,27 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
         });
     }
 
+    /**
+     * 方法描述: 暂时没人用
+     */
+    @Override
+    public void terminateLive() {
+        mPublisherMgr.asyncCloseLive(new AsyncCallback() {
+            @Override
+            public void onSuccess(Bundle bundle) {
+
+            }
+
+            @Override
+            public void onFailure(Bundle bundle, Throwable e) {
+
+            }
+        });
+    }
+
+    /**
+     * 方法描述: 暂时没人用
+     */
     @Override
     public void terminateAllChatting() {
         mPublisherMgr.asyncTerminateAllChatting(new AsyncCallback() {
