@@ -24,7 +24,7 @@ public class ServiceFactory {
         sRetrofit = new Retrofit.Builder()
                 .baseUrl(HttpConstant.HTTP_BASE_URL)
                 .client(client)
-                //增加返回值为Gson的支持(以实体类返回)
+                // 增加返回值为Gson的支持(以实体类返回)
                 .addConverterFactory(GsonConverterFactory.create())
                 // 增加返回值为String的支持
                 // .addConverterFactory(ScalarsConverterFactory.create())

@@ -17,6 +17,7 @@ public class AlivcApplication extends Application {
         super.onCreate();
         // 注册一个广播
         IntentFilter filter = new IntentFilter();
+        // 意图是注册一个网络监听的广播 (用于网络状态变化监听的标志ConnectivityManager.CONNECTIVITY_ACTION)
         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(new ConnectivityChangedReceiver(), filter);
     }
