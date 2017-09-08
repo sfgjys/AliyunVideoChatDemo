@@ -1,7 +1,13 @@
 package com.alivc.videochat.demo.ui;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.PermissionChecker;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -19,6 +25,7 @@ import com.alivc.videochat.demo.http.model.WatcherModel;
 import com.alivc.videochat.demo.presenter.MainPresenter;
 import com.alivc.videochat.demo.ui.adapter.LiveListAdapter;
 import com.alivc.videochat.demo.ui.view.MainView;
+import com.alivc.videochat.demo.uitils.ToastUtils;
 
 import java.util.List;
 
@@ -38,7 +45,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener, 
     private LinearLayout mNoDataView;
 
     /**
-     * 变量的描述: 此控件暂时没什么用
+     * 变量的描述: 开启直播
      */
     private ImageView mRecordBtn;
 
@@ -57,6 +64,17 @@ public class MainActivity extends BaseActivity implements View.OnClickListener, 
 
         initRefreshLayout();
 
+        // 没有权限才进行获取权限
+        if (!permissionCheck()) {
+            if (Build.VERSION.SDK_INT >= 23) {
+                // 6.0 以上请求
+                ActivityCompat.requestPermissions(this, permissionManifest, PERMISSION_REQUEST_CODE);
+            } else {
+                // 6.0 以下在清单文件中没有声明相关权限
+                showNoPermissionTip("6.0以下: " + getString(noPermissionTip[mNoPermissionIndex]));
+                finish();
+            }
+        }
     }
 
     // --------------------------------------------------------------------------------------------------------
@@ -87,7 +105,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener, 
                 mNoDataView.setVisibility(View.INVISIBLE);
                 mRecordBtn.setVisibility(View.VISIBLE);
 
-                // 重新设置列表数据源，并通知更新
+                //  重新设置列表数据源，并通知更新
                 mListAdapter.setDataList(dataList);
                 mListAdapter.notifyDataSetChanged();
             } else {
@@ -168,6 +186,76 @@ public class MainActivity extends BaseActivity implements View.OnClickListener, 
     @Override
     protected void onPause() {
         super.onPause();
+        // 失去焦点时停止正在请求的网络
         mMainPresenter.onStop();
     }
+
+    // **************************************************** 权限请求 ****************************************************
+
+    private final String[] permissionManifest = {
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+    };
+    private final int[] noPermissionTip = {
+            R.string.no_camera_permission,
+            R.string.no_record_audio_permission,
+            R.string.no_read_phone_state_permission,
+            R.string.no_write_external_storage_permission,
+            R.string.no_read_external_storage_permission
+    };
+    /**
+     * 变量的描述: 没有权限的权限在权限组中的角标
+     */
+    private int mNoPermissionIndex = 0;
+    /**
+     * 变量的描述: 请求权限的Code
+     */
+    private final int PERMISSION_REQUEST_CODE = 1;
+
+    /**
+     * 权限检查（适配6.0以上手机）
+     */
+    private boolean permissionCheck() {
+        int permissionCheck = PackageManager.PERMISSION_GRANTED;
+        String permission;
+        for (int i = 0; i < permissionManifest.length; i++) {
+            permission = permissionManifest[i];
+            mNoPermissionIndex = i;
+            if (PermissionChecker.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                permissionCheck = PackageManager.PERMISSION_DENIED;
+            }
+        }
+        return permissionCheck == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case PERMISSION_REQUEST_CODE:
+                for (int i = 0; i < permissions.length; i++) {
+                    if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
+                        int toastTip = noPermissionTip[i];
+                        mNoPermissionIndex = i;
+                        if (toastTip != 0) {
+                            ToastUtils.showToast(MainActivity.this, toastTip);
+                            finish();
+                        }
+                    }
+                }
+                break;
+        }
+    }
+
+    /**
+     * 没有权限的提醒
+     */
+    private void showNoPermissionTip(String tip) {
+        Toast.makeText(this, tip, Toast.LENGTH_LONG).show();
+    }
+
+    // --------------------------------------------------------------------------------------------------------
 }

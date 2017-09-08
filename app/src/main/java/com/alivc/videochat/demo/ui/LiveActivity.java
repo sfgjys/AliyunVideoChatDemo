@@ -100,8 +100,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     private AlertDialog mImInitFailedDialog;
 
 
-    private AppSettings mAppSettings;
-
     private String mRoomID = null;
 
     private ConnectivityMonitor mConnectivityMonitor = new ConnectivityMonitor();
@@ -113,36 +111,23 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        // TODO MNSClientImpl是MNSClient接口的实现类，而MNSClient 是 MNS 服务的 Android 客户端，它为调用者提供了一系列的方法，可以用来操作，管理队列（queue）和消息（message）
+        // TODO 实例化了一个MNS客户端，该客户端是用于主播直播是的消息交互
+        // MNSClientImpl是MNSClient接口的实现类，而MNSClient 是 MNS 服务的 Android 客户端，它为调用者提供了一系列的方法，可以用来操作，管理队列（queue）和消息（message）
         mImManager = new ImManager(this, new ImHelper(new MNSClientImpl()), mConnectivityMonitor);
         // 初始化
         mImManager.init();
 
+
+        // TODO 将MNS客户端传入到直播操作类中根据实际情况使用MNS客户端
         // 创建直播模块生命周期管理类，并将其注入倒本Activity
         mLiveRecordPresenter = new LifecycleLiveRecordPresenterImpl(this, mView, getUid(), mImManager);
         setLifecycleListener(mLiveRecordPresenter); //注意：这个方法必须在super.onCreate()之前调用 因为super.onCreate()调用的是父类的，而在父类中mLiveRecordPresenter有设置
 
+
         // 内部是调用了PublisherSDKHelper的初始化推流器的方法
         super.onCreate(savedInstanceState);
 
-
-        // 这个类没什么作用
-        mAppSettings = new AppSettings(this);
-
-        // 没有权限才进行获取权限
-        if (!permissionCheck()) {
-            if (Build.VERSION.SDK_INT >= 23) {
-                // 6.0 以上请求
-                ActivityCompat.requestPermissions(this, permissionManifest, PERMISSION_REQUEST_CODE);
-            } else {
-                // 6.0以下也没有权限
-                showNoPermissionTip("6.0以下: " + getString(noPermissionTip[mNoPermissionIndex]));
-                finish();
-            }
-        }
-
         setContentView(R.layout.activity_live);
-
 
         mPreviewSurfaceView = (SurfaceView) findViewById(R.id.surface_view);
 
@@ -212,77 +197,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         });
 //        mHeadsetMonitor.setHeadsetStatusChangedListener(mLivePresenter);    //设置对耳机状态的监听，并且通知给SDK
     }
-
-    // **************************************************** 权限请求 ****************************************************
-
-    private final String[] permissionManifest = {
-            Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-    };
-    /**
-     * 变量的描述: 没有权限的权限在权限组中的角标
-     */
-    private int mNoPermissionIndex = 0;
-    /**
-     * 变量的描述: 请求权限的Code
-     */
-    private final int PERMISSION_REQUEST_CODE = 1;
-    private final int[] noPermissionTip = {
-            R.string.no_camera_permission,
-            R.string.no_record_audio_permission,
-            R.string.no_read_phone_state_permission,
-            R.string.no_write_external_storage_permission,
-            R.string.no_read_external_storage_permission
-    };
-
-    /**
-     * 权限检查（适配6.0以上手机）
-     */
-    private boolean permissionCheck() {
-        int permissionCheck = PackageManager.PERMISSION_GRANTED;
-        String permission;
-        for (int i = 0; i < permissionManifest.length; i++) {
-            permission = permissionManifest[i];
-            mNoPermissionIndex = i;
-            if (PermissionChecker.checkSelfPermission(this, permission)
-                    != PackageManager.PERMISSION_GRANTED) {
-                permissionCheck = PackageManager.PERMISSION_DENIED;
-            }
-        }
-        return permissionCheck == PackageManager.PERMISSION_GRANTED;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case PERMISSION_REQUEST_CODE:
-                for (int i = 0; i < permissions.length; i++) {
-                    if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
-                        int toastTip = noPermissionTip[i];
-                        mNoPermissionIndex = i;
-                        if (toastTip != 0) {
-                            ToastUtils.showToast(LiveActivity.this, toastTip);
-                            finish();
-                        }
-                    }
-                }
-                break;
-        }
-    }
-
-    /**
-     * 没有权限的提醒
-     */
-    private void showNoPermissionTip(String tip) {
-        Toast.makeText(this, tip, Toast.LENGTH_LONG).show();
-    }
-
-    // --------------------------------------------------------------------------------------------------------
-
     // --------------------------------------------------------------------------------------------------------
 
     /**
@@ -580,14 +494,10 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
         @Override
         public void showNoPermissionTip() {
-            if (mNoPermissionIndex >= 0 && mNoPermissionIndex < noPermissionTip.length) {
-                ToastUtils.showToast(LiveActivity.this, noPermissionTip[mNoPermissionIndex]);
-            }
         }
 
         @Override
         public void showChatCloseNotifyDialog(String name) {
-
         }
 
 
@@ -622,7 +532,8 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         mHeadsetMonitor.register(getApplicationContext());        // 注册对耳机状态的监听
 
         //根据设置，判断是否要显示推流性能log
-        if (mAppSettings.isShowLogInfo(true)) {
+        boolean isShowLogInfo = false;
+        if (isShowLogInfo) {
             addLogInfoFragment();
         } else {
             removeLogInfoFragment();

@@ -11,6 +11,9 @@ import retrofit2.Call;
 
 /**
  * 这是一个创建不同Call对象，并调用正式请求网络的processObservable方法的类
+ * 技巧:
+ * new Retrofit.Builder().build().create(AccountService.class).login(此处传入请求网络需要的参数Bean类);获得一个Call对象
+ * 使用这个Call对象正式请求网络，Retrofit的网络请求是靠Call来执行的，实例化Call是对网络请求进行配置的过程
  */
 public class AccountServiceBI extends ServiceBI {
 

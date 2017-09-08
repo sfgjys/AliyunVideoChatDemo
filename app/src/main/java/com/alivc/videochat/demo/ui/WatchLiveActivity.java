@@ -175,11 +175,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         // 这个类没什么作用
         mAppSettings = new AppSettings(this);
 
-        // 获取权限
-        if (Build.VERSION.SDK_INT >= 23) {
-            permissionCheck();
-        }
-
         setContentView(R.layout.activity_watch_live);
 
         mRootContainer = (FrameLayout) findViewById(R.id.root_container);
@@ -269,65 +264,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         mPlaySurfaceView.getHolder().setKeepScreenOn(true);// 设置控件常量
 
     }
-
-    // **************************************************** 权限请求 ****************************************************
-
-    /**
-     * 变量的描述: 请求权限的Code
-     */
-    private final int PERMISSION_REQUEST_CODE = 1;
-
-    private final String[] permissionManifest = {
-            Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-    };
-
-    private final int[] noPermissionTip = {
-            R.string.no_camera_permission,
-            R.string.no_record_audio_permission,
-            R.string.no_read_phone_state_permission,
-            R.string.no_write_external_storage_permission,
-            R.string.no_read_external_storage_permission
-    };
-
-    /**
-     * 权限检查（适配6.0以上手机）
-     */
-    private void permissionCheck() {
-        int permissionCheck = PackageManager.PERMISSION_GRANTED;
-        for (String permission : permissionManifest) {
-            if (PermissionChecker.checkSelfPermission(this, permission)
-                    != PackageManager.PERMISSION_GRANTED) {
-                permissionCheck = PackageManager.PERMISSION_DENIED;
-            }
-        }
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, permissionManifest, PERMISSION_REQUEST_CODE);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case PERMISSION_REQUEST_CODE:
-                for (int i = 0; i < permissions.length; i++) {
-                    if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
-                        int toastTip = noPermissionTip[i];
-                        if (toastTip != 0) {
-                            ToastUtils.showToast(WatchLiveActivity.this, toastTip);
-                        }
-                    }
-                }
-                break;
-        }
-    }
-
-    // --------------------------------------------------------------------------------------------------------
-
 
     @Override
     protected void onResume() {

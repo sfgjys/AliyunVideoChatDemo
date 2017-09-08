@@ -13,16 +13,14 @@ public class InteractionServiceBI extends ServiceBI {
 
     /**
      * 发送评论
+     *
      * @param uid
      * @param roomID
      * @param comment
      * @param callback
      * @return
      */
-    public Call sendComment(String uid,
-                                          String roomID,
-                                          String comment,
-                                          Callback callback) {
+    public Call sendComment(String uid, String roomID, String comment, Callback callback) {
         SendCommentForm form = new SendCommentForm(uid, roomID, comment);
         Call call = ServiceFactory.getInteractionService().sendComment(form);
         processObservable(call, callback);
@@ -31,6 +29,7 @@ public class InteractionServiceBI extends ServiceBI {
 
     /**
      * 点赞
+     *
      * @param roomID
      * @param uid
      * @param callback
