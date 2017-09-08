@@ -78,11 +78,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
      */
     private View mFullEventView;
     /**
-     * 变量的描述: 根容器
-     */
-    private FrameLayout mRootContainer;
-
-    /**
      * 变量的描述: 关闭主播直播界面的ImageView控件
      */
     private ImageView mIvClose;
@@ -116,13 +111,10 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         mImManager = new ImManager(this, new ImHelper(new MNSClientImpl()), mConnectivityMonitor);
         // 初始化
         mImManager.init();
-
-
         // TODO 将MNS客户端传入到直播操作类中根据实际情况使用MNS客户端
         // 创建直播模块生命周期管理类，并将其注入倒本Activity
         mLiveRecordPresenter = new LifecycleLiveRecordPresenterImpl(this, mView, getUid(), mImManager);
         setLifecycleListener(mLiveRecordPresenter); //注意：这个方法必须在super.onCreate()之前调用 因为super.onCreate()调用的是父类的，而在父类中mLiveRecordPresenter有设置
-
 
         // 内部是调用了PublisherSDKHelper的初始化推流器的方法
         super.onCreate(savedInstanceState);
@@ -133,15 +125,16 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
         mIvClose = (ImageView) findViewById(R.id.iv_close);
 
+        // ---------------------------------------------触摸mFullEventView控件，根据触摸事件去动态决定mLiveRecordPresenter是聚焦还是缩放-----------------------------------------------------------
 
-        // TODO
+        // 用户在该控件中进行触摸事件，然后让触摸事件给聚焦和缩放操作对象提前消费，在聚焦和缩放操作对象的监听中解析触摸事件，根据触摸事件的内容使用mLiveRecordPresenter操纵聚焦或者缩放
         mFullEventView = findViewById(R.id.full_event_view);
         // 因为mFullEventView的初始宽高和mPreviewSurfaceView宽高一致，所以这里其实获得是mPreviewSurfaceView的初始宽高
+        // mFullEventView的高宽就是SurfaceView的高宽，在聚焦的时候有用
         mPreviewHeight = mFullEventView.getHeight();
         mPreviewWidth = mFullEventView.getWidth();
 
-        // TODO
-        mRootContainer = (FrameLayout) findViewById(R.id.root_container);
+        // --------------------------------------------------------------------------------------------------------
 
         // 三个连麦在主播直播界面上进行播放的SurfaceView
         SurfaceView parterViewLeft = (SurfaceView) findViewById(R.id.parter_view_left);
@@ -176,46 +169,25 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         mScaleDetector = new ScaleGestureDetector(this, mScaleGestureListener);
         mFullEventView.setOnTouchListener(mOnTouchListener);
 
-
+        // 技巧: 这里addCallback可以添加多个监听，当mPreviewSurfaceView有变化了，那就是所有的监听都会响应
         mPreviewSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
-
             }
 
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-                // 当mPreviewSurfaceView宽高改变时，重置宽高属性
+                System.out.println();
+                // 当mPreviewSurfaceView宽高改变时，重置宽高属性，让聚焦的聚焦率可以随着mPreviewSurfaceView的宽高改变而改变
                 mPreviewHeight = height;
                 mPreviewWidth = width;
             }
 
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
-
             }
         });
-//        mHeadsetMonitor.setHeadsetStatusChangedListener(mLivePresenter);    //设置对耳机状态的监听，并且通知给SDK
     }
-    // --------------------------------------------------------------------------------------------------------
-
-    /**
-     * 类的描述: 封装连麦人播放显示控件的Bean类
-     */
-    private static class ChattingViewHolder {
-        SurfaceView mParterView;
-        ImageView mCloseChattingBtn;
-        int mIndex;
-
-        public ChattingViewHolder(SurfaceView parterView, ImageView closeChattingBtn, int index) {
-            mParterView = parterView;
-            mCloseChattingBtn = closeChattingBtn;
-            mIndex = index;
-        }
-    }
-
-    // --------------------------------------------------------------------------------------------------------
-
     // **************************************************** 触摸事件操作 ****************************************************
     /**
      * 变量的描述: 对焦操作对象
@@ -241,6 +213,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
         @Override
         public boolean onSingleTapUp(MotionEvent motionEvent) {
+            System.out.println();
             if (mPreviewWidth > 0 && mPreviewHeight > 0) {
                 float x = motionEvent.getX() / mPreviewWidth;
                 float y = motionEvent.getY() / mPreviewHeight;
@@ -270,7 +243,8 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     private ScaleGestureDetector.OnScaleGestureListener mScaleGestureListener = new ScaleGestureDetector.OnScaleGestureListener() {
         @Override
         public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
-            mLiveRecordPresenter.zoom(scaleGestureDetector.getScaleFactor());
+            System.out.println("scaleFactor: " + scaleGestureDetector.getScaleFactor());
+            mLiveRecordPresenter.zoom(scaleGestureDetector.getScaleFactor());// 缩放放大比例不确定
             return true;
         }
 
@@ -285,18 +259,38 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     };
     /**
      * 变量的描述: 触摸事件监听回调接口实现
+     * 技巧:
+     * Activity中的触摸事件是有Activity进行分发的，先发给最顶级的父类控件，在发给父类下一经控件，一直分发到最底层的控件（也就是屏幕最上层的控件）
+     * 然后在由最底层控件开始响应处理事件，如果处理了就完结，如果没处理就传递给它的上一级控件，一直传到顶级父类控件
      */
     private View.OnTouchListener mOnTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
             // 让对焦和缩放直接消费掉触摸事件
-            mDetector.onTouchEvent(motionEvent);
+            mDetector.onTouchEvent(motionEvent);// 手动触发mDetector和mScaleDetector的触摸监听事件
             mScaleDetector.onTouchEvent(motionEvent);
-            return true;
+            return true;// true 代表触摸事件被处理掉了，不继续往下传了，否则为false，将触摸事件交给下一个控件处理
         }
     };
     // --------------------------------------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------------------
 
+    /**
+     * 类的描述: 封装连麦人播放显示控件的Bean类
+     */
+    private static class ChattingViewHolder {
+        SurfaceView mParterView;
+        ImageView mCloseChattingBtn;
+        int mIndex;
+
+        public ChattingViewHolder(SurfaceView parterView, ImageView closeChattingBtn, int index) {
+            mParterView = parterView;
+            mCloseChattingBtn = closeChattingBtn;
+            mIndex = index;
+        }
+    }
+
+    // --------------------------------------------------------------------------------------------------------
     // **************************************************** 自定义UI更新内容 ****************************************************
     private ILiveRecordView mView = new ILiveRecordView() {
         @Override
