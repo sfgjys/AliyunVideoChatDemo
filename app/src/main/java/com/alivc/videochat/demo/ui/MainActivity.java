@@ -64,6 +64,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener, 
 
         initRefreshLayout();
 
+        // PS: 本界面是在获取到了焦点时加载列表，失去焦点时停止正在加载的网络请求，如此，刚进本界面时先请求了网络，接着又弹出了权限对话框获得了焦点，使界面失去了焦点，网络请求停止
         // 没有权限才进行获取权限
         if (!permissionCheck()) {
             if (Build.VERSION.SDK_INT >= 23) {
