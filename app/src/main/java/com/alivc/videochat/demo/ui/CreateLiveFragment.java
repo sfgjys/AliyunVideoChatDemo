@@ -87,6 +87,13 @@ public class CreateLiveFragment extends Fragment implements View.OnClickListener
     }
 
     @Override
+    public void onStop() {
+        super.onStop();
+        // 当本界面不可见时，停止获取推流地址的网络请求
+        mPresenter.onStop();
+    }
+
+    @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_start_live:
@@ -140,12 +147,6 @@ public class CreateLiveFragment extends Fragment implements View.OnClickListener
      */
     public interface OnPendingPublishListener {
         void onPendingPublish(String roomID, String name, String uid);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        mPresenter.onStop();
     }
 
     @Override

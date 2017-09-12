@@ -18,12 +18,12 @@ import com.alivc.videochat.demo.uitils.ToastUtils;
  */
 public class LifecycleCreateLivePresenterImpl extends ContextBase implements ILifecycleCreateLivePresenter {
     private LifecyclePublisherMgr mPublisherMgr;
-    private ICreateLiveView mView;
+    private ICreateLiveView mCreateLiveView;
 
     public LifecycleCreateLivePresenterImpl(Context context, LifecyclePublisherMgr mgr, ICreateLiveView view) {
         super(context);
         this.mPublisherMgr = mgr;
-        this.mView = view;
+        this.mCreateLiveView = view;
     }
 
     @Override
@@ -33,7 +33,7 @@ public class LifecycleCreateLivePresenterImpl extends ContextBase implements ILi
             public void onSuccess(Bundle bundle) {
                 LiveCreateResult result = (LiveCreateResult) bundle.getSerializable(IPublisherMgr.DATA_KEY_CREATE_LIVE_RESULT);
                 if (result != null) {
-                    mView.showPublishStreamUI(result.getRoomID(), result.getName(), result.getUid());   // 显示创建直播成功的UI
+                    mCreateLiveView.showPublishStreamUI(result.getRoomID(), result.getName(), result.getUid());   // 显示创建直播并推流成功的UI
                 } else {
                     ToastUtils.showToast(getContext(), R.string.create_live_failed);
                 }

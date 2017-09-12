@@ -44,16 +44,19 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
     // --------------------------------------------------------------------------------------------------------
 
     @Override
+    // 1
     public void onCreate() {
         mPublisherMgr.onCreate();
     }
 
     @Override
+    // 2
     public void onStart() {
         mPublisherMgr.onStart();
     }
 
     @Override
+    // 3
     public void onResume() {
         mPublisherMgr.onResume();
     }
@@ -76,16 +79,15 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
     // --------------------------------------------------------------------------------------------------------
 
     @Override
+    // 4  PublisherSDKHelper的startPreView方法是在主SurfaceView的状态监听器（SurfaceHolder.Callback）里进行调用了
     public void startPreview(SurfaceView previewSurf) {
         mPublisherMgr.asyncStartPreview(previewSurf, new AsyncCallback() {
             @Override
             public void onSuccess(Bundle bundle) {
-
             }
 
             @Override
             public void onFailure(Bundle bundle, Throwable e) {
-
             }
         });
     }
@@ -199,46 +201,26 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
             String PTS_UNIT = "ms";
             String DURATION_UNIT = "ms";
             String DELAY_UNIT = "ms";
-            logHandler.updateValue(LogInfoAdapter.LogItem.AUDIO_ENCODE_BITRATE,
-                    publishInfo.getAudioEncodeBitrate() + BITRATE_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_ENCODE_BITRATE,
-                    publishInfo.getVideoEncodeBitrate() + BITRATE_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.AUDIO_UPLOAD_BITRATE,
-                    publishInfo.getAudioUploadBitrate() + BITRATE_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_UPLOAD_BITRATE,
-                    publishInfo.getVideoUploadBitrate() + BITRATE_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.AUDIO_FRAMES_IN_QUEUE,
-                    String.valueOf(publishInfo.getAudioPacketsInBuffer()));
-            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_FRAMES_IN_QUEUE,
-                    String.valueOf(publishInfo.getVideoPacketsInBuffer()));
-            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_ENCODE_FRAME_RATE,
-                    publishInfo.getVideoEncodeBitrate() + BITRATE_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_UPLOAD_FRAME_RATE,
-                    publishInfo.getVideoUploadedFps() + FRAME_RATE_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_CAPTURE_FRAME_RATE,
-                    publishInfo.getVideoCaptureFps() + FRAME_RATE_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.CURRENT_VIDEO_PTS,
-                    publishInfo.getCurrentlyUploadedVideoFramePts() + PTS_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.CURRENT_AUDIO_PTS,
-                    publishInfo.getCurrentlyUploadedAudioFramePts() + PTS_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.PREVIOUS_I_FRAME_PTS,
-                    publishInfo.getPreviousKeyFramePts() + PTS_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_ENCODE_FRAMES,
-                    String.valueOf(publishInfo.getTotalFramesOfEncodedVideo()));
-            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_ENCODE_DURATIONS,
-                    publishInfo.getTotalTimeOfEncodedVideo() + DURATION_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.UPLOAD_PACKETS_SIZE,
-                    String.valueOf(publishInfo.getTotalSizeOfUploadedPackets()));
-            logHandler.updateValue(LogInfoAdapter.LogItem.UPLOAD_PACKETS_DURATIONS,
-                    publishInfo.getTotalTimeOfPublishing() + DURATION_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.UPLOAD_VIDEO_FRAMES,
-                    String.valueOf(publishInfo.getTotalFramesOfVideoUploaded()));
-            logHandler.updateValue(LogInfoAdapter.LogItem.DROPPED_VIDEO_DURATIONS,
-                    publishInfo.getDropDurationOfVideoFrames() + DURATION_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_CAPTURE_TO_UPLOAD_DELAY,
-                    publishInfo.getVideoDurationFromeCaptureToUpload() + DELAY_UNIT);
-            logHandler.updateValue(LogInfoAdapter.LogItem.AUDIO_CAPTURE_TO_UPLOAD_DELAY,
-                    publishInfo.getAudioDurationFromeCaptureToUpload() + DURATION_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.AUDIO_ENCODE_BITRATE, publishInfo.getAudioEncodeBitrate() + BITRATE_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_ENCODE_BITRATE, publishInfo.getVideoEncodeBitrate() + BITRATE_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.AUDIO_UPLOAD_BITRATE, publishInfo.getAudioUploadBitrate() + BITRATE_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_UPLOAD_BITRATE, publishInfo.getVideoUploadBitrate() + BITRATE_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.AUDIO_FRAMES_IN_QUEUE, String.valueOf(publishInfo.getAudioPacketsInBuffer()));
+            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_FRAMES_IN_QUEUE, String.valueOf(publishInfo.getVideoPacketsInBuffer()));
+            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_ENCODE_FRAME_RATE, publishInfo.getVideoEncodeBitrate() + BITRATE_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_UPLOAD_FRAME_RATE, publishInfo.getVideoUploadedFps() + FRAME_RATE_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_CAPTURE_FRAME_RATE, publishInfo.getVideoCaptureFps() + FRAME_RATE_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.CURRENT_VIDEO_PTS, publishInfo.getCurrentlyUploadedVideoFramePts() + PTS_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.CURRENT_AUDIO_PTS, publishInfo.getCurrentlyUploadedAudioFramePts() + PTS_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.PREVIOUS_I_FRAME_PTS, publishInfo.getPreviousKeyFramePts() + PTS_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_ENCODE_FRAMES, String.valueOf(publishInfo.getTotalFramesOfEncodedVideo()));
+            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_ENCODE_DURATIONS, publishInfo.getTotalTimeOfEncodedVideo() + DURATION_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.UPLOAD_PACKETS_SIZE, String.valueOf(publishInfo.getTotalSizeOfUploadedPackets()));
+            logHandler.updateValue(LogInfoAdapter.LogItem.UPLOAD_PACKETS_DURATIONS, publishInfo.getTotalTimeOfPublishing() + DURATION_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.UPLOAD_VIDEO_FRAMES, String.valueOf(publishInfo.getTotalFramesOfVideoUploaded()));
+            logHandler.updateValue(LogInfoAdapter.LogItem.DROPPED_VIDEO_DURATIONS, publishInfo.getDropDurationOfVideoFrames() + DURATION_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.VIDEO_CAPTURE_TO_UPLOAD_DELAY, publishInfo.getVideoDurationFromeCaptureToUpload() + DELAY_UNIT);
+            logHandler.updateValue(LogInfoAdapter.LogItem.AUDIO_CAPTURE_TO_UPLOAD_DELAY, publishInfo.getAudioDurationFromeCaptureToUpload() + DURATION_UNIT);
             logHandler.notifyUpdate();
         }
     }
@@ -350,6 +332,9 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
                     break;
                 case IPublisherMgr.TYPE_PLAYER_AUDIO_PLAYER_ERROR:
                     mView.showInterruptUI(R.string.error_publisher_network_unconnect, 412);
+                    break;
+                case IPublisherMgr.TYPE_LIVE_CREATED:
+                    break;
             }
         }
     };

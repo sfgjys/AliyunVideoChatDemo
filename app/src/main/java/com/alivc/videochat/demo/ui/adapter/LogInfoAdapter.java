@@ -11,7 +11,7 @@ import android.widget.TextView;
 import com.alivc.videochat.demo.http.model.LogInfo;
 
 /**
- * Created by liujianghao on 16-9-22.
+ * 类的描述: 性能列表的适配器
  */
 public class LogInfoAdapter extends RecyclerView.Adapter<LogInfoAdapter.LogViewHolder> {
     public static class LogItem {
@@ -68,7 +68,7 @@ public class LogInfoAdapter extends RecyclerView.Adapter<LogInfoAdapter.LogViewH
         if (logInfo != null) {
             holder.tvLabel.setText(logInfo.getLabel());
             holder.tvValue.setText(logInfo.getValue());
-        }else {
+        } else {
             holder.tvLabel.setText(LABELS[position]);
         }
     }
@@ -79,22 +79,21 @@ public class LogInfoAdapter extends RecyclerView.Adapter<LogInfoAdapter.LogViewH
     }
 
     /**
-     * 更新value
-     * @param key
-     * @param value
+     * 方法描述: 更新数据源数据
      */
     public void updateValue(int key, String value) {
         LogInfo logInfo = mLogInfos.get(key);
-        if(logInfo == null) {
+        if (logInfo == null) {
             logInfo = new LogInfo(LABELS[key], value);
             mLogInfos.put(key, logInfo);
-        }else {
+        } else {
             logInfo.setValue(value);
         }
     }
 
     /**
      * 加载Labels
+     *
      * @param context
      */
     public void loadLabels(Context context) {

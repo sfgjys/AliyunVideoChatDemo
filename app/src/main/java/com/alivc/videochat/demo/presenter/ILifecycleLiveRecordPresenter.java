@@ -18,6 +18,9 @@ public interface ILifecycleLiveRecordPresenter extends ILifecycleListener {
     //TODO：如果不做DI，也要把对象的管理单独抽象出来，这里后期需要重构
     LifecyclePublisherMgr getPublisherMgr();
 
+    /**
+     * 方法描述: 使用性能Fragment中的适配器更新性能参数UI
+     */
     void refreshLogInfo(LogInfoFragment.LogHandler logHandler);
 
     // --------------------------------------------------------------------------------------------------------

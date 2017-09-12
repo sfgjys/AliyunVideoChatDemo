@@ -108,7 +108,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     private String mUID;
 
 
-    private SurfaceView mPreviewSurfaceView = null;
+    private SurfaceView mMainSurfaceView = null;
     private SurfaceStatus mPreviewSurfaceStatus = SurfaceStatus.UNINITED;
 
     private String mTipString;
@@ -189,11 +189,13 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
     @Override
     public void onResume() {
+        // 下面两个if判断都是重新获取了焦点时才有用，第一次进入直播界面获取焦点时下面的判断不会通过
         if (mImManager != null && mControlBody != null && mWSConnOpts != null) {
+            // asyncCreateLive方法被调用过了，界面失去了焦点取消了所有相关订阅，然后界面有重新获得了焦点，需要订阅
             initPublishMsgProcessor();
         }
-
         if (mPreviewSurfaceStatus != SurfaceStatus.UNINITED) {
+            // mSDKHelper在失去焦点时暂停过，现在重新获取了焦点需要恢复推流
             mSDKHelper.resume();
         }
     }
@@ -201,7 +203,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     @Override
     public void onPause() {
         if (mImManager != null) {
-            //取消消息订阅
+            // 取消消息订阅
             mImManager.unRegister(MessageType.INVITE_CALLING);
             mImManager.unRegister(MessageType.AGREE_CALLING);
             mImManager.unRegister(MessageType.NOT_AGREE_CALLING);
@@ -212,6 +214,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             mImManager.unRegister(MessageType.MIX_STATUS_CODE);
             mImManager.unRegister(MessageType.START_PUSH);
             mImManager.unRegister(MessageType.EXIT_CHATTING);
+            // 断开MNS链接
             mImManager.closeSession();
         }
         mSDKHelper.pause(); //暂停推流 or 连麦
@@ -250,8 +253,8 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
     @Override
     public void asyncStartPreview(SurfaceView previewSurfaceView, AsyncCallback callback) {
-        this.mPreviewSurfaceView = previewSurfaceView;
-        mPreviewSurfaceView.getHolder().addCallback(mPreviewCallback);
+        this.mMainSurfaceView = previewSurfaceView;
+        mMainSurfaceView.getHolder().addCallback(mMainSurfaceCallback);
     }
 
     @Override
@@ -365,8 +368,8 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             }
         });
 
-        if (mPreviewSurfaceView != null) {
-            mPreviewSurfaceView.getHolder().removeCallback(mPreviewCallback);
+        if (mMainSurfaceView != null) {
+            mMainSurfaceView.getHolder().removeCallback(mMainSurfaceCallback);
         }
     }
 
@@ -480,15 +483,16 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                 // 获取服务器创建的直播推流的房间号mRoomID
                 mRoomID = response.getRoomID();
 
+                // 给LifecycleCreateLivePresenterImpl回调结果
                 // 将结果Bena封装进Bundle
                 Bundle data = new Bundle();
-
                 // 将Bundle回调给调用本方法的回调接口实例，内部的作用大致是将界面从创建直播切换到正在推流
                 data.putSerializable(DATA_KEY_CREATE_LIVE_RESULT, response);
                 if (callback != null) {
                     callback.onSuccess(data);
                 }
 
+                // 给LifecycleLiveRecordPresenterImpl回调结果
                 if (mCallback != null) {
                     // 这个回调暂时没用
                     mCallback.onEvent(TYPE_LIVE_CREATED, data);
@@ -499,7 +503,10 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                 // 创建并获取推流地址成功，开始推流
                 mSDKHelper.startPublishStream(response.getRtmpUrl());
 
-                // 获取IM链接信息 TODO MNS
+                // 因为在直播中我们需要用到MNS，这属于直播的一部分，所以建立MNS链接是必要的。
+                // 前面我们调用ImManager的init()方法只是进行了初始化，还没有正式进行MNS链接。
+                // 而这里的WebSocketConnectOptions和MnsControlBody是我们在请求推流地址时一起获得的，
+                // 这两个对象是我们建立MNS链接的必要参数
                 mWSConnOpts = new WebSocketConnectOptions();
                 MNSModel mnsModel = response.getMNSModel();
                 MNSConnectModel mnsConnectModel = response.getMnsConnectModel();
@@ -517,6 +524,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                         .messageType(MnsControlBody.MessageType.SUBSCRIBE)
                         .tags(tags)
                         .build();
+                // 建立MNS链接
                 initPublishMsgProcessor();
             }
 
@@ -553,7 +561,42 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     }
 
     // --------------------------------------------------------------------------------------------------------
+    /**
+     * 变量的描述: 主SurfaceView的变化监听回调接口实例
+     */
+    private SurfaceHolder.Callback mMainSurfaceCallback = new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+            Log.d(TAG, "LiveActivity-->Preview surface created");
+            //记录Surface的状态
+            if (mPreviewSurfaceStatus == SurfaceStatus.UNINITED) {
+                // 主SurfaceView第一次被创建，开启预览
+                mPreviewSurfaceStatus = SurfaceStatus.CREATED;
+                // 现在开启预览是让主播在正式推流前就看见自己要直播的画面
+                mSDKHelper.startPreView(mMainSurfaceView);
+            } else if (mPreviewSurfaceStatus == SurfaceStatus.DESTROYED) {
+                // 主SurfaceView已经被销毁过，现在重新创建
+                mPreviewSurfaceStatus = SurfaceStatus.RECREATED;
+            }
+        }
 
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            Log.d(TAG, "LiveActivity-->Preview surface changed");
+            mPreviewSurfaceStatus = SurfaceStatus.CHANGED;
+
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+            Log.d(TAG, "LiveActivity-->Preview surface destroyed");
+            mPreviewSurfaceStatus = SurfaceStatus.DESTROYED;
+        }
+    };
+
+    // --------------------------------------------------------------------------------------------------------
+
+    // 反馈邀请
     //@Override
     private void asyncFeedbackInviting(final String playerUID) {
         mInviteServiceBI.feedback(FeedbackForm.INVITE_TYPE_ANCHOR, FeedbackForm.INVITE_TYPE_WATCHER, playerUID, mUID,
@@ -579,6 +622,283 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     }
 
 
+    private SessionHandler mSessionHandler = new SessionHandler() {
+        @Override
+        public void onInviteChatTimeout() {
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_INVITE_TIMEOUT, null);
+            }
+        }
+
+        @Override
+        public void onProcessInvitingTimeout() {
+//             feedbackInviting(false);  // 自动反馈不同意连麦
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_PROCESS_INVITING_TIMEOUT, null);
+            }
+        }
+
+        @Override
+        public void onMixStreamError() {
+//            asyncTerminateAllChatting(null);
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_MIX_STREAM_ERROR, null);
+            }
+        }
+
+        @Override
+        public void onMixStreamTimeout() {
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_MIX_STREAM_TIMEOUT, null);
+            }
+        }
+
+        @Override
+        public void onMixStreamSuccess() {
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_MIX_STREAM_SUCCESS, null);
+            }
+        }
+
+        @Override
+        public void onMixStreamNotExist() {
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_MIX_STREAM_NOT_EXIST, null);
+            }
+        }
+
+        @Override
+        public void onMainStreamNotExist() {
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_MAIN_STREAM_NOT_EXIST, null);
+            }
+        }
+    };
+
+    // --------------------------------------------------------------------------------------------------------
+
+    public AlivcPublisherPerformanceInfo getPublisherPerformanceInfo() {
+        // return mSDKHelper.getPublisherPerformanceInfo();
+        return new AlivcPublisherPerformanceInfo();
+    }
+
+    public AlivcPlayerPerformanceInfo getPlayerPerformanceInfo(String url) {
+        // return mSDKHelper.getPlayerPerformanceInfo(url);
+        return new AlivcPlayerPerformanceInfo();
+    }
+
+    // **************************************************** MNS链接的建立和注册各种订阅 ****************************************************
+
+    /**
+     * 方法描述: 建立MNS链接，然后注册订阅
+     */
+    private void initPublishMsgProcessor() {
+        mImManager.createSession(mWSConnOpts, mControlBody);
+        // 注册订阅
+        mImManager.register(MessageType.INVITE_CALLING, mInviteFunc, MsgDataInvite.class);
+        mImManager.register(MessageType.AGREE_CALLING, mAgreeFunc, MsgDataAgreeVideoCall.class);
+        mImManager.register(MessageType.NOT_AGREE_CALLING, mNotAgreeFunc, MsgDataNotAgreeVideoCall.class);
+        mImManager.register(MessageType.CALLING_SUCCESS, mMergeStreamSuccFunc, MsgDataMergeStream.class);
+        mImManager.register(MessageType.CALLING_FAILED, mMergeStreamFailedFunc, MsgDataMergeStream.class);
+        mImManager.register(MessageType.LIVE_COMPLETE, mLiveCloseFunc, MsgDataLiveClose.class);
+        mImManager.register(MessageType.MIX_STATUS_CODE, mMixStatusCode, MsgDataMixStatusCode.class);
+        mImManager.register(MessageType.START_PUSH, mPublishStreamFunc, MsgDataStartPublishStream.class);
+        mImManager.register(MessageType.EXIT_CHATTING, mExitChattingFunc, MsgDataExitChatting.class);
+    }
+
+    /**
+     * 连麦邀请的消息处理Action
+     */
+    ImHelper.Func<MsgDataInvite> mInviteFunc = new ImHelper.Func<MsgDataInvite>() {
+
+        @Override
+        public void action(final MsgDataInvite msgDataInvite) {
+            if (mChatSessionMap.containsKey(msgDataInvite.getInviterUID())) {//已经处于连麦的用户，不接受再次邀请
+//                if (mCallback != null) {
+//                    callback.onFailure(null, new ChatSessionException(ChatSessionException.ERROR_CHATTING_ALREADY));
+//                    mCallback.onEvent();
+//                }
+                ChatSession mChatSession = mChatSessionMap.get(msgDataInvite.getInviterUID());
+//                UNCHAT,              //未连麦
+//                        INVITE_FOR_RES,      //邀请连麦成功等待对方响应
+//                        INVITE_RES_SUCCESS,
+//                        INVITE_RES_FAILURE,
+//                        RECEIVED_INVITE,     //收到邀请等待回复状态
+//                        TRY_MIX,            //开始连麦等待混流成功
+//                        MIX_SUCC,           //混流成功
+                if (mChatSession.getChatStatus() == VideoChatStatus.MIX_SUCC ||
+                        mChatSession.getChatStatus() == VideoChatStatus.TRY_MIX) {
+                    return;
+                }
+            }
+
+            ChatSession chatSession = new ChatSession(mSessionHandler);
+            chatSession.notifyReceivedInviting(mUID, msgDataInvite.getInviterUID());
+            mChatSessionMap.put(msgDataInvite.getInviterUID(), chatSession);
+            //自动同意连麦
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            asyncFeedbackInviting(msgDataInvite.getInviterUID());
+        }
+    };
+    /**
+     * 同意连麦的消息处理Action
+     */
+    ImHelper.Func<MsgDataAgreeVideoCall> mAgreeFunc = new ImHelper.Func<MsgDataAgreeVideoCall>() {
+        @Override
+        public void action(final MsgDataAgreeVideoCall msgDataAgreeVideoCall) {
+            final String inviteeUID = msgDataAgreeVideoCall.getInviteeUID();
+            ChatSession chatSession = mChatSessionMap.get(inviteeUID);
+            if (chatSession != null && chatSession.notifyAgreeInviting() == ChatSession.RESULT_OK) {
+                Log.d(TAG, "xiongbo21: notify agree inviting for " + inviteeUID + ", status = " + chatSession.getChatStatus());
+            }
+        }
+    };
+    /**
+     * 不同意连麦的消息处理Action
+     */
+    ImHelper.Func<MsgDataNotAgreeVideoCall> mNotAgreeFunc = new ImHelper.Func<MsgDataNotAgreeVideoCall>() {
+        @Override
+        public void action(final MsgDataNotAgreeVideoCall notAgreeVideoCall) {
+            ChatSession chatSession = mChatSessionMap.get(notAgreeVideoCall.getInviteeUID());
+            chatSession.notifyNotAgreeInviting(notAgreeVideoCall);
+            mChatSessionMap.remove(chatSession);
+        }
+    };
+    /**
+     * 混流成功的消息处理Action
+     */
+    ImHelper.Func<MsgDataMergeStream> mMergeStreamSuccFunc = new ImHelper.Func<MsgDataMergeStream>() {
+
+        @Override
+        public void action(MsgDataMergeStream msgDataMergeStream) {
+            Log.d(TAG, "LiveActivity -->Merge Success");
+            //TODO:需要协调服务端讨论
+        }
+    };
+    /**
+     * 混流失败的消息处理Action
+     */
+    ImHelper.Func<MsgDataMergeStream> mMergeStreamFailedFunc = new ImHelper.Func<MsgDataMergeStream>() {
+
+        @Override
+        public void action(MsgDataMergeStream msgDataMergeStream) {
+            //TODO：需要协调服务端讨论
+        }
+    };
+    /**
+     * 直播结束的消息处理Action
+     */
+    ImHelper.Func<MsgDataLiveClose> mLiveCloseFunc = new ImHelper.Func<MsgDataLiveClose>() {
+
+        @Override
+        public void action(MsgDataLiveClose msgDataLiveClose) {
+//            if () {
+//                stopPublish();
+//                mLiveView.showLiveCloseUI();
+//            }
+        }
+    };
+    /**
+     * 混流过程中产生的状态码的回调
+     */
+    ImHelper.Func<MsgDataMixStatusCode> mMixStatusCode = new ImHelper.Func<MsgDataMixStatusCode>() {
+        @Override
+        public void action(MsgDataMixStatusCode msgDataMixStatusCode) {
+            if (msgDataMixStatusCode != null && !mChatSessionMap.isEmpty()) {
+                String code = msgDataMixStatusCode.getCode();
+                mHandler.removeMessages(MSG_WHAT_MIX_STREAM_ERROR);
+                if (MixStatusCode.INTERNAL_ERROR.toString().equals(code)) {
+                    mHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_ERROR);
+                } else if (MixStatusCode.MAIN_STREAM_NOT_EXIST.toString().equals(code)) {
+                    mHandler.sendEmptyMessage(MSG_WHAT_MAIN_STREAM_NOT_EXIST);
+                    mHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_ERROR, WAITING_FOR_MIX_SUCCESS_DELAY);
+                } else if (MixStatusCode.MIX_STREAM_NOT_EXIST.toString().equals(code)) {
+                    mHandler.sendEmptyMessage(MSG_WHAT_MAIN_STREAM_NOT_EXIST);
+                    mHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_ERROR, WAITING_FOR_MIX_SUCCESS_DELAY);
+                } else if (MixStatusCode.SUCCESS.toString().equals(code)) {
+                    // 对于所有的session，全部设置未mix success
+                    ChatSession session = mChatSessionMap.get(msgDataMixStatusCode.getMixUid());
+                    if (session != null) {
+                        session.setChatStatus(VideoChatStatus.MIX_SUCC);
+                    }
+                    mHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_SUCCESS);
+                }
+                Log.d(TAG, "Mix statusCode: " + msgDataMixStatusCode.getCode());
+            }
+        }
+    };
+    /**
+     * 开始推流的消息处理Action
+     */
+    ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
+        @Override
+        public void action(MsgDataStartPublishStream msgDataStartPublishStream) {
+            Log.d(TAG, "LiveActivity -->Publish Success.");
+            ChatSession chatSession = mChatSessionMap.get(msgDataStartPublishStream.getUid());
+            if (chatSession != null) {
+                Log.d(TAG, String.valueOf("xiongbo21: publis stream for " + msgDataStartPublishStream.getUid() + ", status = " +
+                        chatSession.getChatStatus()));
+            } else {
+                Log.d(TAG, String.valueOf("xiongbo21: publis stream for " + msgDataStartPublishStream.getUid() + ", status = " +
+                        VideoChatStatus.UNCHAT));
+            }
+            if (!mUID.equals(msgDataStartPublishStream.getUid())) {
+                if (chatSession != null && chatSession.isTryMix() && chatSession.getChatSessionInfo() == null) {
+                    ChatSessionInfo sessionInfo = new ChatSessionInfo();
+                    //TODO:这里需要带上推流地址
+                    sessionInfo.setPlayUrl(msgDataStartPublishStream.getPlayUrl());
+                    chatSession.setChatSessionInfo(sessionInfo);
+                    if (mCallback != null) {
+                        Bundle data = new Bundle();
+                        data.putString(DATA_KEY_INVITEE_UID, msgDataStartPublishStream.getUid());
+                        Log.d(TAG, "LiveActivity -->Publish Success. send publish stream success.");
+                        mCallback.onEvent(TYPE_PUBLISH_STREMA_SUCCESS, data);
+                    }
+                }
+            }
+        }
+    };
+    /**
+     * 某人退出连麦的消息处理Action
+     */
+    ImHelper.Func<MsgDataExitChatting> mExitChattingFunc = new ImHelper.Func<MsgDataExitChatting>() {
+        @Override
+        public void action(MsgDataExitChatting msgDataExitChatting) {
+            String playerUID = msgDataExitChatting.getUID();
+            ChatSession chatSession = mChatSessionMap.get(playerUID);
+            if (chatSession != null) {
+                List<String> playUrls = new ArrayList<>();
+                if (chatSession != null && chatSession.getChatSessionInfo() != null)
+                    playUrls.add(chatSession.getChatSessionInfo().getPlayUrl());
+                // TODO by xinye : 退出连麦
+                mVideoChatApiCalling = true;
+                Log.e("xiongbo07", "开始退出连麦...");
+                int result = mSDKHelper.abortChat(playUrls);
+                if (result < 0) {
+                    mVideoChatApiCalling = false;
+                }
+                if (mCallback != null) {
+                    Bundle data = new Bundle();
+                    data.putString(DATA_KEY_PLAYER_UID, playerUID);
+                    mCallback.onEvent(TYPE_SOMEONE_EXIT_CHATTING, data);
+                }
+            }
+            mChatSessionMap.remove(playerUID);
+        }
+    };
+
+    // **************************************************** 推流状态信息和错误监听接口实例 ****************************************************
     /**
      * 变量的描述: 推流错误监听器回调接口实现
      */
@@ -786,318 +1106,5 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             return false;
         }
     };
-
-    private SessionHandler mSessionHandler = new SessionHandler() {
-        @Override
-        public void onInviteChatTimeout() {
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_INVITE_TIMEOUT, null);
-            }
-        }
-
-        @Override
-        public void onProcessInvitingTimeout() {
-//             feedbackInviting(false);  // 自动反馈不同意连麦
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_PROCESS_INVITING_TIMEOUT, null);
-            }
-        }
-
-        @Override
-        public void onMixStreamError() {
-//            asyncTerminateAllChatting(null);
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MIX_STREAM_ERROR, null);
-            }
-        }
-
-        @Override
-        public void onMixStreamTimeout() {
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MIX_STREAM_TIMEOUT, null);
-            }
-        }
-
-        @Override
-        public void onMixStreamSuccess() {
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MIX_STREAM_SUCCESS, null);
-            }
-        }
-
-        @Override
-        public void onMixStreamNotExist() {
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MIX_STREAM_NOT_EXIST, null);
-            }
-        }
-
-        @Override
-        public void onMainStreamNotExist() {
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MAIN_STREAM_NOT_EXIST, null);
-            }
-        }
-    };
-
-    private SurfaceHolder.Callback mPreviewCallback = new SurfaceHolder.Callback() {
-        @Override
-        public void surfaceCreated(SurfaceHolder holder) {
-            Log.d(TAG, "LiveActivity-->Preview surface created");
-            //记录Surface的状态
-            if (mPreviewSurfaceStatus == SurfaceStatus.UNINITED) {
-                mPreviewSurfaceStatus = SurfaceStatus.CREATED;
-                //TODO:开启预览
-                mSDKHelper.startPreView(mPreviewSurfaceView);
-            } else if (mPreviewSurfaceStatus == SurfaceStatus.DESTROYED) {
-                mPreviewSurfaceStatus = SurfaceStatus.RECREATED;
-            }
-        }
-
-        @Override
-        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            Log.d(TAG, "LiveActivity-->Preview surface changed");
-            mPreviewSurfaceStatus = SurfaceStatus.CHANGED;
-
-        }
-
-        @Override
-        public void surfaceDestroyed(SurfaceHolder holder) {
-            Log.d(TAG, "LiveActivity-->Preview surface destroyed");
-            mPreviewSurfaceStatus = SurfaceStatus.DESTROYED;
-        }
-    };
-
-    /**
-     * 初始化推送消息处理器
-     * 在创建直播后需要执行
-     */
-    private void initPublishMsgProcessor() {
-        mImManager.createSession(mWSConnOpts, mControlBody);
-        mImManager.register(MessageType.INVITE_CALLING, mInviteFunc, MsgDataInvite.class);
-        mImManager.register(MessageType.AGREE_CALLING, mAgreeFunc, MsgDataAgreeVideoCall.class);
-        mImManager.register(MessageType.NOT_AGREE_CALLING, mNotAgreeFunc, MsgDataNotAgreeVideoCall.class);
-        mImManager.register(MessageType.CALLING_SUCCESS, mMergeStreamSuccFunc, MsgDataMergeStream.class);
-        mImManager.register(MessageType.CALLING_FAILED, mMergeStreamFailedFunc, MsgDataMergeStream.class);
-        mImManager.register(MessageType.LIVE_COMPLETE, mLiveCloseFunc, MsgDataLiveClose.class);
-        mImManager.register(MessageType.MIX_STATUS_CODE, mMixStatusCode, MsgDataMixStatusCode.class);
-        mImManager.register(MessageType.START_PUSH, mPublishStreamFunc, MsgDataStartPublishStream.class);
-        mImManager.register(MessageType.EXIT_CHATTING, mExitChattingFunc, MsgDataExitChatting.class);
-    }
-
-
-    /**
-     * 连麦邀请的消息处理Action
-     */
-    ImHelper.Func<MsgDataInvite> mInviteFunc = new ImHelper.Func<MsgDataInvite>() {
-
-        @Override
-        public void action(final MsgDataInvite msgDataInvite) {
-            if (mChatSessionMap.containsKey(msgDataInvite.getInviterUID())) {//已经处于连麦的用户，不接受再次邀请
-//                if (mCallback != null) {
-//                    callback.onFailure(null, new ChatSessionException(ChatSessionException.ERROR_CHATTING_ALREADY));
-//                    mCallback.onEvent();
-//                }
-                ChatSession mChatSession = mChatSessionMap.get(msgDataInvite.getInviterUID());
-//                UNCHAT,              //未连麦
-//                        INVITE_FOR_RES,      //邀请连麦成功等待对方响应
-//                        INVITE_RES_SUCCESS,
-//                        INVITE_RES_FAILURE,
-//                        RECEIVED_INVITE,     //收到邀请等待回复状态
-//                        TRY_MIX,            //开始连麦等待混流成功
-//                        MIX_SUCC,           //混流成功
-                if (mChatSession.getChatStatus() == VideoChatStatus.MIX_SUCC ||
-                        mChatSession.getChatStatus() == VideoChatStatus.TRY_MIX) {
-                    return;
-                }
-            }
-
-            ChatSession chatSession = new ChatSession(mSessionHandler);
-            chatSession.notifyReceivedInviting(mUID, msgDataInvite.getInviterUID());
-            mChatSessionMap.put(msgDataInvite.getInviterUID(), chatSession);
-            //自动同意连麦
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            asyncFeedbackInviting(msgDataInvite.getInviterUID());
-        }
-    };
-
-    /**
-     * 开始推流的消息处理Action
-     */
-    ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
-        @Override
-        public void action(MsgDataStartPublishStream msgDataStartPublishStream) {
-            Log.d(TAG, "LiveActivity -->Publish Success.");
-            ChatSession chatSession = mChatSessionMap.get(msgDataStartPublishStream.getUid());
-            if (chatSession != null) {
-                Log.d(TAG, String.valueOf("xiongbo21: publis stream for " + msgDataStartPublishStream.getUid() + ", status = " +
-                        chatSession.getChatStatus()));
-            } else {
-                Log.d(TAG, String.valueOf("xiongbo21: publis stream for " + msgDataStartPublishStream.getUid() + ", status = " +
-                        VideoChatStatus.UNCHAT));
-            }
-            if (!mUID.equals(msgDataStartPublishStream.getUid())) {
-                if (chatSession != null && chatSession.isTryMix() && chatSession.getChatSessionInfo() == null) {
-                    ChatSessionInfo sessionInfo = new ChatSessionInfo();
-                    //TODO:这里需要带上推流地址
-                    sessionInfo.setPlayUrl(msgDataStartPublishStream.getPlayUrl());
-                    chatSession.setChatSessionInfo(sessionInfo);
-                    if (mCallback != null) {
-                        Bundle data = new Bundle();
-                        data.putString(DATA_KEY_INVITEE_UID, msgDataStartPublishStream.getUid());
-                        Log.d(TAG, "LiveActivity -->Publish Success. send publish stream success.");
-                        mCallback.onEvent(TYPE_PUBLISH_STREMA_SUCCESS, data);
-                    }
-                }
-            }
-        }
-    };
-
-
-    /**
-     * 同意连麦的消息处理Action
-     */
-    ImHelper.Func<MsgDataAgreeVideoCall> mAgreeFunc = new ImHelper.Func<MsgDataAgreeVideoCall>() {
-        @Override
-        public void action(final MsgDataAgreeVideoCall msgDataAgreeVideoCall) {
-            final String inviteeUID = msgDataAgreeVideoCall.getInviteeUID();
-            ChatSession chatSession = mChatSessionMap.get(inviteeUID);
-            if (chatSession != null && chatSession.notifyAgreeInviting() == ChatSession.RESULT_OK) {
-                Log.d(TAG, "xiongbo21: notify agree inviting for " + inviteeUID + ", status = " + chatSession.getChatStatus());
-            }
-        }
-    };
-
-    /**
-     * 不同意连麦的消息处理Action
-     */
-    ImHelper.Func<MsgDataNotAgreeVideoCall> mNotAgreeFunc = new ImHelper.Func<MsgDataNotAgreeVideoCall>() {
-        @Override
-        public void action(final MsgDataNotAgreeVideoCall notAgreeVideoCall) {
-            ChatSession chatSession = mChatSessionMap.get(notAgreeVideoCall.getInviteeUID());
-            chatSession.notifyNotAgreeInviting(notAgreeVideoCall);
-            mChatSessionMap.remove(chatSession);
-        }
-    };
-
-    /**
-     * 直播结束的消息处理Action
-     */
-    ImHelper.Func<MsgDataLiveClose> mLiveCloseFunc = new ImHelper.Func<MsgDataLiveClose>() {
-
-        @Override
-        public void action(MsgDataLiveClose msgDataLiveClose) {
-//            if () {
-//                stopPublish();
-//                mLiveView.showLiveCloseUI();
-//            }
-        }
-    };
-
-    /**
-     * 混流成功的消息处理Action
-     */
-    ImHelper.Func<MsgDataMergeStream> mMergeStreamSuccFunc = new ImHelper.Func<MsgDataMergeStream>() {
-
-        @Override
-        public void action(MsgDataMergeStream msgDataMergeStream) {
-            Log.d(TAG, "LiveActivity -->Merge Success");
-            //TODO:需要协调服务端讨论
-        }
-    };
-
-    /**
-     * 混流失败的消息处理Action
-     */
-    ImHelper.Func<MsgDataMergeStream> mMergeStreamFailedFunc = new ImHelper.Func<MsgDataMergeStream>() {
-
-        @Override
-        public void action(MsgDataMergeStream msgDataMergeStream) {
-            //TODO：需要协调服务端讨论
-        }
-    };
-
-    /**
-     * 混流过程中产生的状态码的回调
-     */
-    ImHelper.Func<MsgDataMixStatusCode> mMixStatusCode = new ImHelper.Func<MsgDataMixStatusCode>() {
-        @Override
-        public void action(MsgDataMixStatusCode msgDataMixStatusCode) {
-            if (msgDataMixStatusCode != null && !mChatSessionMap.isEmpty()) {
-                String code = msgDataMixStatusCode.getCode();
-                mHandler.removeMessages(MSG_WHAT_MIX_STREAM_ERROR);
-                if (MixStatusCode.INTERNAL_ERROR.toString().equals(code)) {
-                    mHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_ERROR);
-                } else if (MixStatusCode.MAIN_STREAM_NOT_EXIST.toString().equals(code)) {
-                    mHandler.sendEmptyMessage(MSG_WHAT_MAIN_STREAM_NOT_EXIST);
-                    mHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_ERROR, WAITING_FOR_MIX_SUCCESS_DELAY);
-                } else if (MixStatusCode.MIX_STREAM_NOT_EXIST.toString().equals(code)) {
-                    mHandler.sendEmptyMessage(MSG_WHAT_MAIN_STREAM_NOT_EXIST);
-                    mHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_ERROR, WAITING_FOR_MIX_SUCCESS_DELAY);
-                } else if (MixStatusCode.SUCCESS.toString().equals(code)) {
-                    // 对于所有的session，全部设置未mix success
-                    ChatSession session = mChatSessionMap.get(msgDataMixStatusCode.getMixUid());
-                    if (session != null) {
-                        session.setChatStatus(VideoChatStatus.MIX_SUCC);
-                    }
-                    mHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_SUCCESS);
-                }
-                Log.d(TAG, "Mix statusCode: " + msgDataMixStatusCode.getCode());
-            }
-        }
-    };
-
-    /**
-     * 某人退出连麦的消息处理Action
-     */
-    ImHelper.Func<MsgDataExitChatting> mExitChattingFunc = new ImHelper.Func<MsgDataExitChatting>() {
-        @Override
-        public void action(MsgDataExitChatting msgDataExitChatting) {
-            String playerUID = msgDataExitChatting.getUID();
-            ChatSession chatSession = mChatSessionMap.get(playerUID);
-            if (chatSession != null) {
-                List<String> playUrls = new ArrayList<>();
-                if (chatSession != null && chatSession.getChatSessionInfo() != null)
-                    playUrls.add(chatSession.getChatSessionInfo().getPlayUrl());
-                // TODO by xinye : 退出连麦
-                mVideoChatApiCalling = true;
-                Log.e("xiongbo07", "开始退出连麦...");
-                int result = mSDKHelper.abortChat(playUrls);
-                if (result < 0) {
-                    mVideoChatApiCalling = false;
-                }
-                if (mCallback != null) {
-                    Bundle data = new Bundle();
-                    data.putString(DATA_KEY_PLAYER_UID, playerUID);
-                    mCallback.onEvent(TYPE_SOMEONE_EXIT_CHATTING, data);
-                }
-            }
-            mChatSessionMap.remove(playerUID);
-        }
-    };
-
-    // --------------------------------------------------------------------------------------------------------
-
-    public AlivcPublisherPerformanceInfo getPublisherPerformanceInfo() {
-//        return mSDKHelper.getPublisherPerformanceInfo();
-        return new AlivcPublisherPerformanceInfo();
-    }
-
-    public AlivcPlayerPerformanceInfo getPlayerPerformanceInfo(String url) {
-//        return mSDKHelper.getPlayerPerformanceInfo(url);
-        return new AlivcPlayerPerformanceInfo();
-    }
-
 }
 

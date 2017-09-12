@@ -51,6 +51,21 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         context.startActivity(intent);
     }
 
+    /**
+     * 类的描述: 封装连麦人播放显示控件的Bean类
+     */
+    private static class ChattingViewHolder {
+        SurfaceView mChatSurfaceView;
+        ImageView mCloseChattingButton;
+        int mIndex;
+
+        public ChattingViewHolder(SurfaceView parterView, ImageView closeChattingBtn, int index) {
+            mChatSurfaceView = parterView;
+            mCloseChattingButton = closeChattingBtn;
+            mIndex = index;
+        }
+    }
+
     private final String TAG = "LiveActivity";
     /**
      * 变量的描述: 邀请连麦的Action ，监听是否是邀请连麦，监听返回的值为INTERACTION_TYPE_INVITE，则就是邀请连麦
@@ -177,13 +192,11 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         parterViewMiddle.setZOrderMediaOverlay(true);
         parterViewRight.setZOrderMediaOverlay(true);
 
-
         // 在R.id.root_container上开启Fragment
         // 创建CreateLiveFragment对象，在创建对象的同时通过mLiveRecordPresenter获取LifecyclePublisherMgr对象，并赋值给其成员变量
         CreateLiveFragment createLiveFragment = CreateLiveFragment.newInstance(mLiveRecordPresenter.getPublisherMgr());
         createLiveFragment.setPendingPublishListener(mPendingPublishListener);
         getSupportFragmentManager().beginTransaction().add(R.id.root_container, createLiveFragment).commit();
-
 
         // 对焦
         mDetector = new GestureDetector(this, mGestureDetector);
@@ -295,24 +308,8 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         }
     };
     // --------------------------------------------------------------------------------------------------------
-    // --------------------------------------------------------------------------------------------------------
 
-    /**
-     * 类的描述: 封装连麦人播放显示控件的Bean类
-     */
-    private static class ChattingViewHolder {
-        SurfaceView mChatSurfaceView;
-        ImageView mCloseChattingButton;
-        int mIndex;
-
-        public ChattingViewHolder(SurfaceView parterView, ImageView closeChattingBtn, int index) {
-            mChatSurfaceView = parterView;
-            mCloseChattingButton = closeChattingBtn;
-            mIndex = index;
-        }
-    }
-
-    // --------------------------------------------------------------------------------------------------------
+    // **************************************************** 生命周期变化 ****************************************************
 
     @Override
     protected void onResume() {// 因为在onCreate开启了一个Fragment，所以是先走完了Fragment的onStart后才走Activity的onStart，onResume，接着在走Fragment的onResume
@@ -353,6 +350,45 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         finish();
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
+    // **************************************************** 开启性能Fragment ****************************************************
+
+    /**
+     * 增加性能日志展示
+     */
+    public void addLogInfoFragment() {
+        if (mLogInfoFragment == null) {
+            mLogInfoFragment = new LogInfoFragment();
+            mLogInfoFragment.setRefreshListener(mRefreshListener);
+        }
+        getSupportFragmentManager().beginTransaction().add(R.id.log_container, mLogInfoFragment).commitAllowingStateLoss();
+    }
+
+    /**
+     * 移除性能日志展示
+     */
+    public void removeLogInfoFragment() {
+        if (mLogInfoFragment != null) {
+            getSupportFragmentManager().beginTransaction().remove(mLogInfoFragment).commit();
+        }
+    }
+
+    /**
+     * 变量的描述: 该监听回调因为Handler的不断循环而不断被调用
+     */
+    LogInfoFragment.LogRefreshListener mRefreshListener = new LogInfoFragment.LogRefreshListener() {
+        @Override
+        public void onPendingRefresh() {
+            if (mLogInfoFragment != null && mLiveRecordPresenter != null) {
+                LogInfoFragment.LogHandler logHandler = mLogInfoFragment.getLogHandler();
+                mLiveRecordPresenter.refreshLogInfo(logHandler);
+            }
+        }
+    };
+
+    // --------------------------------------------------------------------------------------------------------
+
     // **************************************************** 获取推流地址推流成功后的反应 ****************************************************
 
     /**
@@ -390,7 +426,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         // 将创建设置好属性的LiveBottomFragment对象传入InteractionFragment对象中使用
         interactionFragment.setBottomFragment(mLiveBottomFragment);
 
-        // 开启Fragment
+        // 开启Fragment TODO 在开启InteractionFragment前，需不需要先remove()CreateLiveFragment
         getSupportFragmentManager().beginTransaction().replace(R.id.root_container, interactionFragment).commit();
     }
 
@@ -507,39 +543,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         }
     }
 
-    /**
-     * 增加性能日志展示
-     */
-    public void addLogInfoFragment() {
-        if (mLogInfoFragment == null) {
-            mLogInfoFragment = new LogInfoFragment();
-            mLogInfoFragment.setRefreshListener(mRefreshListener);
-        }
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.log_container, mLogInfoFragment)
-                .commitAllowingStateLoss();
-    }
-
-    /**
-     * 移除性能日志展示
-     */
-    public void removeLogInfoFragment() {
-        if (mLogInfoFragment != null) {
-            getSupportFragmentManager().beginTransaction().remove(mLogInfoFragment).commit();
-        }
-    }
-
-
-    LogInfoFragment.LogRefreshListener mRefreshListener = new LogInfoFragment.LogRefreshListener() {
-        @Override
-        public void onPendingRefresh() {
-            if (mLogInfoFragment != null && mLiveRecordPresenter != null) {
-                LogInfoFragment.LogHandler logHandler = mLogInfoFragment.getLogHandler();
-                mLiveRecordPresenter.refreshLogInfo(logHandler);
-            }
-        }
-    };
-
 
     private void hideSurfaceView(SurfaceView surfaceView) {
         Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());
@@ -553,6 +556,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         layoutParams.topMargin = DensityUtil.dp2px(LiveActivity.this, 0);
         surfaceView.requestLayout();
     }
+
     // **************************************************** 根据直播，连麦等操作的结果来自定义UI更新内容 ****************************************************
     private ILiveRecordView mView = new ILiveRecordView() {
         @Override
