@@ -714,10 +714,9 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     }
 
     /**
-     * 连麦邀请的消息处理Action
+     * 变量的描述: 观众发起请求和主播进行连麦，这里会收到MNS的消息，被邀请连麦的消息处理Action
      */
     ImHelper.Func<MsgDataInvite> mInviteFunc = new ImHelper.Func<MsgDataInvite>() {
-
         @Override
         public void action(final MsgDataInvite msgDataInvite) {
             if (mChatSessionMap.containsKey(msgDataInvite.getInviterUID())) {//已经处于连麦的用户，不接受再次邀请
@@ -752,7 +751,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         }
     };
     /**
-     * 同意连麦的消息处理Action
+     * 变量的描述: 主播向观众发起连麦的邀请，观众同意时，MNS发送消息过来，观众同意连麦的消息处理Action
      */
     ImHelper.Func<MsgDataAgreeVideoCall> mAgreeFunc = new ImHelper.Func<MsgDataAgreeVideoCall>() {
         @Override
@@ -765,7 +764,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         }
     };
     /**
-     * 不同意连麦的消息处理Action
+     * 变量的描述: 主播向观众发起连麦的邀请，观众同意时，MNS发送消息过来，观众不同意连麦的消息处理Action
      */
     ImHelper.Func<MsgDataNotAgreeVideoCall> mNotAgreeFunc = new ImHelper.Func<MsgDataNotAgreeVideoCall>() {
         @Override
@@ -776,41 +775,66 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         }
     };
     /**
-     * 混流成功的消息处理Action
+     * 变量的描述: 当主播和连麦的人推流成功，并继续推流时会发消息过来，这里我们主要处理连麦的人推流成功
      */
-    ImHelper.Func<MsgDataMergeStream> mMergeStreamSuccFunc = new ImHelper.Func<MsgDataMergeStream>() {
-
+    ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
         @Override
-        public void action(MsgDataMergeStream msgDataMergeStream) {
-            Log.d(TAG, "LiveActivity -->Merge Success");
-            //TODO:需要协调服务端讨论
+        public void action(MsgDataStartPublishStream msgDataStartPublishStream) {
+            Log.d(TAG, "LiveActivity -->推流成功");
+            ChatSession chatSession = mChatSessionMap.get(msgDataStartPublishStream.getUid());
+            if (chatSession != null) {
+                Log.d(TAG, String.valueOf("开始推流的连麦ID: " + msgDataStartPublishStream.getUid() + ", 直播的状态是连麦中，具体状态为: " + chatSession.getChatStatus()));
+            } else {
+                Log.d(TAG, String.valueOf("开始推流的主播ID: " + msgDataStartPublishStream.getUid() + ", 直播的状态是: 未进行连麦中"));
+            }
+            // 开始推流的id不是主播id才能进入if判断
+            if (!mUID.equals(msgDataStartPublishStream.getUid())) {
+                // TODO 处理连麦的人推流成功的订阅
+                if (chatSession != null && chatSession.isTryMix() && chatSession.getChatSessionInfo() == null) {
+                    ChatSessionInfo sessionInfo = new ChatSessionInfo();
+                    // TODO:这里需要带上推流地址
+                    sessionInfo.setPlayUrl(msgDataStartPublishStream.getPlayUrl());
+                    chatSession.setChatSessionInfo(sessionInfo);
+                    if (mCallback != null) {
+                        Bundle data = new Bundle();
+                        data.putString(DATA_KEY_INVITEE_UID, msgDataStartPublishStream.getUid());
+                        Log.d(TAG, "LiveActivity -->Publish Success. send publish stream success.");
+                        mCallback.onEvent(TYPE_PUBLISH_STREMA_SUCCESS, data);
+                    }
+                }
+            }
         }
     };
     /**
-     * 混流失败的消息处理Action
+     * 变量的描述: 某个正在进行连麦的人退出连麦的消息处理Action，这个退出有主播主动踢掉某人，也有某人主动退出
      */
-    ImHelper.Func<MsgDataMergeStream> mMergeStreamFailedFunc = new ImHelper.Func<MsgDataMergeStream>() {
-
+    ImHelper.Func<MsgDataExitChatting> mExitChattingFunc = new ImHelper.Func<MsgDataExitChatting>() {
         @Override
-        public void action(MsgDataMergeStream msgDataMergeStream) {
-            //TODO：需要协调服务端讨论
+        public void action(MsgDataExitChatting msgDataExitChatting) {
+            String playerUID = msgDataExitChatting.getUID();
+            ChatSession chatSession = mChatSessionMap.get(playerUID);
+            if (chatSession != null) {
+                List<String> playUrls = new ArrayList<>();
+                if (chatSession != null && chatSession.getChatSessionInfo() != null)
+                    playUrls.add(chatSession.getChatSessionInfo().getPlayUrl());
+                // TODO by xinye : 退出连麦
+                mVideoChatApiCalling = true;
+                Log.e("xiongbo07", "开始退出连麦...");
+                int result = mSDKHelper.abortChat(playUrls);
+                if (result < 0) {
+                    mVideoChatApiCalling = false;
+                }
+                if (mCallback != null) {
+                    Bundle data = new Bundle();
+                    data.putString(DATA_KEY_PLAYER_UID, playerUID);
+                    mCallback.onEvent(TYPE_SOMEONE_EXIT_CHATTING, data);
+                }
+            }
+            mChatSessionMap.remove(playerUID);
         }
     };
     /**
-     * 直播结束的消息处理Action
-     */
-    ImHelper.Func<MsgDataLiveClose> mLiveCloseFunc = new ImHelper.Func<MsgDataLiveClose>() {
-
-        @Override
-        public void action(MsgDataLiveClose msgDataLiveClose) {
-//            if () {
-//                stopPublish();
-//                mLiveView.showLiveCloseUI();
-//            }
-        }
-    };
-    /**
-     * 混流过程中产生的状态码的回调
+     * 变量的描述: 连麦的时候(不管成功，还是失败)，混流过程中产生的状态码的回调
      */
     ImHelper.Func<MsgDataMixStatusCode> mMixStatusCode = new ImHelper.Func<MsgDataMixStatusCode>() {
         @Override
@@ -839,65 +863,31 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         }
     };
     /**
-     * 开始推流的消息处理Action
+     * 变量的描述: 混流成功的消息处理Action
      */
-    ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
+    ImHelper.Func<MsgDataMergeStream> mMergeStreamSuccFunc = new ImHelper.Func<MsgDataMergeStream>() {
         @Override
-        public void action(MsgDataStartPublishStream msgDataStartPublishStream) {
-            Log.d(TAG, "LiveActivity -->Publish Success.");
-            ChatSession chatSession = mChatSessionMap.get(msgDataStartPublishStream.getUid());
-            if (chatSession != null) {
-                Log.d(TAG, String.valueOf("xiongbo21: publis stream for " + msgDataStartPublishStream.getUid() + ", status = " +
-                        chatSession.getChatStatus()));
-            } else {
-                Log.d(TAG, String.valueOf("xiongbo21: publis stream for " + msgDataStartPublishStream.getUid() + ", status = " +
-                        VideoChatStatus.UNCHAT));
-            }
-            if (!mUID.equals(msgDataStartPublishStream.getUid())) {
-                if (chatSession != null && chatSession.isTryMix() && chatSession.getChatSessionInfo() == null) {
-                    ChatSessionInfo sessionInfo = new ChatSessionInfo();
-                    //TODO:这里需要带上推流地址
-                    sessionInfo.setPlayUrl(msgDataStartPublishStream.getPlayUrl());
-                    chatSession.setChatSessionInfo(sessionInfo);
-                    if (mCallback != null) {
-                        Bundle data = new Bundle();
-                        data.putString(DATA_KEY_INVITEE_UID, msgDataStartPublishStream.getUid());
-                        Log.d(TAG, "LiveActivity -->Publish Success. send publish stream success.");
-                        mCallback.onEvent(TYPE_PUBLISH_STREMA_SUCCESS, data);
-                    }
-                }
-            }
+        public void action(MsgDataMergeStream msgDataMergeStream) {
+            Log.d(TAG, "LiveActivity -->Merge Success");
         }
     };
     /**
-     * 某人退出连麦的消息处理Action
+     * 变量的描述: 混流失败的消息处理Action
      */
-    ImHelper.Func<MsgDataExitChatting> mExitChattingFunc = new ImHelper.Func<MsgDataExitChatting>() {
+    ImHelper.Func<MsgDataMergeStream> mMergeStreamFailedFunc = new ImHelper.Func<MsgDataMergeStream>() {
         @Override
-        public void action(MsgDataExitChatting msgDataExitChatting) {
-            String playerUID = msgDataExitChatting.getUID();
-            ChatSession chatSession = mChatSessionMap.get(playerUID);
-            if (chatSession != null) {
-                List<String> playUrls = new ArrayList<>();
-                if (chatSession != null && chatSession.getChatSessionInfo() != null)
-                    playUrls.add(chatSession.getChatSessionInfo().getPlayUrl());
-                // TODO by xinye : 退出连麦
-                mVideoChatApiCalling = true;
-                Log.e("xiongbo07", "开始退出连麦...");
-                int result = mSDKHelper.abortChat(playUrls);
-                if (result < 0) {
-                    mVideoChatApiCalling = false;
-                }
-                if (mCallback != null) {
-                    Bundle data = new Bundle();
-                    data.putString(DATA_KEY_PLAYER_UID, playerUID);
-                    mCallback.onEvent(TYPE_SOMEONE_EXIT_CHATTING, data);
-                }
-            }
-            mChatSessionMap.remove(playerUID);
+        public void action(MsgDataMergeStream msgDataMergeStream) {
+            Log.d(TAG, "LiveActivity -->Merge Failed");
         }
     };
-
+    /**
+     * 直播结束的消息处理Action
+     */
+    ImHelper.Func<MsgDataLiveClose> mLiveCloseFunc = new ImHelper.Func<MsgDataLiveClose>() {
+        @Override
+        public void action(MsgDataLiveClose msgDataLiveClose) {
+        }
+    };
     // **************************************************** 推流状态信息和错误监听接口实例 ****************************************************
     /**
      * 变量的描述: 推流错误监听器回调接口实现

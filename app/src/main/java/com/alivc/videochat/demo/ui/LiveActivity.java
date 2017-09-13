@@ -344,7 +344,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         mTouchEventView.setOnTouchListener(null);
     }
 
-
     @Override
     public void onBackPressed() {
         finish();
@@ -375,7 +374,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     }
 
     /**
-     * 变量的描述: 该监听回调因为Handler的不断循环而不断被调用
+     * 变量的描述: 在LogInfoFragment中不断调用该监听回调的实例，因为Handler的不断循环而不断被调用
      */
     LogInfoFragment.LogRefreshListener mRefreshListener = new LogInfoFragment.LogRefreshListener() {
         @Override
@@ -389,7 +388,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
     // --------------------------------------------------------------------------------------------------------
 
-    // **************************************************** 获取推流地址推流成功后的反应 ****************************************************
+    // **************************************************** 获取推流地址成功后并已经开始推流的反应 ****************************************************
 
     /**
      * 变量的描述: 请求网络获取推流地址成功后，回调过来的结果内容
@@ -478,6 +477,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         if (mAnchorListDialog == null) {
             mAnchorListDialog = AnchorListDialog.newInstance(roomID);
         }
+        // 如果主播持续点击邀请连麦的按钮，那么就可以通过对话框是否显示，来判断是否还要显示对话框了
         if (!mAnchorListDialog.isShow()) {
             // 显示对话框
             mAnchorListDialog.show(getSupportFragmentManager(), AnchorListDialog.class.getName());
@@ -493,6 +493,9 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         }
     }
 
+    /**
+     * 方法描述: 让被类继承FragmentInteraction接口，以实现接口方法，如此在本Activity开启的Fragment都能获取本类对象，从而调用onPendingAction方法
+     */
     @Override
     public void onPendingAction(int actionType, Bundle bundle) {
         switch (actionType) {

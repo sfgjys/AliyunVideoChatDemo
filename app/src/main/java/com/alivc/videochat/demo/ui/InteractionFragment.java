@@ -30,11 +30,46 @@ import java.util.Locale;
  */
 public class InteractionFragment extends Fragment {
     private static final String TAG = "ActionFragment";
+    /**
+     * 变量的描述: 点赞冒泡控件
+     */
     private BubblingView mBubblingView;
+    /**
+     * 变量的描述: 显示聊天内容的控件
+     */
     private RecyclerView mCommentView;
+    /**
+     * 变量的描述: 显示主播信息的控件
+     */
     private TextView mTvName;
-
-    private int[] images = {
+    /**
+     * 变量的描述:
+     */
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
+    /**
+     * 变量的描述: 聊天列表的适配器
+     */
+    LiveCommentAdapter mAdapter;
+    /**
+     * 变量的描述: 聊天列表的布局管理
+     */
+    LinearLayoutManager mCommentManager;
+    /**
+     * 变量的描述: 底部按钮Fragment
+     */
+    private Fragment mBottomFragment;
+    /**
+     * 变量的描述: 用户登录时保存的数据
+     */
+    private String mUID;
+    /**
+     * 变量的描述: 请求网络获取推流地址的结果LiveCreateResult对象的mName
+     */
+    private String mAnchorName;
+    /**
+     * 变量的描述: 点赞冒泡显示的图片
+     */
+    private int[] mBubblingImageID = {
             R.drawable.heart0,
             R.drawable.heart1,
             R.drawable.heart2,
@@ -45,20 +80,10 @@ public class InteractionFragment extends Fragment {
             R.drawable.heart7,
             R.drawable.heart8
     };
-    int i = 0;
-    LiveCommentAdapter mAdapter;
-    LinearLayoutManager mCommentManager;
-    private Fragment mBottomFragment;
-
     /**
-     * 变量的描述: 用户登录时保存的数据
+     * 变量的描述: 冒泡显示图片的角标
      */
-    private String mUID;
-
-    /**
-     * 变量的描述: 请求网络获取推流地址的结果LiveCreateResult对象的mName
-     */
-    private String mAnchorName;
+    int index = 0;
 
     // --------------------------------------------------------------------------------------------------------
 
@@ -125,11 +150,11 @@ public class InteractionFragment extends Fragment {
         // 冒泡控件
         mBubblingView = (BubblingView) view.findViewById(R.id.bv_like);
 
-        // 设置直播标题？
+        // 设置主播信息
         mTvName = (TextView) view.findViewById(R.id.tv_name);
         mTvName.setText(mAnchorName + "(" + mUID + ")");
 
-        // 聊天内容显示控件？？？
+        // 聊天内容显示控件
         mCommentView = (RecyclerView) view.findViewById(R.id.rv_comment);
         mCommentView.setHasFixedSize(true);// 确保尺寸是个常数不变
         mAdapter = new LiveCommentAdapter();
@@ -141,14 +166,16 @@ public class InteractionFragment extends Fragment {
         mCommentView.setAdapter(mAdapter);
     }
 
-    // TODO 下面的代码都是消息处理
-
+    // **************************************************** 获取MNS管理器 ****************************************************
     private ImManager mImManger;
 
     public void setImManger(ImManager imManger) {
         this.mImManger = imManger;
     }
 
+    // --------------------------------------------------------------------------------------------------------
+    // **************************************************** 注册和注销订阅 ****************************************************
+    // 因为本Fragment是随着直播和观看界面开启的，而在直播和观看界面开启的时候一般已经初始化并建立了MNS的链接，所以这里只要对订阅事件进行操作
     @Override
     public void onResume() {
         super.onResume();
@@ -167,50 +194,53 @@ public class InteractionFragment extends Fragment {
         }
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
-
-
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
+    // --------------------------------------------------------------------------------------------------------
 
     /**
-     * 收到点赞消息处理Action
+     * 变量的描述: 从MNS收到的评论消息总数
      */
-    private ImHelper.Func<MsgDataLike> mLikeFunc = new ImHelper.Func<MsgDataLike>() {
-        @Override
-        public void action(final MsgDataLike o) {
-            if (!mUID.equals(o.getUid())) {
-                showLikeUI(o.getName(), true, false);
-            } else {
-                showLikeUI(o.getName(), true, true);
-            }
-        }
-    };
+    private int mCommentMsgCount = 0;
+    /**
+     * 变量的描述: 从MNS收到的点赞总数
+     */
+    private int mLikeMsgCount = 0;
+    /**
+     * 变量的描述: 从MNS收到的自己点赞的总数
+     */
+    private int mRemoteLikeMsgID = 0;
+    /**
+     * 变量的描述: 在本地记录的自己点赞的总数
+     */
+    private int mLocalLikeMsgID = 0;
 
     /**
-     * @param name
-     * @param isRemote
-     * @param isMine
+     * 方法描述: 显示点赞控件
+     *
+     * @param name     TODO
+     * @param isRemote 是远程的点赞么
+     * @param isMine   是自己的点赞么
      */
     public void showLikeUI(final String name, final boolean isRemote, final boolean isMine) {
-        mBubblingView.addBubblingItem(images[(i + 1) % images.length]);
-        i = (i + 1) % images.length;
+        // (i + 1) % mBubblingImageID.length 这个代码效果等价 i++
+        // mBubblingView控件按照顺序添加冒泡要显示的图片
+        mBubblingView.addBubblingItem(mBubblingImageID[(index + 1) % mBubblingImageID.length]);
+        index = (index + 1) % mBubblingImageID.length;
+
+        // 将点赞的信息显示在聊天控件中
         final LiveCommentBean commentBean = new LiveCommentBean();
         if (isRemote) {
             mLikeMsgCount++;
             if (isMine) {
                 commentBean.setContent(String.format("收到远程点赞[%1$s],当前收到点赞消息总数：%2$d，Msg ID:%3$d",
-                        sdf.format(new Date()),
+                        simpleDateFormat.format(new Date()),
                         mLikeMsgCount,
                         mRemoteLikeMsgID++));
             } else {
-                commentBean.setContent(String.format("收到远程点赞[%1$s],当前收到点赞消息总数：%2$d", sdf.format(new Date()), mLikeMsgCount));
+                commentBean.setContent(String.format("收到远程点赞[%1$s],当前收到点赞消息总数：%2$d", simpleDateFormat.format(new Date()), mLikeMsgCount));
             }
         } else {
             commentBean.setContent(String.format("本地点赞[%1$s]， Msg ID:%2$d",
-                    sdf.format(new Date()),
+                    simpleDateFormat.format(new Date()),
                     mLocalLikeMsgID++));
         }
         commentBean.setName(name);
@@ -218,30 +248,45 @@ public class InteractionFragment extends Fragment {
         mAdapter.addComment(commentBean);
         mCommentView.smoothScrollToPosition(mAdapter.getItemCount() - 1);
     }
-
-    private int mCommentMsgCount = 0;
-    private int mLikeMsgCount = 0;
-    private int mRemoteLikeMsgID = 0;
-    private int mLocalLikeMsgID = 0;
+    // **************************************************** 点赞和聊天的消息订阅 ****************************************************
     /**
-     * 收到评论消息处理的Action
+     * 变量的描述: 收到点赞消息处理Action
+     */
+    private ImHelper.Func<MsgDataLike> mLikeFunc = new ImHelper.Func<MsgDataLike>() {
+        @Override
+        public void action(final MsgDataLike msgDataLike) {
+            // 根据点赞人的id信息来判断是远程点赞还是自己点赞的
+            if (!mUID.equals(msgDataLike.getUid())) {
+                showLikeUI(msgDataLike.getName(), true, false);
+            } else {
+                showLikeUI(msgDataLike.getName(), true, true);
+            }
+        }
+    };
+    /**
+     * 变量的描述: 收到评论消息处理的Action
      */
     private ImHelper.Func<MsgDataComment> mCommentFunc = new ImHelper.Func<MsgDataComment>() {
-
         @Override
         public void action(final MsgDataComment msgDataComment) {
             mCommentMsgCount++;
             final LiveCommentBean commentBean = new LiveCommentBean();
             commentBean.setContent(String.format("收到评论：%1$s [%2$s], 当前收到评论消息总数：%3$d",
                     msgDataComment.getComment(),
-                    sdf.format(new Date()),
+                    simpleDateFormat.format(new Date()),
                     mCommentMsgCount));
             commentBean.setName(msgDataComment.getName());
             commentBean.setColorResID(R.color.live_comment_circle_color);
             mAdapter.addComment(commentBean);
             mCommentView.smoothScrollToPosition(mAdapter.getItemCount() - 1);
             mAdapter.notifyDataSetChanged();
-
         }
     };
+
+    // --------------------------------------------------------------------------------------------------------
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
 }

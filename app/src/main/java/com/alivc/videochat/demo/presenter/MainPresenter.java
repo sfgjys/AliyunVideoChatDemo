@@ -29,6 +29,7 @@ public class MainPresenter {
 
     /**
      * 方法描述: 请求网络获取直播列表，首先判断是否存在正在队列中或者正在执行Call，有就取消掉，重新创建
+     * 这个方法也可以获取正在直播的主播名单列表
      */
     public void loadLiveList() {
         if (ServiceBI.isCalling(mLoadLiveCall)) {
