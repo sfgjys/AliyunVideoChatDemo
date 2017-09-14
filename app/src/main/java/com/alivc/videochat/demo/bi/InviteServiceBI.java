@@ -17,7 +17,7 @@ import retrofit2.Call;
 public class InviteServiceBI extends ServiceBI {
 
     /**
-     * 邀请参数二所代表的用户进行连麦
+     * 向服务器发送邀请参数二所代表的用户进行连麦的请求
      *
      * @param inviterUID  进行邀请连麦的用户的ID
      * @param inviteeUIDs 被邀请连麦的用户的ID  被邀请连麦ID 用‘|’分割 例如: ‘1|2|3’ or ‘2’
@@ -40,7 +40,7 @@ public class InviteServiceBI extends ServiceBI {
      * @param inviteeType 被邀请是否为观众 #1是观众 2 主播
      * @param inviterType 邀请是否为观众 #1是观众 2 主播
      * @param type
-     * @param status 是否同意状态 #1同意 2 不同意
+     * @param status      是否同意状态 #1同意 2 不同意
      */
     public Call feedback(int inviteeType, int inviterType, String inviterUID, String inviteeUID, String type, int status, Callback<InviteFeedbackResult> callback) {
         Call call;

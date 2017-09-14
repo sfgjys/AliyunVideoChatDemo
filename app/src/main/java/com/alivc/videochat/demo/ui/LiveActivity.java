@@ -507,7 +507,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
                     assert userData != null;
                     inviteeUIDs.add(userData.getUid());
                     // 使用uid的集合去发起邀请连麦的请求
-                    mLiveRecordPresenter.inviteChat(inviteeUIDs); // TODO 发起连麦邀请
+                    mLiveRecordPresenter.inviteChat(inviteeUIDs); // 发起连麦邀请
                 }
 //                mLiveBottomFragment.setInviteUIEnable(false);  //禁用邀麦的按钮
         }

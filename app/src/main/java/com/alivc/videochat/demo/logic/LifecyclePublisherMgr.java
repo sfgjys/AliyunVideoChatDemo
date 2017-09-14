@@ -94,6 +94,9 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     private MgrCallback mCallback;
     private Map<String, ChatSession> mChatSessionMap = new HashMap<>();
 
+    /**
+     * 变量的描述: 本集合存储的是，主播向服务器发送邀请连麦通知的网络请求，当网络请求成功或者失败时移除，该集合的目的是在主播界面结束时停止还在请求网络的任务
+     */
     private List<Call> mInviteCalls = new ArrayList<>();        //当前发起的邀请请求
     private Call mCreateLiveCall;
 
@@ -223,12 +226,13 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     @Override
     public void onStop() {
 
-        // 在CreateLiveFragment获取推流地址是，如果用户不想直播了，结束了Fragment，那么这里就用用了可以结束网络请求
+        // 在CreateLiveFragment获取推流地址时，如果用户不想直播了，结束了Fragment，那么这里就用用了可以结束网络请求
         if (mCreateLiveCall != null && ServiceBI.isCalling(mCreateLiveCall)) {
             mCreateLiveCall.cancel();
             mCreateLiveCall = null;
         }
 
+        // 停止还在向服务器发送邀请连麦的通知的网络请求
         if (mInviteCalls.size() > 0) {
             for (Call call : mInviteCalls) {
                 call.cancel();
@@ -251,25 +255,25 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
     // --------------------------------------------------------------------------------------------------------
 
-    @Override
+    @Override // 在进入直播界面的时候就开启预览让用户看见自己所要直播的画面
     public void asyncStartPreview(SurfaceView previewSurfaceView, AsyncCallback callback) {
         this.mMainSurfaceView = previewSurfaceView;
         mMainSurfaceView.getHolder().addCallback(mMainSurfaceCallback);
     }
 
-    @Override
+    @Override // 当用户点击连麦时，请求业务服务器，发送邀请连麦的请求
     public void asyncInviteChatting(final List<String> playerUIDs, final AsyncCallback callback) {
         // ChatSession.MAX_SESSION_NUM是写死的最大连麦数
-        if (mChatSessionMap.size() > ChatSession.MAX_SESSION_NUM) {//目前最多只支持同时连麦3个观众
+        if (mChatSessionMap.size() >= ChatSession.MAX_SESSION_NUM) {// 目前最多只支持同时进行连麦流程的只有3个观众
             if (callback != null) {
                 callback.onFailure(null, new ChatSessionException(ChatSessionException.ERROR_CHATTING_MAX_NUMBER));
             }
             return;
         }
 
-        // 遍历看playerUIDs判断其元素是否已经连麦
+        // 遍历看playerUIDs判断其元素是否已经正在和主播进行连麦流程
         for (String playerUID : playerUIDs) {
-            if (mChatSessionMap.containsKey(playerUID)) {//目前最多只支持同时连麦3个观众
+            if (mChatSessionMap.containsKey(playerUID)) {
                 if (callback != null) {
                     callback.onFailure(null, new ChatSessionException(ChatSessionException.ERROR_CHATTING_ALREADY));
                 }
@@ -279,7 +283,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
         for (String playerUID : playerUIDs) {//检查邀请的用户是否有正在连麦的
             ChatSession chatSession = new ChatSession(mSessionHandler);
-            if (chatSession.invite(mUID, playerUID) != ChatSession.RESULT_OK) {//当前有正在连麦的观众
+            if (chatSession.invite(mUID, playerUID) != ChatSession.RESULT_OK) {// 当前playerUID所代表的观众正在进行连麦流程
                 Bundle bundle = new Bundle();
                 bundle.putString(KEY_CHATTING_UID, playerUID);
                 callback.onFailure(bundle, new ChatSessionException(ChatSessionException.ERROR_CURR_CHATTING));
@@ -290,19 +294,17 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         }
 
         final int callIndex = mInviteCalls.size();
-        final Call call = mInviteServiceBI.inviteCall(mUID,
-                playerUIDs,
-                InviteForm.TYPE_PIC_BY_PIC,
-                FeedbackForm.INVITE_TYPE_ANCHOR, mRoomID,
+        //  向服务器发送邀请参数二所代表的用户进行连麦的请求
+        final Call call = mInviteServiceBI.inviteCall(mUID, playerUIDs, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.INVITE_TYPE_ANCHOR, mRoomID,
                 new ServiceBI.Callback() {
                     @Override
                     public void onResponse(int code, Object response) {
-                        //邀请成功
-                        for (String playerUID : playerUIDs) {//移除所有的Session
-                            mChatSessionMap.get(playerUID).notifyInviteSuccess();   //通知ChatSession邀请成功
+                        // 向服务器发送邀请的请求成功
+                        for (String playerUID : playerUIDs) {
+                            mChatSessionMap.get(playerUID).notifyInviteSuccess();   // 通知ChatSession 发送邀请的网络请求成功
                             Log.d(TAG, "xiongbo21: notify invite success for " + playerUID + ", status = " + mChatSessionMap.get(playerUID).getChatStatus());
                         }
-                        mInviteCalls.remove(callIndex);
+                        mInviteCalls.remove(callIndex);// 网络请求完成，移除
                         if (callback != null) {
                             callback.onSuccess(null);
                         }
@@ -310,18 +312,18 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
                     @Override
                     public void onFailure(Throwable t) {
-                        //邀请失败
-                        for (String playerUID : playerUIDs) {//移除所有的Session
-                            mChatSessionMap.remove(playerUID);
+                        // 向服务器发送邀请的请求失败
+                        for (String playerUID : playerUIDs) {
+                            mChatSessionMap.remove(playerUID);// 因为失败，所以移除playerUID所代表的连麦流程
                             Log.d(TAG, "xiongbo21: remove chat session for " + playerUID);
                         }
-                        mInviteCalls.remove(callIndex);
+                        mInviteCalls.remove(callIndex);// 网络请求完成，移除
                         if (callback != null) {
                             callback.onFailure(null, t);
                         }
                     }
                 });
-        mInviteCalls.add(call);
+        mInviteCalls.add(call);// 添加网络请求，以便于在特定的时候进行操作
     }
 
     @Override
@@ -349,7 +351,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         mSDKHelper.autoFocus(xRatio, yRatio);
     }
 
-    @Override
+    @Override // 请求网络，告诉业务服务器直播将要被关闭
     public void asyncCloseLive(final AsyncCallback callback) {
         mLiveServiceBI.closeLive(mRoomID, mUID, new ServiceBI.Callback() {
             @Override

@@ -9,9 +9,17 @@ import com.alivc.videochat.demo.im.model.MsgDataNotAgreeVideoCall;
 import com.alivc.videochat.demo.ui.VideoChatStatus;
 
 /**
- * Created by apple on 2017/1/7.
+ * 类的描述: 本类是包含了连麦的所有流程的一个会话
+ * 1、未开始进行连麦链接流程
+ * 2、向服务器发送邀请连麦的请求
+ * 3、被邀请人收到服务器的邀请消息
+ * 4、被邀请人同意还是拒绝发送给服务器
+ * 5、服务器将被邀请人的结果发送给主动邀请人
+ * 6、结果为拒绝则移除会话，结果为同意则继续会话
+ * 7、因为同意，所以开始进行正式连麦
+ * 8、结束连麦
+ * 9、移除本会话
  */
-
 public class ChatSession {
     public static final int RESULT_OK = 1;
     public static final int RESULT_INVALID_STATUS = -1;
@@ -109,7 +117,7 @@ public class ChatSession {
 
 
     /**
-     * 方法描述: 成功请求网络，邀请对方进行连麦，等待对方是否同意连麦，
+     * 方法描述: 成功请求网络，邀请对方进行连麦，等待对方是否同意连麦，其内并修改连麦流程的状态
      */
     public void notifyInviteSuccess() {
         mChatStatus = VideoChatStatus.INVITE_RES_SUCCESS;

@@ -80,7 +80,7 @@ public interface IPublisherMgr {
     void asyncStartPreview(SurfaceView holder, AsyncCallback callback);
 
     /**
-     * 方法描述: 邀请观众连麦（某一个观众）
+     * 方法描述: 邀请观众连麦（某一个观众），实质是向服务器发送主播想要连麦的人的数据，
      */
     void asyncInviteChatting(List<String> inviteeUIDs, AsyncCallback callback);
 

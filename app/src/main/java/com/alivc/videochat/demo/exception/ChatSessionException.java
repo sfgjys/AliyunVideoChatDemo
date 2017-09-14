@@ -6,7 +6,7 @@ package com.alivc.videochat.demo.exception;
 
 public class ChatSessionException extends Throwable {
     /**
-     * 变量的描述: 当前正在连麦
+     * 变量的描述: 当前正在进行连麦流程
      */
     public static final int ERROR_CURR_CHATTING = 0x001;
     /**
@@ -14,7 +14,7 @@ public class ChatSessionException extends Throwable {
      */
     public static final int ERROR_CHATTING_MAX_NUMBER = 0x002;  //
     /**
-     * 变量的描述: 邀请的观众整在连麦中
+     * 变量的描述: 邀请的观众正在与你进行连麦流程
      */
     public static final int ERROR_CHATTING_ALREADY = 0x003;  //
     /**
