@@ -1,7 +1,7 @@
 package com.alivc.videochat.demo.logic;
 
 
-public interface SessionHandler {
+public interface ChatSessionCallback {
     /**
      * 方法描述: 网络请求邀请对方进行连麦，但10秒后对方没有响应，响应超时，自动结束连麦流程
      */

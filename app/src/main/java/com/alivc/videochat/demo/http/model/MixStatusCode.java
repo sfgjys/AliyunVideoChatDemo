@@ -1,9 +1,8 @@
 package com.alivc.videochat.demo.http.model;
 
 /**
- * Created by apple on 2016/12/13.
+ * 类的描述:
  */
-
 public enum MixStatusCode {
     /**
      * 变量的描述: 成功推流

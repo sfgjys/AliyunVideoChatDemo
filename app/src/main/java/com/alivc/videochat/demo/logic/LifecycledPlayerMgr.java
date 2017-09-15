@@ -305,7 +305,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         // 将主播的uid添加进uid集合中。这里只有主播是被邀请
         inviteeUIDs.add(mPublisherUID);
 
-        mChatSession = new ChatSession(mSessionHandler);
+        mChatSession = new ChatSession(mChatSessionCallback);
 
         mChatSession.invite(mPublisherUID, mUID);
         // 请求网络去邀请别人进行连麦，业务服务器发送请求给被邀请人，被邀请人的结果发给业务服务器，业务服务器在通过MNS发送给邀请人也就是本用户
@@ -482,7 +482,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
      * 方法描述: 将别的连麦观众推流成功后的短延迟播放地址和uid存储进mOtherChatSessionMap集合中
      */
     private void addChatSession(String playUrl, String mUid) {
-        ChatSession session = new ChatSession(mSessionHandler);
+        ChatSession session = new ChatSession(mChatSessionCallback);
         ChatSessionInfo sessionInfo = new ChatSessionInfo();
         sessionInfo.setPlayerUID(mUid);
         sessionInfo.setPlayUrl(playUrl);
@@ -492,7 +492,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 
     // --------------------------------------------------------------------------------------------------------
 
-    private SessionHandler mSessionHandler = new SessionHandler() {
+    private ChatSessionCallback mChatSessionCallback = new ChatSessionCallback() {
         @Override
         public void onInviteChatTimeout() {
             // 发起连麦邀请之后，10秒之内还收不到反馈，则按照超时处理，认为对方已经拒绝
@@ -715,7 +715,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
                     mUidMap.remove(inviteeUID);
 
                     // 将其他连麦观众的uid和对应的播放地址存储进一个ChatSessionInfo对象，在将ChatSessionInfo对象存储进一个新的ChatSession对象
-                    chatSession = new ChatSession(mSessionHandler);// 这里用不到session的状态管理，只用到了信息缓存功能
+                    chatSession = new ChatSession(mChatSessionCallback);// 这里用不到session的状态管理，只用到了信息缓存功能
                     sessionInfo = new ChatSessionInfo();
                     sessionInfo.setPlayerUID(inviteeUID);
                     sessionInfo.setPlayUrl(parterInfo.getPlayUrl());
@@ -873,7 +873,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         @Override
         public void action(final MsgDataInvite msgDataInvite) {
             mUidMap.clear();
-            mChatSession = new ChatSession(mSessionHandler);
+            mChatSession = new ChatSession(mChatSessionCallback);
             mChatSession.notifyReceivedInviting(msgDataInvite.getInviterUID(), mUID);
             //自动同意连麦
             try {
@@ -924,7 +924,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
                             for (ParterInfo parterInfo : parterInfos) {
                                 inviteeUID = parterInfo.getUID();
                                 mUidMap.remove(inviteeUID);
-                                chatSession = new ChatSession(mSessionHandler);//这里用不到session的状态管理，只用到了信息缓存功能
+                                chatSession = new ChatSession(mChatSessionCallback);//这里用不到session的状态管理，只用到了信息缓存功能
                                 sessionInfo = new ChatSessionInfo();
                                 sessionInfo.setPlayerUID(inviteeUID);
                                 sessionInfo.setPlayUrl(parterInfo.getPlayUrl());

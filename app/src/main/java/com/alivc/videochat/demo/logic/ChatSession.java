@@ -37,7 +37,7 @@ public class ChatSession {
     private static final int MSG_WHAT_INVITE_CHAT_TIMEOUT = 1;   //连麦邀请响应超时
 
     /**
-     * 别人发送的邀请，自己超时未处理，自动回应不同意连麦，并且在自己的UI层给出提醒
+     * 变量的描述: 别人发送的邀请，自己超时未处理，自动回应不同意连麦，并且在自己的UI层给出提醒
      */
     private static final int MSG_WHAT_PROCESS_INVITING_TIMEOUT = 2;
 
@@ -48,7 +48,6 @@ public class ChatSession {
 
     /**
      * InternalError, MainStreamNotExist, MixStreamNotExist都认为是混流错误，
-     * 超过{@link WatchLivePresenter#WAITING_FOR_MIX_SUCCESS_DELAY}时间还没收到Success的code，就会结束连麦
      */
     private static final int MSG_WHAT_MIX_STREAM_ERROR = 4;
 
@@ -66,7 +65,7 @@ public class ChatSession {
      * 变量的描述: 连麦各个状态的表现，其值用VideoChatStatus枚举来赋值，初始是未连麦
      */
     private VideoChatStatus mChatStatus = VideoChatStatus.UNCHAT;
-    private SessionHandler mSessionHandler;
+    private ChatSessionCallback mChatSessionCallback;
     private ChatSessionInfo mChatSessionInfo;
     private SurfaceHolder.Callback mSurfaceCallback;
     private SurfaceStatus mSurfaceStatus = SurfaceStatus.UNINITED;
@@ -75,8 +74,8 @@ public class ChatSession {
     private int mOperationStatus = 0; // 1 表示操作进行中,0 表示操作已经完成
 
 
-    public ChatSession(SessionHandler handler) {
-        this.mSessionHandler = handler;
+    public ChatSession(ChatSessionCallback handler) {
+        this.mChatSessionCallback = handler;
     }
 
     /**
@@ -92,6 +91,7 @@ public class ChatSession {
                 mChatSessionInfo.setPublisherUID(publisherUID);
                 mChatSessionInfo.setPlayerUID(playerUID);
             }
+
             // 改变连麦流程状态
             mChatStatus = VideoChatStatus.INVITE_FOR_RES;
             return RESULT_OK;
@@ -110,8 +110,8 @@ public class ChatSession {
     }
 
     public void notifyFeedbackSuccess() {
-        mChatStatus = VideoChatStatus.TRY_MIX;   //更新连麦状态为开始混流， 等待混流成功
-        mHandler.removeMessages(MSG_WHAT_PROCESS_INVITING_TIMEOUT);
+        mChatStatus = VideoChatStatus.TRY_MIX;   // 更新连麦状态为开始混流， 等待混流成功
+        mHandler.removeMessages(MSG_WHAT_PROCESS_INVITING_TIMEOUT);// 移除别人发送的邀请，自己超时未处理，自动回应不同意连麦
 //        mHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_TIMEOUT, MIX_STREAM_TIMEOUT);  //开始等待混流成功超时的倒计时
     }
 
@@ -183,15 +183,14 @@ public class ChatSession {
     }
 
     /**
-     * 方法描述: 主播端或者观众端被邀请时调用
+     * 方法描述: 主播端或者观众端被邀请时调用，改变状态为到邀请，等待被邀请人反馈的状态
      */
     public void notifyReceivedInviting(String publisherUID, String playerUID) {
-        // 设置进去，但是没有调用取出代码，而且mChatSessionInfo不可能有值
         if (mChatSessionInfo != null) {
             mChatSessionInfo.setPublisherUID(publisherUID);
             mChatSessionInfo.setPlayerUID(playerUID);
         }
-        mChatStatus = VideoChatStatus.RECEIVED_INVITE;   //更新当前连麦状态为收到邀请，等待反馈的状态
+        mChatStatus = VideoChatStatus.RECEIVED_INVITE;   // 更新当前连麦状态为收到邀请，等待反馈的状态
         mHandler.sendEmptyMessageDelayed(MSG_WHAT_PROCESS_INVITING_TIMEOUT, INVITE_CHAT_TIMEOUT_DELAY); //超过10s自动拒绝连麦
     }
 
@@ -300,38 +299,38 @@ public class ChatSession {
             switch (msg.what) {
                 case MSG_WHAT_INVITE_CHAT_TIMEOUT:// 自己发送邀请，对方超时未响应，则自己更新本地的连麦状态为未连麦
                     // TODO 超时后没有移除mChatSessionMap中存储的这个超时连麦流程
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onInviteChatTimeout();
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onInviteChatTimeout();
                     }
                     break;
-                case MSG_WHAT_PROCESS_INVITING_TIMEOUT:
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onProcessInvitingTimeout();
+                case MSG_WHAT_PROCESS_INVITING_TIMEOUT:// 别人发送的邀请，自己超时未处理，自动回应不同意连麦，并且在自己的UI层给出提醒
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onProcessInvitingTimeout();
                     }
                     break;
                 case MSG_WHAT_MIX_STREAM_TIMEOUT:
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onMixStreamTimeout();
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onMixStreamTimeout();
                     }
                     break;
                 case MSG_WHAT_MIX_STREAM_ERROR:
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onMixStreamError();
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onMixStreamError();
                     }
                     break;
                 case MSG_WHAT_MIX_STREAM_SUCCESS:
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onMixStreamSuccess();
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onMixStreamSuccess();
                     }
                     break;
                 case MSG_WHAT_MIX_STREAM_NOT_EXIST:
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onMixStreamNotExist();
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onMixStreamNotExist();
                     }
                     break;
                 case MSG_WHAT_MAIN_STREAM_NOT_EXIST:
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onMainStreamNotExist();
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onMainStreamNotExist();
                     }
                     break;
             }

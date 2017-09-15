@@ -1,9 +1,8 @@
 package com.alivc.videochat.demo.ui;
 
 /**
- * Created by apple on 2016/12/5.
+ * 类的描述:
  */
-
 public enum VideoChatStatus {
     /**
      * 变量的描述: 未连麦，未进行连麦流程
@@ -22,7 +21,7 @@ public enum VideoChatStatus {
      */
     INVITE_RES_FAILURE,
     /**
-     * 变量的描述: 收到邀请等待回复状态
+     * 变量的描述: 被邀请人收到邀请，等待被邀请人的回复的状态
      */
     RECEIVED_INVITE,     //
     /**

@@ -36,8 +36,6 @@ import com.alivc.videochat.demo.im.model.MessageType;
 import com.alivc.videochat.demo.im.model.MsgDataAgreeVideoCall;
 import com.alivc.videochat.demo.im.model.MsgDataExitChatting;
 import com.alivc.videochat.demo.im.model.MsgDataInvite;
-import com.alivc.videochat.demo.im.model.MsgDataLiveClose;
-import com.alivc.videochat.demo.im.model.MsgDataMergeStream;
 import com.alivc.videochat.demo.im.model.MsgDataMixStatusCode;
 import com.alivc.videochat.demo.im.model.MsgDataNotAgreeVideoCall;
 import com.alivc.videochat.demo.im.model.MsgDataStartPublishStream;
@@ -63,21 +61,6 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     public static final int MAX_RECONNECT_COUNT = 10;
 
     private static final long WAITING_FOR_MIX_SUCCESS_DELAY = 15 * 1000; //混流错误时等待重新混流成功的时间，超过这个时间会结束连麦
-
-    /**
-     * 自己发送邀请，对方超时未响应，则自己更新本地的连麦状态为未连麦
-     */
-    private static final int MSG_WHAT_INVITE_CHAT_TIMEOUT = 1;   //连麦邀请响应超时
-
-    /**
-     * 别人发送的邀请，自己超时未处理，自动回应不同意连麦，并且在自己的UI层给出提醒
-     */
-    private static final int MSG_WHAT_PROCESS_INVITING_TIMEOUT = 2;
-
-    /**
-     * 同意连麦后，等待混流成功超时
-     */
-    private static final int MSG_WHAT_MIX_STREAM_TIMEOUT = 3;
 
     /**
      * 变量的描述: Handler识别标识混流内部异常
@@ -132,46 +115,97 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     private int mReconnectCount = 0;
 
     // --------------------------------------------------------------------------------------------------------
-    private final Handler mHandler = new Handler() {
+    /**
+     * 变量的描述: 用来发送混流结果的Handler
+     */
+    private final Handler mMixFlowResultHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             switch (msg.what) {
-                case MSG_WHAT_INVITE_CHAT_TIMEOUT://连麦响应超时
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onInviteChatTimeout();
-                    }
-                    break;
-                case MSG_WHAT_PROCESS_INVITING_TIMEOUT:
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onProcessInvitingTimeout();
-                    }
-                    break;
-                case MSG_WHAT_MIX_STREAM_TIMEOUT:
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onMixStreamTimeout();
-                    }
-                    break;
                 case MSG_WHAT_MIX_STREAM_ERROR: // 混流内部异常
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onMixStreamError();
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onMixStreamError();
                     }
                     break;
                 case MSG_WHAT_MIX_STREAM_SUCCESS:// 混流成功
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onMixStreamSuccess();
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onMixStreamSuccess();
                     }
                     break;
                 case MSG_WHAT_MIX_STREAM_NOT_EXIST:// 混流(连麦观众流)不存在
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onMixStreamNotExist();
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onMixStreamNotExist();
                     }
                     break;
                 case MSG_WHAT_MAIN_STREAM_NOT_EXIST:// 主播流不存在
-                    if (mSessionHandler != null) {
-                        mSessionHandler.onMainStreamNotExist();
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onMainStreamNotExist();
                     }
                     break;
+            }
+        }
+    };
+
+    private ChatSessionCallback mChatSessionCallback = new ChatSessionCallback() {
+        @Override
+        public void onInviteChatTimeout() {
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_INVITE_TIMEOUT, null);
+            }
+        }
+
+        @Override
+        public void onProcessInvitingTimeout() {// 等待主播是否同意被邀请进行连麦，超时了
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_PROCESS_INVITING_TIMEOUT, null);
+            }
+        }
+
+        @Override
+        public void onMixStreamTimeout() {
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_MIX_STREAM_TIMEOUT, null);
+            }
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+
+        @Override
+        public void onMixStreamError() {
+//            asyncTerminateAllChatting(null);
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_MIX_STREAM_ERROR, null);
+            }
+        }
+
+        @Override
+        public void onMixStreamSuccess() {
+            // 混流成功，连麦api使用完毕
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                // 回调返回混流成功的结果
+                mCallback.onEvent(TYPE_MIX_STREAM_SUCCESS, null);
+            }
+        }
+
+        @Override
+        public void onMixStreamNotExist() {
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_MIX_STREAM_NOT_EXIST, null);
+            }
+        }
+
+        @Override
+        public void onMainStreamNotExist() {
+            mVideoChatApiCalling = false;
+            if (mCallback != null) {
+                mCallback.onEvent(TYPE_MAIN_STREAM_NOT_EXIST, null);
             }
         }
     };
@@ -386,7 +420,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         }
 
         for (String playerUID : playerUIDs) {// 检查邀请的用户是否有正在进行连麦流程的
-            ChatSession chatSession = new ChatSession(mSessionHandler);
+            ChatSession chatSession = new ChatSession(mChatSessionCallback);
             if (chatSession.invite(mUID, playerUID) != ChatSession.RESULT_OK) {
                 // 当前playerUID所代表的观众正在进行连麦流程
                 Bundle bundle = new Bundle();
@@ -610,95 +644,32 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         }
     };
 
-    // --------------------------------------------------------------------------------------------------------
-
-    // 反馈邀请
-    //@Override
+    /**
+     * 方法描述: 主播被观众邀请，主播同意了。则需要调用此方法 反馈邀请 实质就是告诉服务器主播是否同意被邀请进行连麦
+     */
     private void asyncFeedbackInviting(final String playerUID) {
-        mInviteServiceBI.feedback(FeedbackForm.INVITE_TYPE_ANCHOR, FeedbackForm.INVITE_TYPE_WATCHER, playerUID, mUID,
-                InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.STATUS_AGREE, new ServiceBI.Callback<InviteFeedbackResult>() {
-                    @Override
-                    public void onResponse(int code, InviteFeedbackResult response) {
-                        /**
-                         * 所谓的短延时URL实际上就是未经转码的原始流播放地址也就是，主播连麦观众时，主播端看到的观众的小窗画面，应该使用的播放地址
-                         *
-                         * 注意：这里没有直接就开始播放小窗，是因为这个时候观众端实际上还没有推流成功，需要等到收到推流成功的通知才开始播放
-                         */
-                        ChatSession chatSession = mChatSessionMap.get(playerUID);
-                        if (chatSession != null) {
-                            chatSession.notifyFeedbackSuccess();
-                        }
-                    }
+        mInviteServiceBI.feedback(FeedbackForm.INVITE_TYPE_ANCHOR, FeedbackForm.INVITE_TYPE_WATCHER, playerUID, mUID, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.STATUS_AGREE, new ServiceBI.Callback<InviteFeedbackResult>() {
+            @Override
+            public void onResponse(int code, InviteFeedbackResult response) {
+                /**
+                 * 所谓的短延时URL实际上就是未经转码的原始流播放地址也就是，主播连麦观众时，主播端看到的观众的小窗画面，应该使用的播放地址
+                 * 注意：这里没有直接就开始播放小窗，是因为这个时候观众端实际上还没有推流成功，需要等到收到推流成功的通知才开始播放
+                 */
+                ChatSession chatSession = mChatSessionMap.get(playerUID);
+                // 修改进行邀请的观众的连麦流程的状态为尝试混流(其实就是等待其推流成功)
+                if (chatSession != null) {
+                    chatSession.notifyFeedbackSuccess();
+                }
+            }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        Log.d(TAG, "Publisher feedback failure", t);
-                    }
-                });
+            @Override
+            public void onFailure(Throwable t) {
+                Log.d(TAG, "Publisher feedback failure", t);
+            }
+        });
     }
 
-
-    private SessionHandler mSessionHandler = new SessionHandler() {
-        @Override
-        public void onInviteChatTimeout() {
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_INVITE_TIMEOUT, null);
-            }
-        }
-
-        @Override
-        public void onProcessInvitingTimeout() {
-//             feedbackInviting(false);  // 自动反馈不同意连麦
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_PROCESS_INVITING_TIMEOUT, null);
-            }
-        }
-
-        @Override
-        public void onMixStreamError() {
-//            asyncTerminateAllChatting(null);
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MIX_STREAM_ERROR, null);
-            }
-        }
-
-        @Override
-        public void onMixStreamTimeout() {
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MIX_STREAM_TIMEOUT, null);
-            }
-        }
-
-        @Override
-        public void onMixStreamSuccess() {
-            // 混流成功，连麦api使用完毕
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                // 回调返回混流成功的结果
-                mCallback.onEvent(TYPE_MIX_STREAM_SUCCESS, null);
-            }
-        }
-
-        @Override
-        public void onMixStreamNotExist() {
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MIX_STREAM_NOT_EXIST, null);
-            }
-        }
-
-        @Override
-        public void onMainStreamNotExist() {
-            mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MAIN_STREAM_NOT_EXIST, null);
-            }
-        }
-    };
+    // --------------------------------------------------------------------------------------------------------
 
     // --------------------------------------------------------------------------------------------------------
 
@@ -734,7 +705,8 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     ImHelper.Func<MsgDataInvite> mInviteFunc = new ImHelper.Func<MsgDataInvite>() {
         @Override
         public void action(final MsgDataInvite msgDataInvite) {
-            if (mChatSessionMap.containsKey(msgDataInvite.getInviterUID())) {//已经处于连麦的用户，不接受再次邀请
+            if (mChatSessionMap.containsKey(msgDataInvite.getInviterUID())) {// 判断发起连麦的观众是否处于连麦流程，是就不接受再次邀请
+                // TODO 这里的处理不是很明白
                 ChatSession mChatSession = mChatSessionMap.get(msgDataInvite.getInviterUID());
                 if (mChatSession.getChatStatus() == VideoChatStatus.MIX_SUCC ||
                         mChatSession.getChatStatus() == VideoChatStatus.TRY_MIX) {
@@ -742,15 +714,18 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                 }
             }
 
-            ChatSession chatSession = new ChatSession(mSessionHandler);
+            // 将邀请主播进行连麦的观众生成连麦流程
+            ChatSession chatSession = new ChatSession(mChatSessionCallback);
             chatSession.notifyReceivedInviting(mUID, msgDataInvite.getInviterUID());
             mChatSessionMap.put(msgDataInvite.getInviterUID(), chatSession);
+
             //自动同意连麦
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
             asyncFeedbackInviting(msgDataInvite.getInviterUID());
         }
     };
@@ -855,21 +830,22 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             if (msgDataMixStatusCode != null && !mChatSessionMap.isEmpty()) {
                 String code = msgDataMixStatusCode.getCode();
 
-                mHandler.removeMessages(MSG_WHAT_MIX_STREAM_ERROR);
+                // 接收MNS的消息有可能是重新混流成功的消息，所以将上次消息开启的混流内部异常的handler消息移除
+                mMixFlowResultHandler.removeMessages(MSG_WHAT_MIX_STREAM_ERROR);
 
                 if (MixStatusCode.INTERNAL_ERROR.toString().equals(code)) {// 网络异常
                     // 因为服务器端进行混流的网络异常，导致 混流内部异常 ，将结果发送出去
-                    mHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_ERROR);
+                    mMixFlowResultHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_ERROR);
                 } else if (MixStatusCode.MAIN_STREAM_NOT_EXIST.toString().equals(code)) {// 主播放流不存在
                     // 发送连麦主播流不存在的结果，在handler中根据结果进行反应
-                    mHandler.sendEmptyMessage(MSG_WHAT_MAIN_STREAM_NOT_EXIST);
+                    mMixFlowResultHandler.sendEmptyMessage(MSG_WHAT_MAIN_STREAM_NOT_EXIST);
                     // 虽然混流失败了，但是可以等待其重新混流，如果超过等待时间，则发送混流内部异常的结果
-                    mHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_ERROR, WAITING_FOR_MIX_SUCCESS_DELAY);
+                    mMixFlowResultHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_ERROR, WAITING_FOR_MIX_SUCCESS_DELAY);
                 } else if (MixStatusCode.MIX_STREAM_NOT_EXIST.toString().equals(code)) {// 混流不存在
                     // 发送连麦主播流不存在的结果，在handler中根据结果进行反应
-                    mHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_NOT_EXIST);
+                    mMixFlowResultHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_NOT_EXIST);
                     // 虽然混流失败了，但是可以等待其重新混流，如果超过等待时间，则发送混流内部异常的结果
-                    mHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_ERROR, WAITING_FOR_MIX_SUCCESS_DELAY);
+                    mMixFlowResultHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_ERROR, WAITING_FOR_MIX_SUCCESS_DELAY);
 
                 } else if (MixStatusCode.SUCCESS.toString().equals(code)) {// 混流成功
                     // 经过了上面的if判断，走到这说明混流暂时是成功的
@@ -881,7 +857,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                         session.setChatStatus(VideoChatStatus.MIX_SUCC);
                     }
                     // 发送混流成功的结果
-                    mHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_SUCCESS);
+                    mMixFlowResultHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_SUCCESS);
                 }
                 Log.d(TAG, "Mix statusCode: " + msgDataMixStatusCode.getCode());
             }

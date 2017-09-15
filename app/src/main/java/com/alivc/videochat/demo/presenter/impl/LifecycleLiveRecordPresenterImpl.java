@@ -268,7 +268,7 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
                     mView.showInterruptUI(R.string.error_video_capture, data.getInt(IPublisherMgr.DATA_KEY_PUBLISHER_INFO_CODE));
 //                    mView.showCameraOpenFailureUI();
                     break;
-                case IPublisherMgr.TYPE_PROCESS_INVITING_TIMEOUT:   //处理对方连麦邀请超时
+                case IPublisherMgr.TYPE_PROCESS_INVITING_TIMEOUT:   // 处理对方连麦邀请超时
                     ToastUtils.showToast(getContext(), R.string.inviting_process_timeout); //提醒超时未处理，已经自动拒绝对方的连麦邀
                     break;
                 case IPublisherMgr.TYPE_PUBLISH_STREMA_SUCCESS:// 某个连麦观众推流成功，服务端获取了推流对应的播放地址，并通过MNS发送给了主播
