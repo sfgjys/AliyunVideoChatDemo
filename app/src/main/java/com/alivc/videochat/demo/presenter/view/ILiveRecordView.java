@@ -18,7 +18,12 @@ public interface ILiveRecordView {
     //显示邀请连麦响应超时UI
     void showInviteChattingTimeoutUI(String uid);
 
-    //显示连麦的UI,返回渲染播放连麦画面用的SurfaceView
+    /**
+     * 方法描述: 获取空闲的ChattingViewHolder 设置SurfaceView和关闭按钮可见  将空闲的ChattingViewHolder与连麦的uid一起存储进mUsedViewHolderMap
+     * 设置SurfaceView对应的关闭按钮的点击事件(根据连麦的uid调用关闭连麦的方法)
+     *
+     * @return 返回用于播放连麦人的SurfaceView
+     */
     SurfaceView showChattingUI(String uid);
 
     //显示连麦邀请成功的UI
@@ -30,8 +35,14 @@ public interface ILiveRecordView {
     //显示中断连麦的UI
     void showTerminateChattingUI(String playerUID);
 
+    /**
+     * 方法描述: 将参数通过对话框进行显示
+     */
     void showInfoDialog(String msg);
 
+    /**
+     * 方法描述: 将参数对应的String资源通过吐司展示
+     */
     void showToast(int msgId);
 
     void updateBeautyUI(boolean beautyOn);

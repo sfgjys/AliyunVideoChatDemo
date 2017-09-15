@@ -271,11 +271,13 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
                 case IPublisherMgr.TYPE_PROCESS_INVITING_TIMEOUT:   //处理对方连麦邀请超时
                     ToastUtils.showToast(getContext(), R.string.inviting_process_timeout); //提醒超时未处理，已经自动拒绝对方的连麦邀
                     break;
-                case IPublisherMgr.TYPE_PUBLISH_STREMA_SUCCESS:
-                case IPublisherMgr.TYPE_START_CHATTING:
+                case IPublisherMgr.TYPE_PUBLISH_STREMA_SUCCESS:// 某个连麦观众推流成功，服务端获取了推流对应的播放地址，并通过MNS发送给了主播
+                    // 主播收到了连麦观众推流的播放地址，记录播放地址后，将其uid发送过来
+                    // 在UI界面上获取一个空闲的SurfaceView，并将其与uid绑定在一起
                     String inviteeUID = data.getString(IPublisherMgr.DATA_KEY_INVITEE_UID);
                     SurfaceView parterView = mView.showChattingUI(inviteeUID);      //显示连麦的UI
                     if (parterView != null) {
+                        // 调用正式连麦的方法
                         mPublisherMgr.launchChat(parterView, inviteeUID);
                     }
                     break;
@@ -293,8 +295,8 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
                 case IPublisherMgr.TYPE_MIX_STREAM_ERROR:
                     mView.showToast(R.string.mix_internal_error);
                     break;
-                case IPublisherMgr.TYPE_INVITE_TIMEOUT:     //邀请连麦，对方响应超时
-                    ToastUtils.showToast(getContext(), R.string.invite_timeout_tip);   //提醒：对方长时间未响应，已取消连麦邀请
+                case IPublisherMgr.TYPE_INVITE_TIMEOUT:     // 邀请对方进行连麦，对方响应超时
+                    ToastUtils.showToast(getContext(), R.string.invite_timeout_tip);   //提醒：对方长时间未响应，已取消连麦流程
 //                    mView.showInviteChattingTimeoutUI(data.getString(IPublisherMgr.DATA_KEY_INVITEE_UID));
                     break;
                 case IPublisherMgr.TYPE_MIX_STREAM_NOT_EXIST:

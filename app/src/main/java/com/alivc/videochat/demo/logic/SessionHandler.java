@@ -1,12 +1,9 @@
 package com.alivc.videochat.demo.logic;
 
-/**
- * Created by apple on 2017/1/5.
- */
 
 public interface SessionHandler {
     /**
-     * 方法描述: 网络请求邀请对方进行连麦，但10秒后都没有响应，响应超时，自动任务拒绝连麦
+     * 方法描述: 网络请求邀请对方进行连麦，但10秒后对方没有响应，响应超时，自动结束连麦流程
      */
     void onInviteChatTimeout();
 

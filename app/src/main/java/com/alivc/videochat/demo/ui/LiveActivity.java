@@ -78,7 +78,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
     /**
      * 变量的描述: 存储的是：包含连麦人播放显示控件的对象
      */
-    private TreeMap<Integer, ChattingViewHolder> mFreeSurfaceHolderMap = new TreeMap<>();// 连麦小窗View容器，用来管理连麦的小窗
+    private final TreeMap<Integer, ChattingViewHolder> mFreeSurfaceHolderMap = new TreeMap<>();// 连麦小窗View容器，用来管理连麦的小窗
     /**
      * 变量的描述: 正在使用的ChattingViewHolder
      */
@@ -546,7 +546,9 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         }
     }
 
-
+    /**
+     * 方法描述: 修改SurfaceView的topMargin为300 来隐藏SurfaceView ，之所以不用gone，是因为SurfaceView的生命周期
+     */
     private void hideSurfaceView(SurfaceView surfaceView) {
         Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());
         ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
@@ -554,6 +556,9 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         surfaceView.requestLayout();
     }
 
+    /**
+     * 方法描述: 修改SurfaceView的topMargin为0 来显示SurfaceView 不用担心topMargin为0，那么三个SurfaceView会连在一起，还有topBottom
+     */
     private void showSurfaceView(SurfaceView surfaceView) {
         ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) surfaceView.getLayoutParams();
         layoutParams.topMargin = DensityUtil.dp2px(LiveActivity.this, 0);
@@ -603,26 +608,31 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         @Override
         public SurfaceView showChattingUI(final String uid) {
             ChattingViewHolder viewHolder = null;
-            //显示
+            // 上把锁，在获取空闲的ChattingViewHolder是不至于混乱
             synchronized (mFreeSurfaceHolderMap) {
                 if (mFreeSurfaceHolderMap.size() > 0) {
                     viewHolder = mFreeSurfaceHolderMap.pollFirstEntry().getValue();
                 }
             }
             if (viewHolder == null) {
-                //当前的三个小窗都已经被占用了
+                // 当前的三个小窗都已经被占用了
                 Log.e(TAG, "No enough surfaceview to show chatting!");
                 return null;
             }
+
+            // 设置SurfaceView和关闭按钮可见
             viewHolder.mChatSurfaceView.setVisibility(View.VISIBLE);
             viewHolder.mCloseChattingButton.setVisibility(View.VISIBLE);
             ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) viewHolder.mChatSurfaceView.getLayoutParams();
             layoutParams.topMargin = DensityUtil.dp2px(LiveActivity.this, 0);
 
+            // 将空闲的ChattingViewHolder与连麦的uid一起存储进mUsedViewHolderMap
             mUsedViewHolderMap.put(uid, viewHolder);
+            // 设置SurfaceView对应的关闭按钮的点击事件
             viewHolder.mCloseChattingButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    // 根据连麦的uid关闭连麦
                     mLiveRecordPresenter.terminateChatting(uid);
                 }
             });
@@ -700,8 +710,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
         @Override
         public void showInfoDialog(String msg) {
-            AlertDialog.Builder normalDialog =
-                    new AlertDialog.Builder(LiveActivity.this);
+            AlertDialog.Builder normalDialog = new AlertDialog.Builder(LiveActivity.this);
             normalDialog.setTitle("消息提示");
             if (msg != null) {
                 normalDialog.setMessage(msg);
@@ -714,7 +723,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
                     dialog.dismiss();
                 }
             });
-
             normalDialog.show();
         }
 

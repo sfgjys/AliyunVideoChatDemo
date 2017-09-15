@@ -24,7 +24,7 @@ public class ChatSession {
     public static final int RESULT_OK = 1;
     public static final int RESULT_INVALID_STATUS = -1;
     /**
-     * 变量的描述: 连麦邀请等待响应超时时间——10秒
+     * 变量的描述: 等待被邀请人响应连麦的响应超时时间——10秒
      */
     private static final long INVITE_CHAT_TIMEOUT_DELAY = 10 * 1000;   //
     private static final long MIX_STREAM_TIMEOUT = 15 * 1000;       //同意连麦后，等待混流成功的超时时间——30秒
@@ -32,7 +32,7 @@ public class ChatSession {
 
 
     /**
-     * 自己发送邀请，对方超时未响应，则自己更新本地的连麦状态为未连麦
+     * 变量的描述: 自己发送邀请，对方超时未响应，则自己更新本地的连麦状态为未连麦
      */
     private static final int MSG_WHAT_INVITE_CHAT_TIMEOUT = 1;   //连麦邀请响应超时
 
@@ -92,7 +92,7 @@ public class ChatSession {
                 mChatSessionInfo.setPublisherUID(publisherUID);
                 mChatSessionInfo.setPlayerUID(playerUID);
             }
-            // 改变连麦状态
+            // 改变连麦流程状态
             mChatStatus = VideoChatStatus.INVITE_FOR_RES;
             return RESULT_OK;
         } else {
@@ -117,12 +117,12 @@ public class ChatSession {
 
 
     /**
-     * 方法描述: 成功请求网络，邀请对方进行连麦，等待对方是否同意连麦，其内并修改连麦流程的状态
+     * 方法描述: 发送邀请对方进行连麦的消息的网络请求成功，修改连麦流程状态为等待被邀请连麦的人的响应，并开启Handler的定时发送消息(如果10秒后没有接收到从服务器发给MNS的消息，则自动认为对方拒绝)
      */
     public void notifyInviteSuccess() {
         mChatStatus = VideoChatStatus.INVITE_RES_SUCCESS;
         // 开始响应倒计时，等待对方是否同意连麦，10秒中有回应，会移除该消息，否则10秒后发送自动认为对方拒绝的消息
-        mHandler.sendEmptyMessageDelayed(MSG_WHAT_INVITE_CHAT_TIMEOUT, INVITE_CHAT_TIMEOUT_DELAY);//倒计时，10s后未收到回复，自动认为对方决绝。
+        mHandler.sendEmptyMessageDelayed(MSG_WHAT_INVITE_CHAT_TIMEOUT, INVITE_CHAT_TIMEOUT_DELAY);//倒计时，10s后未收到回复，自动认为对方拒绝。
     }
 
     /**
@@ -146,10 +146,13 @@ public class ChatSession {
         mChatStatus = VideoChatStatus.UNCHAT;
     }
 
+    /**
+     * 方法描述:  邀请对发进行连麦，MNS接收到了对方同意进行连麦，修改连麦流程的状态为尝试混流，移除邀请等待响应超时倒计时的消息
+     */
     public int notifyAgreeInviting() {
-        mHandler.removeMessages(MSG_WHAT_INVITE_CHAT_TIMEOUT);//TODO:移除邀请等待响应超时倒计时的消息
-        if (mChatStatus == VideoChatStatus.INVITE_RES_SUCCESS) {  // 如果当前是已经发送邀请，等待对方反馈的状态，则处理这个消息，否则视为无效的消息，不作处理
-            mChatStatus = VideoChatStatus.TRY_MIX;   //更新当前状态为开始混流，等待混流成功
+        mHandler.removeMessages(MSG_WHAT_INVITE_CHAT_TIMEOUT);// 移除邀请等待响应超时倒计时的消息
+        if (mChatStatus == VideoChatStatus.INVITE_RES_SUCCESS) {  // 如果当前是已经发送连麦邀请，等待对方是否同意的状态，则处理这个消息，否则视为无效的消息，不作处理
+            mChatStatus = VideoChatStatus.TRY_MIX;   // 更新当前状态为尝试混流，等待混流成功
             return RESULT_OK;
         }
         return RESULT_INVALID_STATUS;
@@ -173,7 +176,7 @@ public class ChatSession {
     public int notifyNotAgreeInviting(MsgDataNotAgreeVideoCall notAgreeVideoCall) {
         if (mChatStatus == VideoChatStatus.INVITE_RES_SUCCESS) {// 如果当前是已经发送邀请，等待对方反馈的状态，则处理这个消息，否则视为无效的消息，不作处理
             mHandler.removeMessages(MSG_WHAT_INVITE_CHAT_TIMEOUT);// 移除邀请等待响应超时倒计时的消息
-            mChatStatus = VideoChatStatus.UNCHAT;    // 更新当前状态为未混流
+            mChatStatus = VideoChatStatus.UNCHAT;    // 更新当前状态为未进行连麦流程
             return RESULT_OK;
         }
         return RESULT_INVALID_STATUS;
@@ -237,6 +240,9 @@ public class ChatSession {
         this.mChatStatus = mChatStatus;
     }
 
+    /**
+     * 方法描述: 判断本连麦流程的状态是否为尝试混流
+     */
     boolean isTryMix() {
         return mChatStatus == VideoChatStatus.TRY_MIX;
     }
@@ -253,16 +259,47 @@ public class ChatSession {
 //        mOperationStatus = 0;
 //    }
 
+    public ChatSessionInfo getChatSessionInfo() {
+        return mChatSessionInfo;
+    }
+
+    public void setChatSessionInfo(ChatSessionInfo chatSessionInfo) {
+        mChatSessionInfo = chatSessionInfo;
+    }
+
+    public SurfaceHolder.Callback getSurfaceCallback() {
+        return mSurfaceCallback;
+    }
+
+    public void setSurfaceCallback(SurfaceHolder.Callback surfaceCallback) {
+        mSurfaceCallback = surfaceCallback;
+    }
+
+    public SurfaceStatus getSurfaceStatus() {
+        return mSurfaceStatus;
+    }
+
+    public void setSurfaceStatus(SurfaceStatus surfaceStatus) {
+        mSurfaceStatus = surfaceStatus;
+    }
+
+    public SurfaceView getSurfaceView() {
+        return mSurfaceView;
+    }
+
+    public void setSurfaceView(SurfaceView surfaceView) {
+        mSurfaceView = surfaceView;
+    }
+
+    // --------------------------------------------------------------------------------------------------------
 
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             switch (msg.what) {
-                /**
-                 * 自己发送邀请，对方超时未响应，则自己更新本地的连麦状态为未连麦
-                 */
-                case MSG_WHAT_INVITE_CHAT_TIMEOUT:// 连麦响应超时
+                case MSG_WHAT_INVITE_CHAT_TIMEOUT:// 自己发送邀请，对方超时未响应，则自己更新本地的连麦状态为未连麦
+                    // TODO 超时后没有移除mChatSessionMap中存储的这个超时连麦流程
                     if (mSessionHandler != null) {
                         mSessionHandler.onInviteChatTimeout();
                     }
@@ -300,36 +337,4 @@ public class ChatSession {
             }
         }
     };
-
-    public ChatSessionInfo getChatSessionInfo() {
-        return mChatSessionInfo;
-    }
-
-    public void setChatSessionInfo(ChatSessionInfo chatSessionInfo) {
-        mChatSessionInfo = chatSessionInfo;
-    }
-
-    public SurfaceHolder.Callback getSurfaceCallback() {
-        return mSurfaceCallback;
-    }
-
-    public void setSurfaceCallback(SurfaceHolder.Callback surfaceCallback) {
-        mSurfaceCallback = surfaceCallback;
-    }
-
-    public SurfaceStatus getSurfaceStatus() {
-        return mSurfaceStatus;
-    }
-
-    public void setSurfaceStatus(SurfaceStatus surfaceStatus) {
-        mSurfaceStatus = surfaceStatus;
-    }
-
-    public SurfaceView getSurfaceView() {
-        return mSurfaceView;
-    }
-
-    public void setSurfaceView(SurfaceView surfaceView) {
-        mSurfaceView = surfaceView;
-    }
 }

@@ -80,18 +80,27 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     private static final int MSG_WHAT_MIX_STREAM_TIMEOUT = 3;
 
     /**
-     * InternalError, MainStreamNotExist, MixStreamNotExist都认为是混流错误，
+     * 变量的描述: Handler识别标识混流内部异常
      */
     private static final int MSG_WHAT_MIX_STREAM_ERROR = 4;
-
+    /**
+     * 变量的描述: Handler识别标识混流成功
+     */
     private static final int MSG_WHAT_MIX_STREAM_SUCCESS = 5;
-
+    /**
+     * 变量的描述: Handler识别标识混流(连麦观众流)不存在
+     */
     private static final int MSG_WHAT_MIX_STREAM_NOT_EXIST = 6;
-
+    /**
+     * 变量的描述: Handler识别标识主播流不存在
+     */
     private static final int MSG_WHAT_MAIN_STREAM_NOT_EXIST = 7;
 
     private PublisherSDKHelper mSDKHelper;
     private MgrCallback mCallback;
+    /**
+     * 变量的描述: key为连麦观众的id，value为连麦观众所代表的连麦流程对象
+     */
     private Map<String, ChatSession> mChatSessionMap = new HashMap<>();
 
     /**
@@ -115,6 +124,9 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     private SurfaceStatus mPreviewSurfaceStatus = SurfaceStatus.UNINITED;
 
     private String mTipString;
+    /**
+     * 变量的描述: 代表了是否正在调用连麦的正式API，该API包含了连麦，结束连麦等
+     */
     private boolean mVideoChatApiCalling = false;
 
     private int mReconnectCount = 0;
@@ -140,22 +152,22 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                         mSessionHandler.onMixStreamTimeout();
                     }
                     break;
-                case MSG_WHAT_MIX_STREAM_ERROR:
+                case MSG_WHAT_MIX_STREAM_ERROR: // 混流内部异常
                     if (mSessionHandler != null) {
                         mSessionHandler.onMixStreamError();
                     }
                     break;
-                case MSG_WHAT_MIX_STREAM_SUCCESS:
+                case MSG_WHAT_MIX_STREAM_SUCCESS:// 混流成功
                     if (mSessionHandler != null) {
                         mSessionHandler.onMixStreamSuccess();
                     }
                     break;
-                case MSG_WHAT_MIX_STREAM_NOT_EXIST:
+                case MSG_WHAT_MIX_STREAM_NOT_EXIST:// 混流(连麦观众流)不存在
                     if (mSessionHandler != null) {
                         mSessionHandler.onMixStreamNotExist();
                     }
                     break;
-                case MSG_WHAT_MAIN_STREAM_NOT_EXIST:
+                case MSG_WHAT_MAIN_STREAM_NOT_EXIST:// 主播流不存在
                     if (mSessionHandler != null) {
                         mSessionHandler.onMainStreamNotExist();
                     }
@@ -210,10 +222,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             mImManager.unRegister(MessageType.INVITE_CALLING);
             mImManager.unRegister(MessageType.AGREE_CALLING);
             mImManager.unRegister(MessageType.NOT_AGREE_CALLING);
-            mImManager.unRegister(MessageType.CALLING_SUCCESS);
-            mImManager.unRegister(MessageType.CALLING_FAILED);
             mImManager.unRegister(MessageType.TERMINATE_CALLING);
-            mImManager.unRegister(MessageType.LIVE_COMPLETE);
             mImManager.unRegister(MessageType.MIX_STATUS_CODE);
             mImManager.unRegister(MessageType.START_PUSH);
             mImManager.unRegister(MessageType.EXIT_CHATTING);
@@ -261,6 +270,101 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         mMainSurfaceView.getHolder().addCallback(mMainSurfaceCallback);
     }
 
+    @Override // 请求网络获取推流地址，如此asyncStartPreview方法开启的预览才能通过推流地址直播出去
+    public void asyncCreateLive(String desc, final AsyncCallback callback) {
+        // 先查看下请求网络获取推流地址的Call任务是否存在
+        if (mCreateLiveCall != null && ServiceBI.isCalling(mCreateLiveCall)) {
+            mCreateLiveCall.cancel();
+            mCreateLiveCall = null;
+        }
+        // 创建请求网络获取推流地址的Call任务
+        mCreateLiveCall = mLiveServiceBI.createLive(mUID, desc, new ServiceBI.Callback<LiveCreateResult>() {
+            @Override
+            public void onResponse(int code, LiveCreateResult response) {
+                // 获取服务器创建的直播推流的房间号mRoomID
+                mRoomID = response.getRoomID();
+
+                // 给LifecycleCreateLivePresenterImpl回调结果
+                // 将结果Bena封装进Bundle
+                Bundle data = new Bundle();
+                // 将Bundle回调给调用本方法的回调接口实例，内部的作用大致是将界面从创建直播切换到正在推流
+                data.putSerializable(DATA_KEY_CREATE_LIVE_RESULT, response);
+                if (callback != null) {
+                    callback.onSuccess(data);
+                }
+
+                // 给LifecycleLiveRecordPresenterImpl回调结果
+                if (mCallback != null) {
+                    // 这个回调暂时没用
+                    mCallback.onEvent(TYPE_LIVE_CREATED, data);
+                }
+
+                mCreateLiveCall = null;
+
+                // 创建并获取推流地址成功，开始推流
+                mSDKHelper.startPublishStream(response.getRtmpUrl());
+
+                // 因为在直播中我们需要用到MNS，这属于直播的一部分，所以建立MNS链接是必要的。
+                // 前面我们调用ImManager的init()方法只是进行了初始化，还没有正式进行MNS链接。
+                // 而这里的WebSocketConnectOptions和MnsControlBody是我们在请求推流地址时一起获得的，
+                // 这两个对象是我们建立MNS链接的必要参数
+                mWSConnOpts = new WebSocketConnectOptions();
+                MNSModel mnsModel = response.getMNSModel();
+                MNSConnectModel mnsConnectModel = response.getMnsConnectModel();
+                mWSConnOpts.setServerURI(mnsConnectModel.getTopicWSServerAddress());
+                List<String> tags = new ArrayList<>();
+                tags.add(mnsModel.getRoomTag());
+                tags.add(mnsModel.getUserTag());
+                mControlBody = new MnsControlBody.Builder()
+                        .accessId(mnsConnectModel.getAccessID())
+                        .accountId(mnsConnectModel.getAccountID())
+                        .authorization("MNS " + mnsConnectModel.getAccessID() + ":" + mnsConnectModel.getAuthentication())
+                        .date(mnsConnectModel.getDate())
+                        .subscription(mnsModel.getTopic())
+                        .topic(mnsModel.getTopic())
+                        .messageType(MnsControlBody.MessageType.SUBSCRIBE)
+                        .tags(tags)
+                        .build();
+                // 建立MNS链接
+                initPublishMsgProcessor();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                // 获取推流地址的Call失败，释放Call，并调用回调接口
+                if (callback != null) {
+                    callback.onFailure(null, t);
+                }
+                mCreateLiveCall = null;
+            }
+        });
+    }
+
+    @Override
+    public void switchCamera() {
+        mSDKHelper.switchCamera();
+    }
+
+    @Override
+    public boolean switchBeauty() {
+        return mSDKHelper.switchBeauty();
+    }
+
+    @Override
+    public boolean switchFlash() {
+        return mSDKHelper.switchFlash();
+    }
+
+    @Override
+    public void zoom(float scaleFactor) {
+        mSDKHelper.zoom(scaleFactor);
+    }
+
+    @Override
+    public void autoFocus(float xRatio, float yRatio) {
+        mSDKHelper.autoFocus(xRatio, yRatio);
+    }
+
     @Override // 当用户点击连麦时，请求业务服务器，发送邀请连麦的请求
     public void asyncInviteChatting(final List<String> playerUIDs, final AsyncCallback callback) {
         // ChatSession.MAX_SESSION_NUM是写死的最大连麦数
@@ -281,9 +385,10 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             }
         }
 
-        for (String playerUID : playerUIDs) {//检查邀请的用户是否有正在连麦的
+        for (String playerUID : playerUIDs) {// 检查邀请的用户是否有正在进行连麦流程的
             ChatSession chatSession = new ChatSession(mSessionHandler);
-            if (chatSession.invite(mUID, playerUID) != ChatSession.RESULT_OK) {// 当前playerUID所代表的观众正在进行连麦流程
+            if (chatSession.invite(mUID, playerUID) != ChatSession.RESULT_OK) {
+                // 当前playerUID所代表的观众正在进行连麦流程
                 Bundle bundle = new Bundle();
                 bundle.putString(KEY_CHATTING_UID, playerUID);
                 callback.onFailure(bundle, new ChatSessionException(ChatSessionException.ERROR_CURR_CHATTING));
@@ -326,31 +431,6 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         mInviteCalls.add(call);// 添加网络请求，以便于在特定的时候进行操作
     }
 
-    @Override
-    public void switchCamera() {
-        mSDKHelper.switchCamera();
-    }
-
-    @Override
-    public boolean switchBeauty() {
-        return mSDKHelper.switchBeauty();
-    }
-
-    @Override
-    public boolean switchFlash() {
-        return mSDKHelper.switchFlash();
-    }
-
-    @Override
-    public void zoom(float scaleFactor) {
-        mSDKHelper.zoom(scaleFactor);
-    }
-
-    @Override
-    public void autoFocus(float xRatio, float yRatio) {
-        mSDKHelper.autoFocus(xRatio, yRatio);
-    }
-
     @Override // 请求网络，告诉业务服务器直播将要被关闭
     public void asyncCloseLive(final AsyncCallback callback) {
         mLiveServiceBI.closeLive(mRoomID, mUID, new ServiceBI.Callback() {
@@ -386,7 +466,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             return;
         }
 
-        if (mChatSessionMap.size() > 0) {//当前正在连麦
+        if (mChatSessionMap.size() > 0) {// 连麦流程对象集合中有数据，说明当前有连麦流程正在进行中
             mInviteServiceBI.leaveCall(playerUID, mRoomID, new ServiceBI.Callback() {
                 @Override
                 public void onResponse(int code, Object response) {
@@ -470,95 +550,29 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     }
 
     // --------------------------------------------------------------------------------------------------------
-
-    @Override
-    public void asyncCreateLive(String desc, final AsyncCallback callback) {
-        // 先查看下请求网络获取推流地址的Call任务是否存在
-        if (mCreateLiveCall != null && ServiceBI.isCalling(mCreateLiveCall)) {
-            mCreateLiveCall.cancel();
-            mCreateLiveCall = null;
-        }
-        // 创建请求网络获取推流地址的Call任务
-        mCreateLiveCall = mLiveServiceBI.createLive(mUID, desc, new ServiceBI.Callback<LiveCreateResult>() {
-            @Override
-            public void onResponse(int code, LiveCreateResult response) {
-                // 获取服务器创建的直播推流的房间号mRoomID
-                mRoomID = response.getRoomID();
-
-                // 给LifecycleCreateLivePresenterImpl回调结果
-                // 将结果Bena封装进Bundle
-                Bundle data = new Bundle();
-                // 将Bundle回调给调用本方法的回调接口实例，内部的作用大致是将界面从创建直播切换到正在推流
-                data.putSerializable(DATA_KEY_CREATE_LIVE_RESULT, response);
-                if (callback != null) {
-                    callback.onSuccess(data);
-                }
-
-                // 给LifecycleLiveRecordPresenterImpl回调结果
-                if (mCallback != null) {
-                    // 这个回调暂时没用
-                    mCallback.onEvent(TYPE_LIVE_CREATED, data);
-                }
-
-                mCreateLiveCall = null;
-
-                // 创建并获取推流地址成功，开始推流
-                mSDKHelper.startPublishStream(response.getRtmpUrl());
-
-                // 因为在直播中我们需要用到MNS，这属于直播的一部分，所以建立MNS链接是必要的。
-                // 前面我们调用ImManager的init()方法只是进行了初始化，还没有正式进行MNS链接。
-                // 而这里的WebSocketConnectOptions和MnsControlBody是我们在请求推流地址时一起获得的，
-                // 这两个对象是我们建立MNS链接的必要参数
-                mWSConnOpts = new WebSocketConnectOptions();
-                MNSModel mnsModel = response.getMNSModel();
-                MNSConnectModel mnsConnectModel = response.getMnsConnectModel();
-                mWSConnOpts.setServerURI(mnsConnectModel.getTopicWSServerAddress());
-                List<String> tags = new ArrayList<>();
-                tags.add(mnsModel.getRoomTag());
-                tags.add(mnsModel.getUserTag());
-                mControlBody = new MnsControlBody.Builder()
-                        .accessId(mnsConnectModel.getAccessID())
-                        .accountId(mnsConnectModel.getAccountID())
-                        .authorization("MNS " + mnsConnectModel.getAccessID() + ":" + mnsConnectModel.getAuthentication())
-                        .date(mnsConnectModel.getDate())
-                        .subscription(mnsModel.getTopic())
-                        .topic(mnsModel.getTopic())
-                        .messageType(MnsControlBody.MessageType.SUBSCRIBE)
-                        .tags(tags)
-                        .build();
-                // 建立MNS链接
-                initPublishMsgProcessor();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                // 获取推流地址的Call失败，释放Call，并调用回调接口
-                if (callback != null) {
-                    callback.onFailure(null, t);
-                }
-                mCreateLiveCall = null;
-            }
-        });
-    }
-
-    @Override
+    @Override // 正式的开启连麦，因为时主播界面的连麦，所以其内部主要是播放连麦人的推流视频
     public void launchChat(SurfaceView parterView, String playerUID) {
+        // 正常的时候 mVideoChatApiCalling 在这里是false
         if (mVideoChatApiCalling) {
             if (mCallback != null) {
                 Bundle data = new Bundle();
-                data.putString(DATA_KEY_PLAYER_ERROR_MSG, mTipString);
+                data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
                 mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
             }
             return;
         }
 
+        // 通过uid获取ChatSession，在通过ChatSession获得播放地址
         final ChatSession chatSession = mChatSessionMap.get(playerUID);
         Map<String, SurfaceView> urlSurfaceMap = new HashMap<>();
+        // 将播放地址和SurfaceView一起存入Map集合
         urlSurfaceMap.put(chatSession.getChatSessionInfo().getPlayUrl(), parterView);
         // TODO by xinye : 发起连麦/ADD 连麦
         mVideoChatApiCalling = true;
         Log.e("xiongbo07", "开始发起连麦...");
+        // 使用Map集合正式开始调用连麦方法
         mSDKHelper.launchChats(urlSurfaceMap);
+        // 连麦核心方法调用没有异常后，将SurfaceView存入连麦流程对象
         chatSession.setSurfaceView(parterView);
     }
 
@@ -661,8 +675,10 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
         @Override
         public void onMixStreamSuccess() {
+            // 混流成功，连麦api使用完毕
             mVideoChatApiCalling = false;
             if (mCallback != null) {
+                // 回调返回混流成功的结果
                 mCallback.onEvent(TYPE_MIX_STREAM_SUCCESS, null);
             }
         }
@@ -707,9 +723,6 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         mImManager.register(MessageType.INVITE_CALLING, mInviteFunc, MsgDataInvite.class);
         mImManager.register(MessageType.AGREE_CALLING, mAgreeFunc, MsgDataAgreeVideoCall.class);
         mImManager.register(MessageType.NOT_AGREE_CALLING, mNotAgreeFunc, MsgDataNotAgreeVideoCall.class);
-        mImManager.register(MessageType.CALLING_SUCCESS, mMergeStreamSuccFunc, MsgDataMergeStream.class);
-        mImManager.register(MessageType.CALLING_FAILED, mMergeStreamFailedFunc, MsgDataMergeStream.class);
-        mImManager.register(MessageType.LIVE_COMPLETE, mLiveCloseFunc, MsgDataLiveClose.class);
         mImManager.register(MessageType.MIX_STATUS_CODE, mMixStatusCode, MsgDataMixStatusCode.class);
         mImManager.register(MessageType.START_PUSH, mPublishStreamFunc, MsgDataStartPublishStream.class);
         mImManager.register(MessageType.EXIT_CHATTING, mExitChattingFunc, MsgDataExitChatting.class);
@@ -722,18 +735,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         @Override
         public void action(final MsgDataInvite msgDataInvite) {
             if (mChatSessionMap.containsKey(msgDataInvite.getInviterUID())) {//已经处于连麦的用户，不接受再次邀请
-//                if (mCallback != null) {
-//                    callback.onFailure(null, new ChatSessionException(ChatSessionException.ERROR_CHATTING_ALREADY));
-//                    mCallback.onEvent();
-//                }
                 ChatSession mChatSession = mChatSessionMap.get(msgDataInvite.getInviterUID());
-//                UNCHAT,              //未连麦
-//                        INVITE_FOR_RES,      //邀请连麦成功等待对方响应
-//                        INVITE_RES_SUCCESS,
-//                        INVITE_RES_FAILURE,
-//                        RECEIVED_INVITE,     //收到邀请等待回复状态
-//                        TRY_MIX,            //开始连麦等待混流成功
-//                        MIX_SUCC,           //混流成功
                 if (mChatSession.getChatStatus() == VideoChatStatus.MIX_SUCC ||
                         mChatSession.getChatStatus() == VideoChatStatus.TRY_MIX) {
                     return;
@@ -758,26 +760,32 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     ImHelper.Func<MsgDataAgreeVideoCall> mAgreeFunc = new ImHelper.Func<MsgDataAgreeVideoCall>() {
         @Override
         public void action(final MsgDataAgreeVideoCall msgDataAgreeVideoCall) {
+            // 从MNS传递过来的数据源中取出同意进行连麦的观众的UID
             final String inviteeUID = msgDataAgreeVideoCall.getInviteeUID();
+            // 获取 同意进行连麦的观众 的连麦流程对象
             ChatSession chatSession = mChatSessionMap.get(inviteeUID);
+            // 对连麦流程的状态进行更新
             if (chatSession != null && chatSession.notifyAgreeInviting() == ChatSession.RESULT_OK) {
                 Log.d(TAG, "xiongbo21: notify agree inviting for " + inviteeUID + ", status = " + chatSession.getChatStatus());
             }
         }
     };
     /**
-     * 变量的描述: 主播向观众发起连麦的邀请，观众同意时，MNS发送消息过来，观众不同意连麦的消息处理Action
+     * 变量的描述: 主播向观众发起连麦的邀请，观众不同意时，MNS发送消息过来，观众不同意连麦的消息处理Action
      */
     ImHelper.Func<MsgDataNotAgreeVideoCall> mNotAgreeFunc = new ImHelper.Func<MsgDataNotAgreeVideoCall>() {
         @Override
         public void action(final MsgDataNotAgreeVideoCall notAgreeVideoCall) {
+            // 获取 不同意进行连麦的观众 的连麦流程对象
             ChatSession chatSession = mChatSessionMap.get(notAgreeVideoCall.getInviteeUID());
+            // 对连麦流程的状态进行更新
             chatSession.notifyNotAgreeInviting(notAgreeVideoCall);
-            mChatSessionMap.remove(chatSession);
+            // 移除 不同意进行连麦的观众 的连麦流程对象
+            mChatSessionMap.remove(notAgreeVideoCall.getInviteeUID());
         }
     };
     /**
-     * 变量的描述: 当主播和连麦的人推流成功，并继续推流时会发消息过来，这里我们主要处理连麦的人推流成功
+     * 变量的描述: 当主播和连麦的人推流成功时(可获取推流对应的播放地址)，MNS会接收从服务器发送过来的消息，这里我们主要处理连麦的人推流成功
      */
     ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
         @Override
@@ -785,18 +793,20 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             Log.d(TAG, "LiveActivity -->推流成功");
             ChatSession chatSession = mChatSessionMap.get(msgDataStartPublishStream.getUid());
             if (chatSession != null) {
-                Log.d(TAG, String.valueOf("开始推流的连麦ID: " + msgDataStartPublishStream.getUid() + ", 直播的状态是连麦中，具体状态为: " + chatSession.getChatStatus()));
+                Log.d(TAG, String.valueOf("推流成功的连麦ID: " + msgDataStartPublishStream.getUid() + ", 直播的状态是连麦中，具体状态为: " + chatSession.getChatStatus()));
             } else {
-                Log.d(TAG, String.valueOf("开始推流的主播ID: " + msgDataStartPublishStream.getUid() + ", 直播的状态是: 未进行连麦中"));
+                Log.d(TAG, String.valueOf("推流成功的主播ID: " + msgDataStartPublishStream.getUid() + ", 直播的状态是: 未进行连麦中"));
             }
-            // 开始推流的id不是主播id才能进入if判断
+            // 推流成功的id不是主播id才能进入if判断
             if (!mUID.equals(msgDataStartPublishStream.getUid())) {
-                // TODO 处理连麦的人推流成功的订阅
+                // 推流成功的id是之前存储的对应的ChatSession(连麦流程对象),并且该连麦流程对象的 ChatSessionInfo(连麦流程信息对象)为null
                 if (chatSession != null && chatSession.isTryMix() && chatSession.getChatSessionInfo() == null) {
+                    // 将MNS收的连麦人的播放地址存储进ChatSessionInfo，在将ChatSessionInfo存储进连麦流程对象中，方便代码下次可以通过uid获取对应的播放地址
                     ChatSessionInfo sessionInfo = new ChatSessionInfo();
-                    // TODO:这里需要带上推流地址
                     sessionInfo.setPlayUrl(msgDataStartPublishStream.getPlayUrl());
                     chatSession.setChatSessionInfo(sessionInfo);
+
+                    // 将这里的UID回调给mCallback，让mCallback的实例去更新UI界面，并正式开启连麦方法
                     if (mCallback != null) {
                         Bundle data = new Bundle();
                         data.putString(DATA_KEY_INVITEE_UID, msgDataStartPublishStream.getUid());
@@ -841,53 +851,40 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     ImHelper.Func<MsgDataMixStatusCode> mMixStatusCode = new ImHelper.Func<MsgDataMixStatusCode>() {
         @Override
         public void action(MsgDataMixStatusCode msgDataMixStatusCode) {
+            // MNS接收的数据不为空，还有连麦流程对象
             if (msgDataMixStatusCode != null && !mChatSessionMap.isEmpty()) {
                 String code = msgDataMixStatusCode.getCode();
+
                 mHandler.removeMessages(MSG_WHAT_MIX_STREAM_ERROR);
-                if (MixStatusCode.INTERNAL_ERROR.toString().equals(code)) {
+
+                if (MixStatusCode.INTERNAL_ERROR.toString().equals(code)) {// 网络异常
+                    // 因为服务器端进行混流的网络异常，导致 混流内部异常 ，将结果发送出去
                     mHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_ERROR);
-                } else if (MixStatusCode.MAIN_STREAM_NOT_EXIST.toString().equals(code)) {
+                } else if (MixStatusCode.MAIN_STREAM_NOT_EXIST.toString().equals(code)) {// 主播放流不存在
+                    // 发送连麦主播流不存在的结果，在handler中根据结果进行反应
                     mHandler.sendEmptyMessage(MSG_WHAT_MAIN_STREAM_NOT_EXIST);
+                    // 虽然混流失败了，但是可以等待其重新混流，如果超过等待时间，则发送混流内部异常的结果
                     mHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_ERROR, WAITING_FOR_MIX_SUCCESS_DELAY);
-                } else if (MixStatusCode.MIX_STREAM_NOT_EXIST.toString().equals(code)) {
-                    mHandler.sendEmptyMessage(MSG_WHAT_MAIN_STREAM_NOT_EXIST);
+                } else if (MixStatusCode.MIX_STREAM_NOT_EXIST.toString().equals(code)) {// 混流不存在
+                    // 发送连麦主播流不存在的结果，在handler中根据结果进行反应
+                    mHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_NOT_EXIST);
+                    // 虽然混流失败了，但是可以等待其重新混流，如果超过等待时间，则发送混流内部异常的结果
                     mHandler.sendEmptyMessageDelayed(MSG_WHAT_MIX_STREAM_ERROR, WAITING_FOR_MIX_SUCCESS_DELAY);
-                } else if (MixStatusCode.SUCCESS.toString().equals(code)) {
-                    // 对于所有的session，全部设置未mix success
-                    ChatSession session = mChatSessionMap.get(msgDataMixStatusCode.getMixUid());
+
+                } else if (MixStatusCode.SUCCESS.toString().equals(code)) {// 混流成功
+                    // 经过了上面的if判断，走到这说明混流暂时是成功的
+                    // 对于所有的连麦流程对象，全部设置未mix success混流成功
+                    String mixUid = msgDataMixStatusCode.getMixUid();
+                    ChatSession session = mChatSessionMap.get(mixUid);
                     if (session != null) {
+                        // TODO 这里获取的uid一直是空的，所以没法重新设置连麦流程的状态
                         session.setChatStatus(VideoChatStatus.MIX_SUCC);
                     }
+                    // 发送混流成功的结果
                     mHandler.sendEmptyMessage(MSG_WHAT_MIX_STREAM_SUCCESS);
                 }
                 Log.d(TAG, "Mix statusCode: " + msgDataMixStatusCode.getCode());
             }
-        }
-    };
-    /**
-     * 变量的描述: 混流成功的消息处理Action
-     */
-    ImHelper.Func<MsgDataMergeStream> mMergeStreamSuccFunc = new ImHelper.Func<MsgDataMergeStream>() {
-        @Override
-        public void action(MsgDataMergeStream msgDataMergeStream) {
-            Log.d(TAG, "LiveActivity -->Merge Success");
-        }
-    };
-    /**
-     * 变量的描述: 混流失败的消息处理Action
-     */
-    ImHelper.Func<MsgDataMergeStream> mMergeStreamFailedFunc = new ImHelper.Func<MsgDataMergeStream>() {
-        @Override
-        public void action(MsgDataMergeStream msgDataMergeStream) {
-            Log.d(TAG, "LiveActivity -->Merge Failed");
-        }
-    };
-    /**
-     * 直播结束的消息处理Action
-     */
-    ImHelper.Func<MsgDataLiveClose> mLiveCloseFunc = new ImHelper.Func<MsgDataLiveClose>() {
-        @Override
-        public void action(MsgDataLiveClose msgDataLiveClose) {
         }
     };
     // **************************************************** 推流状态信息和错误监听接口实例 ****************************************************

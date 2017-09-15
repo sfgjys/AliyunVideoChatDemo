@@ -1,16 +1,16 @@
 package com.alivc.videochat.demo.logic;
 
 /**
- * Created by apple on 2017/1/8.
+ * 类的描述: 用来存储连麦流程中重要的数据，例如：推流地址，短延时播放地址
  */
-
 public class ChatSessionInfo {
     private String mPublisherUID;
-    private String mPlayerUID;
     /**
      * 变量的描述: 推流地址
      */
     private String mRtmpUrl;        //
+    // --------------------------------------------------------------------------------------------------------
+    private String mPlayerUID;
     /**
      * 变量的描述: 短延时播放地址
      */

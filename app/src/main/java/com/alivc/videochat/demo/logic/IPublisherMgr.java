@@ -22,13 +22,15 @@ public interface IPublisherMgr {
     int TYPE_PUBLISHER_NETWORK_TIMEOUT = 0x0008;
 
     int TYPE_PROCESS_INVITING_TIMEOUT = 0x0010;         //处理对方连麦响应超时
-    int TYPE_PUBLISH_STREMA_SUCCESS = 0x0011;           //某个连麦对方推流成功
+    /**
+     * 变量的描述: 某个连麦观众推流成功，服务端获取了推流对应的播放地址，并通过MNS发送给了主播
+     */
+    int TYPE_PUBLISH_STREMA_SUCCESS = 0x0011;           //
     int TYPE_RECEIVED_CHAT_INVITING = 0x0012;           //收到连麦邀请
     /**
      * 变量的描述: 获取直播推流地址成功
      */
     int TYPE_LIVE_CREATED = 0x0013;
-    int TYPE_START_CHATTING = 0x0014;                   //开始连麦
     int TYPE_SOMEONE_EXIT_CHATTING = 0x0015;            //某人退出连麦
 
 
@@ -123,7 +125,4 @@ public interface IPublisherMgr {
      * 方法描述: 结束连麦（所有观众）
      */
     void asyncTerminateAllChatting(AsyncCallback callback);
-
-    //反馈邀请
-//    void asyncFeedbackInviting(String playerUID, int status);
 }

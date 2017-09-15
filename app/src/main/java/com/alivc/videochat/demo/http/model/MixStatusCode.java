@@ -14,7 +14,7 @@ public enum MixStatusCode {
      */
     MAIN_STREAM_NOT_EXIST("MainStreamNotExist"),
     /**
-     * 变量的描述: 混流不存在
+     * 变量的描述: 混流(连麦观众流)不存在
      */
     MIX_STREAM_NOT_EXIST("MixStreamNotExist"),
     /**
