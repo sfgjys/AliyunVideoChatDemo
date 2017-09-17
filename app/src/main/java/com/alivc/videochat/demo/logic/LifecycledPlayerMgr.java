@@ -62,7 +62,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     private ChatSession mChatSession;       //当前观众与主播连麦的会话
     private PlayerSDKHelper mSDKHelper;
     /**
-     * 变量的描述: 其他观众参与连麦的会话
+     * 变量的描述: 其他观众参与连麦的连麦流程
      */
     private HashMap<String, ChatSession> mOtherChatSessionMap = new HashMap<>();    //
 
@@ -115,8 +115,8 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     @Override
     public void onCreate() {
         Context context = getContext();
-        assert (context != null);
-        mSDKHelper.initPlayer(context, mPlayerErrorListener, mPlayerInfoListener, mCallback);  //初始化播放器
+        if (context != null)
+            mSDKHelper.initPlayer(context, mPlayerErrorListener, mPlayerInfoListener, mCallback);  //初始化播放器
     }
 
     @Override
@@ -125,6 +125,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 
     @Override
     public void onResume() {
+        // 第一次进入本界面不会进入判断里
         if (mWSConnOpt != null && mMnsControlBody != null) {
             mImManager.createSession(mWSConnOpt, mMnsControlBody);
             mImManager.register(MessageType.LIVE_COMPLETE, mLiveCloseFunc, MsgDataLiveClose.class);
@@ -138,12 +139,14 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
             mImManager.register(MessageType.MIX_STATUS_CODE, mMixStatusCodeFunc, MsgDataMixStatusCode.class);
             mImManager.register(MessageType.EXIT_CHATTING, mExitingChattingFunc, MsgDataExitChatting.class);
         }
+        // 暂停播放，方法里会先判断是否有过暂停
         mSDKHelper.resume();
     }
 
     @Override
     public void onPause() {
         int count = 0;
+        // 等待连麦的api调用完毕
         while (mVideoChatApiCalling && count++ < 10) {
             try {
                 Thread.sleep(200);
@@ -167,7 +170,6 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         mImManager.closeSession();
 
         mSDKHelper.pause(); //暂停播放 or 连麦
-
     }
 
     @Override
@@ -190,7 +192,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 
     // --------------------------------------------------------------------------------------------------------
 
-    @Override
+    @Override // 进入观看界面的时候，就请求网络获取播放地址，并且建立MNS链接，然后注册订阅
     public void asyncEnterLiveRoom(String liveRoomID, final AsyncCallback callback) {
         this.mLiveRoomID = liveRoomID;
         if (mEnterRoomCall != null && ServiceBI.isCalling(mEnterRoomCall)) {
@@ -257,7 +259,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         });
     }
 
-    @Override
+    @Override // 获取播放地址成功后，就正式开始播放
     public void startPlay(SurfaceView playSurf) {
         mHostPlaySurf = playSurf;
         mSDKHelper.startToPlay(mPlayUrl, mHostPlaySurf);
@@ -279,10 +281,9 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         return mSDKHelper.switchFlash();
     }
 
-    @Override
+    @Override // 请求网络，告诉业务服务器观众要邀请主播进行连麦
     public void asyncInviteChatting(final AsyncCallback callback) throws ChatSessionException {
         mUidMap.clear();
-        System.out.println();
 
         // 如果观众的连麦的状态管理器ChatSession的isActive方法返回true，在代表当前有正在进行的连麦（or 邀请）
         if (mChatSession != null && mChatSession.isActive()) {//
@@ -294,7 +295,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
             }
         }
 
-        // 存储被邀请人的用户ID
+        // 存储被邀请人的用户ID，也就是主播的id
         List<String> inviteeUIDs = new ArrayList<>();
 
         // 清空连麦请求网络任务
@@ -311,7 +312,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         // 请求网络去邀请别人进行连麦，业务服务器发送请求给被邀请人，被邀请人的结果发给业务服务器，业务服务器在通过MNS发送给邀请人也就是本用户
         mInviteCall = mInviteServiceBI.inviteCall(mUID, inviteeUIDs, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.INVITE_TYPE_WATCHER, mLiveRoomID, new ServiceBI.Callback() {
             @Override
-            public void onResponse(int code, Object response) {
+            public void onResponse(int code, Object response) {// 告诉业务服务器观众要邀请主播进行连麦的消息 成功
                 mChatSession.notifyInviteSuccess();
                 if (callback != null) {
                     callback.onSuccess(null);
@@ -319,7 +320,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
             }
 
             @Override
-            public void onFailure(Throwable t) {
+            public void onFailure(Throwable t) {// 告诉业务服务器观众要邀请主播进行连麦的消息 失败
                 mChatSession.notifyInviteFailure();
                 if (callback != null) {
                     callback.onFailure(null, t);
@@ -331,6 +332,8 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     // --------------------------------------------------------------------------------------------------------
 
     @Override
+    // 正式开始与主播连麦，参数一是连麦观众推流自己的视频，参数二是播放观众连麦前已经和主播进行连麦的观众
+    // 这个方法如果是在本观众已经成功连麦后被调用，则其内部是只播放后连麦的人的视频
     public void launchChat(SurfaceView previewSurface, Map<String, SurfaceView> uidSurfaceMap) {
         if (mChatSession != null) {
             // 使用参数二uidSurfaceMap和本类变量mOtherChatSessionMap，存储一个对应了播放地址和Surface到集合中
@@ -368,7 +371,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 
     // --------------------------------------------------------------------------------------------------------
 
-    @Override
+    @Override // 结束本观众和主播的连麦，只是结束本观众和主播的连麦，其他观众和主播连麦管不着
     public void asyncTerminateChatting(final AsyncCallback callback) {
 
         if (mChatSession != null) {
@@ -468,6 +471,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 
     /**
      * 方法描述: 将其他观众连麦推流成功后的uid传递给MgrCallback实例接口，在 MgrCallback 中可以通过uid获取对应的短延迟播发
+     * 在MgrCallback回调中也是正式开启连麦
      */
     private void handlePublishStreamMsg(ArrayList<String> userIdList) {
         if (mCallback != null) {
@@ -578,9 +582,9 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 
     /**
      * 变量的描述: 观众进行连麦的时候，需要进行推流，将视频推出去，所以这里是对推流成功的消息进行处理Action
-     * 备注：只作为观众这里的消息处理不需要，而如果是作为连麦中的其中一人，就需要进行处理
+     * 备注：只作为本观众的话，这里的消息处理不需要，而如果是作为其他连麦观众中的其中一人，就需要进行处理
      */
-    ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
+    private ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
         @Override
         public void action(MsgDataStartPublishStream msgDataStartPublishStream) {
             // 获取推流成功的uid，该uid有可能是本观众的，也有可能是其他连麦观众的
@@ -592,12 +596,13 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
                 // 本观众连麦成功了，但现有其他连麦用户推流成功
                 Log.d(TAG, "WatchLiveActivity -->Publish Success. " + mChatSession.getChatStatus());
 
-                // 1. 如果未连麦,直接忽略
+                // 1. 如果是本观众没有进行连麦，但是其他的观众进行了连麦，那么有可能进入本判断，这种情况不要管
                 if (mChatSession.getChatStatus() == VideoChatStatus.UNCHAT) {
                     Log.d(TAG, "WatchLiveActivity -->Publish Success. unchat return");
                     return;
                 }
 
+                // 本观众正在进行连麦的流程的同时，有其他观众连麦推流成功了，那么我们将其他连麦观众的播放地址先进行存储
                 if (mChatSession.getChatStatus() != VideoChatStatus.MIX_SUCC && mChatSession.getChatStatus() != VideoChatStatus.TRY_MIX) {
                     // 进入队列
                     mUidMap.put(uid, msgDataStartPublishStream.getPlayUrl());
@@ -614,16 +619,9 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 //                    }
 //                }
 
-                if (mChatSession.getChatStatus() != VideoChatStatus.MIX_SUCC && mChatSession.getChatStatus() != VideoChatStatus.TRY_MIX) {
-                    Log.d(TAG, "WatchLiveActivity -->Publish Success. not mix success return");
-                    return;
-                }
-
-                // 以上的内容暂时没有什么用
-
                 // 3. 如果连麦发起中, 等待连麦发起完成再add chat
 
-                // 只有下面四行代码有意义，存储数据，进行回调根据数据显示连麦者
+                // 存储数据，进行回调根据数据显示连麦者
                 addChatSession(msgDataStartPublishStream.getPlayUrl(), uid);
                 ArrayList<String> userIdList = new ArrayList<>();
                 userIdList.add(uid);
@@ -634,7 +632,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
             } else if (mUID.equals(uid)) {
                 // 本观众正在进行连麦操作，推流成功
 
-                // 下面的代码暂时没有用
+                // 如果在本观众进行连麦操作的时候，且没有推流成功前，有其他观众推流成功了，这时下面的代码就有意义了
                 ArrayList<String> userIdList = new ArrayList<>();
                 for (String userId : mUidMap.keySet()) {
                     userIdList.add(userId);
@@ -649,9 +647,9 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
         }
     };
     /**
-     * 变量的描述: 连麦推流成功后，连麦过程中CDN的状态码回调
+     * 变量的描述: 连麦推流成功后，连麦过程中混流的状态码回调
      */
-    ImHelper.Func<MsgDataMixStatusCode> mMixStatusCodeFunc = new ImHelper.Func<MsgDataMixStatusCode>() {
+    private ImHelper.Func<MsgDataMixStatusCode> mMixStatusCodeFunc = new ImHelper.Func<MsgDataMixStatusCode>() {
         @Override
         public void action(MsgDataMixStatusCode msgDataMixStatusCode) {
             if (msgDataMixStatusCode != null && mChatSession != null) {
@@ -680,7 +678,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     /**
      * 变量的描述: 被邀请连麦的人的同意连麦的消息被MNS服务端发送到了本MNS的客户端，在此处进行处理Action
      */
-    ImHelper.Func<MsgDataAgreeVideoCall> mAgreeFunc = new ImHelper.Func<MsgDataAgreeVideoCall>() {
+    private ImHelper.Func<MsgDataAgreeVideoCall> mAgreeFunc = new ImHelper.Func<MsgDataAgreeVideoCall>() {
         @Override
         public void action(final MsgDataAgreeVideoCall msgDataAgreeVideoCall) {
             // 如果超时了，那么对于主播的同意信息就不进行处理了,这是因为主播即使在10秒内同意了，但是经过业务服务器发来到观众这，已经超时了
@@ -740,7 +738,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     /**
      * 变量的描述: 被邀请连麦的人的不同意连麦的消息被发送倒本MNS客户端，处理Action
      */
-    ImHelper.Func<MsgDataNotAgreeVideoCall> mNotAgreeFunc = new ImHelper.Func<MsgDataNotAgreeVideoCall>() {
+    private ImHelper.Func<MsgDataNotAgreeVideoCall> mNotAgreeFunc = new ImHelper.Func<MsgDataNotAgreeVideoCall>() {
         @Override
         public void action(final MsgDataNotAgreeVideoCall notAgreeVideoCall) {
             if (mChatSession != null) {
@@ -787,7 +785,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     /**
      * 变量的描述: 观众自己或者主播指定观众退出连麦时(这里的观众可以自己，也可以是其他连麦的观众)，消息处理Action
      */
-    ImHelper.Func<MsgDataExitChatting> mExitingChattingFunc = new ImHelper.Func<MsgDataExitChatting>() {
+    private ImHelper.Func<MsgDataExitChatting> mExitingChattingFunc = new ImHelper.Func<MsgDataExitChatting>() {
         @Override
         public void action(MsgDataExitChatting msgDataExitChatting) {
             Log.d(TAG, "Someone exit chatting");
@@ -837,7 +835,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     /**
      * 变量的描述: 结束所有正在连麦的时候，消息处理Action 这里是在主播端直接请求业务服务器结束所有连麦时，这里会接收到消息，其实质是让所有的连麦观众客户端代码中直接关闭自己的连麦
      */
-    ImHelper.Func<MsgDataCloseVideoCall> mCloseChatFunc = new ImHelper.Func<MsgDataCloseVideoCall>() {
+    private ImHelper.Func<MsgDataCloseVideoCall> mCloseChatFunc = new ImHelper.Func<MsgDataCloseVideoCall>() {
         @Override
         public void action(MsgDataCloseVideoCall msgDataCloseVideoCall) {
             // TODO by xinye : 退出连麦
@@ -852,7 +850,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     /**
      * 变量的描述: 观众观看直播时，主播结束直播的时候，消息处理Action
      */
-    ImHelper.Func<MsgDataLiveClose> mLiveCloseFunc = new ImHelper.Func<MsgDataLiveClose>() {
+    private ImHelper.Func<MsgDataLiveClose> mLiveCloseFunc = new ImHelper.Func<MsgDataLiveClose>() {
         @Override
         public void action(MsgDataLiveClose msgDataLiveClose) {
             if (mChatSession != null) {
@@ -869,7 +867,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     /**
      * 变量的描述: 观众观看的主播对本观众发起了连麦邀请的时候，消息处理Action
      */
-    ImHelper.Func<MsgDataInvite> mInviteFunc = new ImHelper.Func<MsgDataInvite>() {
+    private ImHelper.Func<MsgDataInvite> mInviteFunc = new ImHelper.Func<MsgDataInvite>() {
         @Override
         public void action(final MsgDataInvite msgDataInvite) {
             mUidMap.clear();

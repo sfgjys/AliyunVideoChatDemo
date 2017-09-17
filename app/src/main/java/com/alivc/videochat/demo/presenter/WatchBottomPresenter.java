@@ -35,6 +35,7 @@ public class WatchBottomPresenter extends ContextBase {
 
         @Override
         public void onResponse(int code, Object response) {
+            // 发送评论成功的话，服务器会通过MNS发送消息给聊天控件，让其显示评论
             Log.d(TAG, "send comment succeed");
         }
 

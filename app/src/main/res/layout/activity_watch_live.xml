@@ -41,11 +41,6 @@
         android:textColor="@android:color/holo_red_light"
         android:textSize="@dimen/font_size_28px" />
 
-    <ImageView
-        android:id="@+id/iv_loading"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
     <FrameLayout
         android:id="@+id/root_container"
         android:layout_width="match_parent"

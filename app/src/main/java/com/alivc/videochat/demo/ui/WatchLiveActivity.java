@@ -105,8 +105,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
      * 变量的描述: 一个正在加载中的显示界面控件
      */
     private View mLoadingView = null;
-    private View mInterruptView = null;
-    private TextView mTvInterruptTip;
 
     /**
      * 变量的描述: 展示性能的控件
@@ -125,7 +123,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
     private WatchBottomFragment mBottomFragment;
 
-    private AppSettings mAppSettings;
     private String mIMFailedMessage;
     private DialogInterface.OnClickListener mIMFailedListener;
     private ConnectivityMonitor mConnectivityMonitor = new ConnectivityMonitor();
@@ -134,11 +131,10 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     private ILifecycleLivePlayPresenter mPresenter;
     private String mLiveRoomID;
 
-
     /**
      * 类的描述: 存储连麦副麦的SurfaceView，对应的关闭ImageView，以及对应的indexF
      */
-    public static class ChattingViewHolder {
+    private static class ChattingViewHolder {
         SurfaceView mSurfaceView;
         ImageView mIvClose;
         int mIndex;
@@ -172,9 +168,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         // 获取传递过来的roomId
         mLiveRoomID = getIntent().getStringExtra(ExtraConstant.EXTRA_ROOM_ID);
 
-        // 这个类没什么作用
-        mAppSettings = new AppSettings(this);
-
         setContentView(R.layout.activity_watch_live);
 
         mRootContainer = (FrameLayout) findViewById(R.id.root_container);
@@ -183,10 +176,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
         // 以根部局root_container填充出一个 正在加载的转圈 控件
         mLoadingView = LayoutInflater.from(this).inflate(R.layout.fragment_live_video_loading, mRootContainer, false);
-
-        // 感觉暂时没用
-        mInterruptView = LayoutInflater.from(this).inflate(R.layout.fragment_live_interrupt, mRootContainer, false);
-        mTvInterruptTip = (TextView) mInterruptView.findViewById(R.id.tv_interrupt_tip);
 
         // --------------------------------------------------------------------------------------------------------
 
@@ -203,11 +192,8 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
         // 初始化连麦的副Surface,并用ChattingViewHolder进行封装
         mLeftChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_left), (ImageView) findViewById(R.id.iv_abort_chat_left), 3);
-//        hideSurfaceView(mLeftChattingHolder.mSurfaceView);
         mMiddleChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_middle), (ImageView) findViewById(R.id.iv_abort_chat_middle), 2);
-//        hideSurfaceView(mMiddleChattingHolder.mSurfaceView);
         mRightChattingHolder = new ChattingViewHolder((SurfaceView) findViewById(R.id.parter_view_right), (ImageView) findViewById(R.id.iv_abort_chat_right), 1);
-//        hideSurfaceView(mRightChattingHolder.mSurfaceView);
 
         // 设置副麦Surface将其覆盖在其他媒体上面
         mLeftChattingHolder.mSurfaceView.setZOrderMediaOverlay(true);
@@ -256,12 +242,9 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
         // --------------------------------------------------------------------------------------------------------
 
-        // 一进入界面就播放主播直播
-//        mPreviewSurfaceView.setZOrderOnTop(false);
-//        mHeadsetMonitor.setHeadsetStatusChangedListener(mWatchLivePresenter);
         // 设置这个已经被废弃了，现在是在需要的时候会自动设置
         mPlaySurfaceView.getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);// 适用于GPU加速的Surface
-        mPlaySurfaceView.getHolder().setKeepScreenOn(true);// 设置控件常量
+        mPlaySurfaceView.getHolder().setKeepScreenOn(true);// 设置控件常亮
 
     }
 
@@ -274,7 +257,8 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         mConnectivityMonitor.register(this);        //注册对网络状态的监听
         mHeadsetMonitor.register(this);        //注册对耳机状态的监听
 
-        if (mAppSettings.isShowLogInfo(true)) {
+        boolean isShowLogInfo = false;
+        if (isShowLogInfo) {
             showLogInfoUI();
         } else {
             dismissLogInfoUI();
@@ -303,6 +287,7 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
     // --------------------------------------------------------------------------------------------------------
 
+    // **************************************************** 性能日志展示 ****************************************************
     LogInfoFragment.LogRefreshListener mRefreshListener = new LogInfoFragment.LogRefreshListener() {
         @Override
         public void onPendingRefresh() {
@@ -322,9 +307,7 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             mLogInfoFragment = new LogInfoFragment();
             mLogInfoFragment.setRefreshListener(mRefreshListener);
         }
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.log_container, mLogInfoFragment)
-                .commitAllowingStateLoss();
+        getSupportFragmentManager().beginTransaction().add(R.id.log_container, mLogInfoFragment).commitAllowingStateLoss();
     }
 
     /**
@@ -372,7 +355,7 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     }
 
     /**
-     * 方法描述: 修改参数控件topMargin属性为300 。为的是让参数控件部在手机屏幕上显示
+     * 方法描述: 修改参数控件topMargin属性为300 。为的是让参数控件部在手机屏幕上隐藏
      */
     private void hideSurfaceView(SurfaceView surfaceView) {
         Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());
@@ -438,7 +421,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
         @Override
         public void showEnterLiveRoomFailure() {
-
         }
 
         @Override
@@ -449,14 +431,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
                 return;
             }
             hideLoading();  //隐藏正在加载的UI
-//            if (mInterruptView != null && mInterruptView.getParent() == null) {
-//                mRootContainer.addView(mInterruptView);
-//            }
-//            if (what != Integer.MAX_VALUE) {
-//                mTvInterruptTip.setText(getString(msgRedID) + ", ErrorCode: " + what);
-//            } else {
-//                mTvInterruptTip.setText(msgRedID);
-//            }
 
             try {
                 AlertDialog.Builder normalDialog =
@@ -526,7 +500,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
 
         @Override
         public void hideLiveInterruptUI() {
-            mRootContainer.removeView(mInterruptView);
         }
 
         /**

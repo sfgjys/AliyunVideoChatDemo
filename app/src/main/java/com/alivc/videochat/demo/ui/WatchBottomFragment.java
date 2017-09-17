@@ -253,7 +253,7 @@ public class WatchBottomFragment extends ActionFragment implements View.OnClickL
      * 通过对比RootView的height和windowVisibleDisplayFrame的bottom来计算root view的不可见高度
      * 如果不可见高度是0说明键盘处于隐藏的状态，反之属于弹出的状态
      */
-    class InputMethodUIListener implements ViewTreeObserver.OnGlobalLayoutListener {
+    private class InputMethodUIListener implements ViewTreeObserver.OnGlobalLayoutListener {
         /**
          * 变量的描述: 判断键盘处于何种状态，true属于弹出的状态，false处于隐藏的状态
          */
