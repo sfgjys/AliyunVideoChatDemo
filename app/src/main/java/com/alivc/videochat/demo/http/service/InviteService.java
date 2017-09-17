@@ -23,8 +23,7 @@ public interface InviteService {
     Call<HttpResponse<InviteFeedbackResult>> feedback(@Body FeedbackForm form);
 
     @POST(HttpConstant.URL_CLOSE_VIDEO_CALL)
-    Call<HttpResponse<Object>>
-    closeVideoCall(@Body CloseVideoForm form);
+    Call<HttpResponse<Object>> closeVideoCall(@Body CloseVideoForm form);// 关闭所有连麦
 
     @POST(HttpConstant.URL_LEAVE_VIDEO_CALL)
     Call<HttpResponse<Object>> leaveChatting(@Body CloseVideoForm form);// 观众离开连麦

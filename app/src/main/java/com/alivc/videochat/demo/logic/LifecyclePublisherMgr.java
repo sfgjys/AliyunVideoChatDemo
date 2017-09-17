@@ -12,7 +12,6 @@ import com.alibaba.sdk.client.WebSocketConnectOptions;
 import com.alibaba.sdk.mns.MnsControlBody;
 import com.alivc.videochat.publisher.AlivcPublisherPerformanceInfo;
 import com.alivc.videochat.publisher.MediaError;
-import com.alivc.videochat.AlivcPlayerPerformanceInfo;
 import com.alivc.videochat.AlivcVideoChatHost;
 import com.alivc.videochat.IVideoChatHost;
 import com.alivc.videochat.demo.base.AsyncCallback;
@@ -56,9 +55,9 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
     private static final String TAG = LifecyclePublisherMgr.class.getName();
 
-    public static final String KEY_CHATTING_UID = "chatting_uid";   //正在连麦的用户ID
+    private static final String KEY_CHATTING_UID = "chatting_uid";   //正在连麦的用户ID
 
-    public static final int MAX_RECONNECT_COUNT = 10;
+    private static final int MAX_RECONNECT_COUNT = 10;
 
     private static final long WAITING_FOR_MIX_SUCCESS_DELAY = 15 * 1000; //混流错误时等待重新混流成功的时间，超过这个时间会结束连麦
 
@@ -106,17 +105,48 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     private SurfaceView mMainSurfaceView = null;
     private SurfaceStatus mPreviewSurfaceStatus = SurfaceStatus.UNINITED;
 
-    private String mTipString;
     /**
      * 变量的描述: 代表了是否正在调用连麦的正式API，该API包含了连麦，结束连麦等
      */
     private boolean mVideoChatApiCalling = false;
 
     private int mReconnectCount = 0;
-
     // --------------------------------------------------------------------------------------------------------
     /**
-     * 变量的描述: 用来发送混流结果的Handler
+     * 变量的描述: 主SurfaceView的变化监听回调接口实例
+     */
+    private SurfaceHolder.Callback mMainSurfaceCallback = new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+            Log.d(TAG, "LiveActivity-->Preview surface created");
+            //记录Surface的状态
+            if (mPreviewSurfaceStatus == SurfaceStatus.UNINITED) {
+                // 主SurfaceView第一次被创建，开启预览
+                mPreviewSurfaceStatus = SurfaceStatus.CREATED;
+                // 现在开启预览是让主播在正式推流前就看见自己要直播的画面
+                mSDKHelper.startPreView(mMainSurfaceView);
+            } else if (mPreviewSurfaceStatus == SurfaceStatus.DESTROYED) {
+                // 主SurfaceView已经被销毁过，现在重新创建
+                mPreviewSurfaceStatus = SurfaceStatus.RECREATED;
+            }
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            Log.d(TAG, "LiveActivity-->Preview surface changed");
+            mPreviewSurfaceStatus = SurfaceStatus.CHANGED;
+
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+            Log.d(TAG, "LiveActivity-->Preview surface destroyed");
+            mPreviewSurfaceStatus = SurfaceStatus.DESTROYED;
+        }
+    };
+    // --------------------------------------------------------------------------------------------------------
+    /**
+     * 变量的描述: 用来发送混流结果并做出相应响应的Handler
      */
     private final Handler mMixFlowResultHandler = new Handler() {
         @Override
@@ -146,7 +176,10 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             }
         }
     };
-
+    // --------------------------------------------------------------------------------------------------------
+    /**
+     * 变量的描述: 连麦流程的回调接口实例，对各种连麦流程中的状态做出更新对应UI的回调
+     */
     private ChatSessionCallback mChatSessionCallback = new ChatSessionCallback() {
         @Override
         public void onInviteChatTimeout() {
@@ -209,7 +242,6 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             }
         }
     };
-
     // --------------------------------------------------------------------------------------------------------
 
     public LifecyclePublisherMgr(Context context, MgrCallback callback, String uid, ImManager imManager) {
@@ -221,15 +253,14 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         this.mUID = uid;
         this.mImManager = imManager;
     }
-
     // --------------------------------------------------------------------------------------------------------
 
     @Override
     public void onCreate() {
         Context context = getContext();
         // 如果context为空则assert抛出的异常AssertionError
-        assert (context != null);
-        mSDKHelper.initRecorder(context, mOnErrorListener, mInfoListener); //初始化推流器
+        if (context != null)
+            mSDKHelper.initRecorder(context, mOnErrorListener, mInfoListener); //初始化推流器
     }
 
     @Override
@@ -465,6 +496,132 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         mInviteCalls.add(call);// 添加网络请求，以便于在特定的时候进行操作
     }
 
+    @Override // 正式的开启连麦，因为时主播界面的连麦，所以其内部主要是播放连麦人的推流视频
+    public void launchChat(SurfaceView parterView, String playerUID) {
+        // 正常的时候 mVideoChatApiCalling 在这里是false
+        if (mVideoChatApiCalling) {
+            if (mCallback != null) {
+                Bundle data = new Bundle();
+                data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
+                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
+            }
+            return;
+        }
+
+        // 通过uid获取ChatSession，在通过ChatSession获得播放地址
+        final ChatSession chatSession = mChatSessionMap.get(playerUID);
+        Map<String, SurfaceView> urlSurfaceMap = new HashMap<>();
+        // 将播放地址和SurfaceView一起存入Map集合
+        urlSurfaceMap.put(chatSession.getChatSessionInfo().getPlayUrl(), parterView);
+        //  发起连麦/ADD 连麦的api
+        mVideoChatApiCalling = true;
+        Log.e("xiongbo07", "开始发起连麦...");
+        // 使用Map集合正式开始调用连麦方法
+        mSDKHelper.launchChats(urlSurfaceMap);
+        // 连麦核心方法调用没有异常后，将SurfaceView存入连麦流程对象
+        chatSession.setSurfaceView(parterView);
+    }
+
+    @Override // 结束指定uid的连麦
+    public void asyncTerminateChatting(final String playerUID, final AsyncCallback callback) {
+        // 正常的时候 mVideoChatApiCalling 在这里是false
+        if (mVideoChatApiCalling) {
+            if (mCallback != null) {
+                Bundle data = new Bundle();
+                data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
+                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
+            }
+            return;
+        }
+
+        if (mChatSessionMap.size() > 0) {// 连麦流程对象集合中有数据，说明当前有连麦流程正在进行中
+            // 请求网络，向服务器发送主播将要结束哪个指定的连麦
+            mInviteServiceBI.leaveCall(playerUID, mRoomID, new ServiceBI.Callback<Object>() {
+                @Override
+                public void onResponse(int code, Object response) {
+                    if (callback != null) {
+                        callback.onSuccess(null);
+                    }
+                    // 向服务器发送成功，那么主播需要调用API结束连麦自己这边的连麦，观众端那里从MNS获取到信息后自动调用API结束连麦
+                    //清楚所有的session信息
+                    final ChatSession chatSession = mChatSessionMap.get(playerUID);
+                    if (chatSession != null) {
+                        SurfaceView surfaceView = chatSession.getSurfaceView();
+                        if (surfaceView != null) {
+                            surfaceView.getHolder().removeCallback(chatSession.getSurfaceCallback());
+                        }
+                        ArrayList<String> playUrls = new ArrayList<>();
+                        playUrls.add(chatSession.getChatSessionInfo().getPlayUrl());
+                        // 退出连麦,调用了连麦的API
+                        mVideoChatApiCalling = true;
+                        mSDKHelper.abortChat(playUrls);
+                        Log.e("xiongbo07", "开始REMOVE连麦... " + playerUID);
+                        mChatSessionMap.remove(playerUID);
+                        // 这里不用使用回调接口更新退出连麦的UI，因为这里本身就是一个回调
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    if (callback != null) {
+                        callback.onFailure(null, t);
+                    }
+                }
+            });
+        }
+    }
+
+    @Override // 在直播界面被销毁时，如果还有正在连麦的观众，那么就结束所有连麦
+    public void asyncTerminateAllChatting(final AsyncCallback callback) {
+        // 正常的时候 mVideoChatApiCalling 在这里是false
+        if (mVideoChatApiCalling) {
+            if (mCallback != null) {
+                Bundle data = new Bundle();
+                data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
+                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
+            }
+            return;
+        }
+
+        String key;
+        SurfaceView surfaceView;
+        ChatSession chatSession;
+        if (mChatSessionMap.size() > 0) {// 当前还有正在连麦
+            // 请求网络，告诉服务器我们将要断开所有连麦
+            mInviteServiceBI.terminateCall(mRoomID, new ServiceBI.Callback() {
+                @Override
+                public void onResponse(int code, Object response) {
+                    if (callback != null) {
+                        callback.onSuccess(null);
+                    }
+                    // 调用API结束所有连麦
+                    mVideoChatApiCalling = true;
+                    Log.e("xiongbo07", "开始退出连麦...");
+                    mSDKHelper.abortChat(null); //调用SDK中断连麦
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    if (callback != null) {
+                        callback.onFailure(null, t);
+                    }
+                }
+            });
+            // 清除集合中的所有连麦流程对象
+            Iterator<String> chatSessionKeySet = mChatSessionMap.keySet().iterator();
+            //清楚所有的session信息
+            while (chatSessionKeySet.hasNext()) {
+                key = chatSessionKeySet.next();
+                chatSession = mChatSessionMap.get(key);
+                surfaceView = chatSession.getSurfaceView();
+                if (surfaceView != null) {
+                    surfaceView.getHolder().removeCallback(chatSession.getSurfaceCallback());
+                }
+            }
+            mChatSessionMap.clear();
+        }
+    }
+
     @Override // 请求网络，告诉业务服务器直播将要被关闭
     public void asyncCloseLive(final AsyncCallback callback) {
         mLiveServiceBI.closeLive(mRoomID, mUID, new ServiceBI.Callback() {
@@ -484,189 +641,10 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             }
         });
 
+        // 移除主SurfaceView的监听接口
         if (mMainSurfaceView != null) {
             mMainSurfaceView.getHolder().removeCallback(mMainSurfaceCallback);
         }
-    }
-
-    @Override
-    public void asyncTerminateChatting(final String playerUID, final AsyncCallback callback) {
-        if (mVideoChatApiCalling) {
-            if (mCallback != null) {
-                Bundle data = new Bundle();
-                data.putString(DATA_KEY_PLAYER_ERROR_MSG, mTipString);
-                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
-            }
-            return;
-        }
-
-        if (mChatSessionMap.size() > 0) {// 连麦流程对象集合中有数据，说明当前有连麦流程正在进行中
-            mInviteServiceBI.leaveCall(playerUID, mRoomID, new ServiceBI.Callback() {
-                @Override
-                public void onResponse(int code, Object response) {
-                    if (callback != null) {
-                        callback.onSuccess(null);
-                    }
-                    //清楚所有的session信息
-                    final ChatSession chatSession = mChatSessionMap.get(playerUID);
-                    if (chatSession != null) {
-                        SurfaceView surfaceView = chatSession.getSurfaceView();
-                        if (surfaceView != null) {
-                            surfaceView.getHolder().removeCallback(chatSession.getSurfaceCallback());
-                        }
-                        ArrayList<String> playUrls = new ArrayList<String>();
-                        playUrls.add(chatSession.getChatSessionInfo().getPlayUrl());
-                        // TODO by xinye : 退出连麦
-                        mVideoChatApiCalling = true;
-                        mSDKHelper.abortChat(playUrls);
-                        Log.e("xiongbo07", "开始REMOVE连麦... " + playerUID);
-                        mChatSessionMap.remove(playerUID);
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    if (callback != null) {
-                        callback.onFailure(null, t);
-                    }
-                }
-            });
-        }
-    }
-
-    @Override
-    public void asyncTerminateAllChatting(final AsyncCallback callback) {
-        if (mVideoChatApiCalling) {
-            if (mCallback != null) {
-                Bundle data = new Bundle();
-                data.putString(DATA_KEY_PLAYER_ERROR_MSG, mTipString);
-                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
-            }
-            return;
-        }
-
-        String key;
-        SurfaceView surfaceView;
-        ChatSession chatSession;
-        if (mChatSessionMap.size() > 0) {//当前正在连麦
-            mInviteServiceBI.terminateCall(mRoomID, new ServiceBI.Callback() {
-                @Override
-                public void onResponse(int code, Object response) {
-                    if (callback != null) {
-                        callback.onSuccess(null);
-                    }
-                    // TODO by xinye : 退出连麦
-                    mVideoChatApiCalling = true;
-                    Log.e("xiongbo07", "开始退出连麦...");
-                    mSDKHelper.abortChat(null); //调用SDK中断连麦
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    if (callback != null) {
-                        callback.onFailure(null, t);
-                    }
-                }
-            });
-            Iterator<String> chatSessionKeySet = mChatSessionMap.keySet().iterator();
-            //清楚所有的session信息
-            while (chatSessionKeySet.hasNext()) {
-                key = chatSessionKeySet.next();
-                chatSession = mChatSessionMap.get(key);
-                surfaceView = chatSession.getSurfaceView();
-                if (surfaceView != null) {
-                    surfaceView.getHolder().removeCallback(chatSession.getSurfaceCallback());
-                }
-            }
-            mChatSessionMap.clear();
-
-        }
-    }
-
-    // --------------------------------------------------------------------------------------------------------
-    @Override // 正式的开启连麦，因为时主播界面的连麦，所以其内部主要是播放连麦人的推流视频
-    public void launchChat(SurfaceView parterView, String playerUID) {
-        // 正常的时候 mVideoChatApiCalling 在这里是false
-        if (mVideoChatApiCalling) {
-            if (mCallback != null) {
-                Bundle data = new Bundle();
-                data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
-                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
-            }
-            return;
-        }
-
-        // 通过uid获取ChatSession，在通过ChatSession获得播放地址
-        final ChatSession chatSession = mChatSessionMap.get(playerUID);
-        Map<String, SurfaceView> urlSurfaceMap = new HashMap<>();
-        // 将播放地址和SurfaceView一起存入Map集合
-        urlSurfaceMap.put(chatSession.getChatSessionInfo().getPlayUrl(), parterView);
-        // TODO by xinye : 发起连麦/ADD 连麦
-        mVideoChatApiCalling = true;
-        Log.e("xiongbo07", "开始发起连麦...");
-        // 使用Map集合正式开始调用连麦方法
-        mSDKHelper.launchChats(urlSurfaceMap);
-        // 连麦核心方法调用没有异常后，将SurfaceView存入连麦流程对象
-        chatSession.setSurfaceView(parterView);
-    }
-
-    // --------------------------------------------------------------------------------------------------------
-    /**
-     * 变量的描述: 主SurfaceView的变化监听回调接口实例
-     */
-    private SurfaceHolder.Callback mMainSurfaceCallback = new SurfaceHolder.Callback() {
-        @Override
-        public void surfaceCreated(SurfaceHolder holder) {
-            Log.d(TAG, "LiveActivity-->Preview surface created");
-            //记录Surface的状态
-            if (mPreviewSurfaceStatus == SurfaceStatus.UNINITED) {
-                // 主SurfaceView第一次被创建，开启预览
-                mPreviewSurfaceStatus = SurfaceStatus.CREATED;
-                // 现在开启预览是让主播在正式推流前就看见自己要直播的画面
-                mSDKHelper.startPreView(mMainSurfaceView);
-            } else if (mPreviewSurfaceStatus == SurfaceStatus.DESTROYED) {
-                // 主SurfaceView已经被销毁过，现在重新创建
-                mPreviewSurfaceStatus = SurfaceStatus.RECREATED;
-            }
-        }
-
-        @Override
-        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            Log.d(TAG, "LiveActivity-->Preview surface changed");
-            mPreviewSurfaceStatus = SurfaceStatus.CHANGED;
-
-        }
-
-        @Override
-        public void surfaceDestroyed(SurfaceHolder holder) {
-            Log.d(TAG, "LiveActivity-->Preview surface destroyed");
-            mPreviewSurfaceStatus = SurfaceStatus.DESTROYED;
-        }
-    };
-
-    /**
-     * 方法描述: 主播被观众邀请，主播同意了。则需要调用此方法 反馈邀请 实质就是告诉服务器主播是否同意被邀请进行连麦
-     */
-    private void asyncFeedbackInviting(final String playerUID) {
-        mInviteServiceBI.feedback(FeedbackForm.INVITE_TYPE_ANCHOR, FeedbackForm.INVITE_TYPE_WATCHER, playerUID, mUID, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.STATUS_AGREE, new ServiceBI.Callback<InviteFeedbackResult>() {
-            @Override
-            public void onResponse(int code, InviteFeedbackResult response) {
-                /**
-                 * 所谓的短延时URL实际上就是未经转码的原始流播放地址也就是，主播连麦观众时，主播端看到的观众的小窗画面，应该使用的播放地址
-                 * 注意：这里没有直接就开始播放小窗，是因为这个时候观众端实际上还没有推流成功，需要等到收到推流成功的通知才开始播放
-                 */
-                ChatSession chatSession = mChatSessionMap.get(playerUID);
-                // 修改进行邀请的观众的连麦流程的状态为尝试混流(其实就是等待其推流成功)
-                if (chatSession != null) {
-                    chatSession.notifyFeedbackSuccess();
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                Log.d(TAG, "Publisher feedback failure", t);
-            }
-        });
     }
 
     // --------------------------------------------------------------------------------------------------------
@@ -676,11 +654,6 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     public AlivcPublisherPerformanceInfo getPublisherPerformanceInfo() {
         // return mSDKHelper.getPublisherPerformanceInfo();
         return new AlivcPublisherPerformanceInfo();
-    }
-
-    public AlivcPlayerPerformanceInfo getPlayerPerformanceInfo(String url) {
-        // return mSDKHelper.getPlayerPerformanceInfo(url);
-        return new AlivcPlayerPerformanceInfo();
     }
 
     // **************************************************** MNS链接的建立和注册各种订阅 ****************************************************
@@ -702,7 +675,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     /**
      * 变量的描述: 观众发起请求和主播进行连麦，这里会收到MNS的消息，被邀请连麦的消息处理Action
      */
-    ImHelper.Func<MsgDataInvite> mInviteFunc = new ImHelper.Func<MsgDataInvite>() {
+    private ImHelper.Func<MsgDataInvite> mInviteFunc = new ImHelper.Func<MsgDataInvite>() {
         @Override
         public void action(final MsgDataInvite msgDataInvite) {
             if (mChatSessionMap.containsKey(msgDataInvite.getInviterUID())) {// 判断发起连麦的观众是否处于连麦流程，是就不接受再次邀请
@@ -729,10 +702,34 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             asyncFeedbackInviting(msgDataInvite.getInviterUID());
         }
     };
+
+    /**
+     * 方法描述: 主播被观众邀请，主播同意了。则需要调用此方法 反馈邀请 实质就是告诉服务器主播是否同意被邀请进行连麦
+     */
+    private void asyncFeedbackInviting(final String playerUID) {
+        mInviteServiceBI.feedback(FeedbackForm.INVITE_TYPE_ANCHOR, FeedbackForm.INVITE_TYPE_WATCHER, playerUID, mUID, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.STATUS_AGREE, new ServiceBI.Callback<InviteFeedbackResult>() {
+            @Override
+            public void onResponse(int code, InviteFeedbackResult response) {
+                // 所谓的短延时URL实际上就是未经转码的原始流播放地址也就是，主播连麦观众时，主播端看到的观众的小窗画面，应该使用的播放地址
+                // 注意：这里没有直接就开始播放小窗，是因为这个时候观众端实际上还没有推流成功，需要等到收到推流成功的通知才开始播放
+                ChatSession chatSession = mChatSessionMap.get(playerUID);
+                // 修改进行邀请的观众的连麦流程的状态为尝试混流(其实就是等待其推流成功)
+                if (chatSession != null) {
+                    chatSession.notifyFeedbackSuccess();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                Log.d(TAG, "Publisher feedback failure", t);
+            }
+        });
+    }
+
     /**
      * 变量的描述: 主播向观众发起连麦的邀请，观众同意时，MNS发送消息过来，观众同意连麦的消息处理Action
      */
-    ImHelper.Func<MsgDataAgreeVideoCall> mAgreeFunc = new ImHelper.Func<MsgDataAgreeVideoCall>() {
+    private ImHelper.Func<MsgDataAgreeVideoCall> mAgreeFunc = new ImHelper.Func<MsgDataAgreeVideoCall>() {
         @Override
         public void action(final MsgDataAgreeVideoCall msgDataAgreeVideoCall) {
             // 从MNS传递过来的数据源中取出同意进行连麦的观众的UID
@@ -748,7 +745,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     /**
      * 变量的描述: 主播向观众发起连麦的邀请，观众不同意时，MNS发送消息过来，观众不同意连麦的消息处理Action
      */
-    ImHelper.Func<MsgDataNotAgreeVideoCall> mNotAgreeFunc = new ImHelper.Func<MsgDataNotAgreeVideoCall>() {
+    private ImHelper.Func<MsgDataNotAgreeVideoCall> mNotAgreeFunc = new ImHelper.Func<MsgDataNotAgreeVideoCall>() {
         @Override
         public void action(final MsgDataNotAgreeVideoCall notAgreeVideoCall) {
             // 获取 不同意进行连麦的观众 的连麦流程对象
@@ -762,7 +759,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     /**
      * 变量的描述: 当主播和连麦的人推流成功时(可获取推流对应的播放地址)，MNS会接收从服务器发送过来的消息，这里我们主要处理连麦的人推流成功
      */
-    ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
+    private ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
         @Override
         public void action(MsgDataStartPublishStream msgDataStartPublishStream) {
             Log.d(TAG, "LiveActivity -->推流成功");
@@ -793,24 +790,28 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         }
     };
     /**
-     * 变量的描述: 某个正在进行连麦的人退出连麦的消息处理Action，这个退出有主播主动踢掉某人，也有某人主动退出
+     * 变量的描述: 某个正在进行连麦的人退出连麦的消息处理Action，这个退出有主播主动踢掉某人，也有某人主动退出，
+     * 但是如果是主播主动踢掉的，那么获取的ChatSession是null。因为在主播主动踢人时就已经调用api退出其连麦，也清空了对应的ChatSession
+     * 这里主要是对那些主动退出连麦的人进行反应
      */
-    ImHelper.Func<MsgDataExitChatting> mExitChattingFunc = new ImHelper.Func<MsgDataExitChatting>() {
+    private ImHelper.Func<MsgDataExitChatting> mExitChattingFunc = new ImHelper.Func<MsgDataExitChatting>() {
         @Override
         public void action(MsgDataExitChatting msgDataExitChatting) {
             String playerUID = msgDataExitChatting.getUID();
             ChatSession chatSession = mChatSessionMap.get(playerUID);
             if (chatSession != null) {
                 List<String> playUrls = new ArrayList<>();
-                if (chatSession != null && chatSession.getChatSessionInfo() != null)
+                if (chatSession.getChatSessionInfo() != null) {
                     playUrls.add(chatSession.getChatSessionInfo().getPlayUrl());
-                // TODO by xinye : 退出连麦
+                }
+                // 退出连麦,调用api退出
                 mVideoChatApiCalling = true;
                 Log.e("xiongbo07", "开始退出连麦...");
                 int result = mSDKHelper.abortChat(playUrls);
                 if (result < 0) {
                     mVideoChatApiCalling = false;
                 }
+                // 通过mCallback回调更新UI界面的退出连麦
                 if (mCallback != null) {
                     Bundle data = new Bundle();
                     data.putString(DATA_KEY_PLAYER_UID, playerUID);
@@ -823,7 +824,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     /**
      * 变量的描述: 连麦的时候(不管成功，还是失败)，混流过程中产生的状态码的回调
      */
-    ImHelper.Func<MsgDataMixStatusCode> mMixStatusCode = new ImHelper.Func<MsgDataMixStatusCode>() {
+    private ImHelper.Func<MsgDataMixStatusCode> mMixStatusCode = new ImHelper.Func<MsgDataMixStatusCode>() {
         @Override
         public void action(MsgDataMixStatusCode msgDataMixStatusCode) {
             // MNS接收的数据不为空，还有连麦流程对象
@@ -867,7 +868,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     /**
      * 变量的描述: 推流错误监听器回调接口实现
      */
-    AlivcVideoChatHost.OnErrorListener mOnErrorListener = new IVideoChatHost.OnErrorListener() {
+    private AlivcVideoChatHost.OnErrorListener mOnErrorListener = new IVideoChatHost.OnErrorListener() {
         @Override
         public boolean onError(IVideoChatHost iVideoChatHost, int what, String url) {
             if (what == 0) {
@@ -935,6 +936,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                 case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_NO_DATA:// 音频采集失败 音频采集出错
                     if (mChatSessionMap.size() > 0) {
                         //TODO:遍历ChatSession，并且close 连麦
+                        System.out.println();
                     }
                     //TODO:关闭连麦
                     if (mCallback != null) {
@@ -1001,7 +1003,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     /**
      * 变量的描述: 推流器状态信息监听器回调接口实现
      */
-    AlivcVideoChatHost.OnInfoListener mInfoListener = new AlivcVideoChatHost.OnInfoListener() {
+    private AlivcVideoChatHost.OnInfoListener mInfoListener = new AlivcVideoChatHost.OnInfoListener() {
 
         @Override
         public boolean onInfo(IVideoChatHost iVideoChatHost, int what, String url) {

@@ -32,7 +32,10 @@ public interface ILiveRecordView {
     //显示连麦邀请失败的UI
     void showInviteVideoChatFailedUI(Throwable e);
 
-    //显示中断连麦的UI
+    /**
+     * 方法描述: 当调用完sdk退出连麦后，我们也需要更新UI界面的连麦退出
+     * @param  playerUID 指定哪个连麦退出，playerUID没有值，则是退出所有正在连麦的
+     */
     void showTerminateChattingUI(String playerUID);
 
     /**

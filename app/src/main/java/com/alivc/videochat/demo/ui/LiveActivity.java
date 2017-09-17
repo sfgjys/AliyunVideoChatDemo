@@ -44,7 +44,7 @@ import java.util.TreeMap;
 /**
  * 类的描述: 主播直播页面---主要是消息显示和冒泡动画，底部按键是另一个Fragment
  */
-public class LiveActivity extends BaseActivity implements View.OnClickListener, FragmentInteraction {
+public class LiveActivity extends BaseActivity implements FragmentInteraction {
 
     public static void startActivity(Context context) {
         Intent intent = new Intent(context, LiveActivity.class);
@@ -158,6 +158,12 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         mMainSurfaceView = (SurfaceView) findViewById(R.id.surface_view);
 
         mActivityClose = (ImageView) findViewById(R.id.iv_close);
+        mActivityClose.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });
 
         // ---------------------------------------------触摸mFullEventView控件，根据触摸事件去动态决定mLiveRecordPresenter是聚焦还是缩放-----------------------------------------------------------
 
@@ -515,37 +521,6 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
 
     // --------------------------------------------------------------------------------------------------------
 
-    private DialogInterface.OnClickListener mImInitFailedListener = new DialogInterface.OnClickListener() {
-
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            finish();
-        }
-    };
-
-    private DialogInterface.OnClickListener mImLoginFailedListener = new DialogInterface.OnClickListener() {
-
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            finish();
-            Intent intent = new Intent(LiveActivity.this, LoginActivity.class);
-            startActivity(intent);
-        }
-    };
-
-
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.iv_close:
-                onBackPressed();
-                break;
-//            case R.id.iv_abort_chat:
-//                showChatCloseConfirmDialog();
-//                break;
-        }
-    }
-
     /**
      * 方法描述: 修改SurfaceView的topMargin为300 来隐藏SurfaceView ，之所以不用gone，是因为SurfaceView的生命周期
      */
@@ -564,6 +539,23 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
         layoutParams.topMargin = DensityUtil.dp2px(LiveActivity.this, 0);
         surfaceView.requestLayout();
     }
+    // --------------------------------------------------------------------------------------------------------
+
+    private DialogInterface.OnClickListener mImInitFailedListener = new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            finish();
+        }
+    };
+
+    private DialogInterface.OnClickListener mImLoginFailedListener = new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            finish();
+            Intent intent = new Intent(LiveActivity.this, LoginActivity.class);
+            startActivity(intent);
+        }
+    };
 
     // **************************************************** 根据直播，连麦等操作的结果来自定义UI更新内容 ****************************************************
     private ILiveRecordView mView = new ILiveRecordView() {
@@ -679,6 +671,7 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
             String key;
             ChattingViewHolder holder;
             if (playerUID == null) {
+                // 退出所有正在连麦的UI
                 Iterator<String> keySetIt = mUsedViewHolderMap.keySet().iterator();
                 while (keySetIt.hasNext()) {
                     key = keySetIt.next();
@@ -689,17 +682,19 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
                 }
                 mUsedViewHolderMap.clear();
             } else {
+                // 指定了某个连麦退出
                 holder = mUsedViewHolderMap.get(playerUID);
                 if (holder != null) {
+                    // 隐藏SurfaceView
                     hideSurfaceView(holder.mChatSurfaceView);
                     holder.mCloseChattingButton.setVisibility(View.GONE);
+                    // 对集合进行操作
                     mFreeSurfaceHolderMap.put(holder.mIndex, holder);
                     mUsedViewHolderMap.remove(playerUID);
                 } else {
                     // 被重复调用
-//                    throw new RuntimeException("parter view holder is null.");
+                    throw new RuntimeException("parter view holder is null.");
                 }
-
             }
         }
 
@@ -749,14 +744,10 @@ public class LiveActivity extends BaseActivity implements View.OnClickListener, 
             }
             switch (errorType) {
                 case ImErrorCode.NOT_LOGIN:
-                    mImInitFailedDialog.setButton(DialogInterface.BUTTON_POSITIVE,
-                            getString(R.string.sure),
-                            mImLoginFailedListener);
+                    mImInitFailedDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.sure), mImLoginFailedListener);
                     break;
                 case ImErrorCode.UNKNOWN:
-                    mImInitFailedDialog.setButton(DialogInterface.BUTTON_POSITIVE,
-                            getString(R.string.sure),
-                            mImInitFailedListener);
+                    mImInitFailedDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.sure), mImInitFailedListener);
                     break;
             }
             mImInitFailedDialog.show();

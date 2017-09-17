@@ -8,6 +8,7 @@ import com.alivc.videochat.demo.http.model.InviteFeedbackResult;
 import com.alivc.videochat.demo.http.service.ServiceFactory;
 
 import java.util.List;
+import java.util.Objects;
 
 import retrofit2.Call;
 
@@ -73,12 +74,11 @@ public class InviteServiceBI extends ServiceBI {
     /**
      * 观众退出连麦
      *
-     * @param uid
-     * @param liveRoomID
-     * @return
+     * @param uid        退出连麦的观众的uid
+     * @param liveRoomID 观众所退出的连麦的所在房间id
      */
-    public Call leaveCall(String uid, String liveRoomID, Callback callback) {
-        Call call;
+    public Call leaveCall(String uid, String liveRoomID, Callback<Object> callback) {
+        Call<HttpResponse<Object>> call;
         CloseVideoForm form = new CloseVideoForm(liveRoomID, uid);
         call = ServiceFactory.getInviteService().leaveChatting(form);
         processObservable(call, callback);

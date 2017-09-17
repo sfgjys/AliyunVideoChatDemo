@@ -398,7 +398,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
          * 2、成功后调用SDK停止连麦接口，并且上报停止连麦成功的消息接口
          * 3、清空本地连麦相关信息（比如mOtherChattingViews、mOtherChattingPlayUrls）
          */
-        mInviteServiceBI.leaveCall(mUID, mLiveRoomID, new ServiceBI.Callback() {
+        mInviteServiceBI.leaveCall(mUID, mLiveRoomID, new ServiceBI.Callback<Object>() {
 
             @Override
             public void onResponse(int code, Object response) {
