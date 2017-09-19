@@ -101,7 +101,7 @@ public class ChatSession {
     }
 
     /**
-     * 方法描述: 更新连麦状态为未连麦状态
+     * 方法描述: 对于别人的邀请连麦是否同意
      */
     public void feedbactInviting(boolean isAgree) {
         if (!isAgree) {
@@ -183,7 +183,7 @@ public class ChatSession {
     }
 
     /**
-     * 方法描述: 主播端或者观众端被邀请时调用，改变状态为到邀请，等待被邀请人反馈的状态
+     * 方法描述: 主播端或者观众端被邀请时调用，改变状态为收到邀请，等待被邀请人反馈的状态
      */
     public void notifyReceivedInviting(String publisherUID, String playerUID) {
         if (mChatSessionInfo != null) {

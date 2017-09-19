@@ -82,6 +82,14 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     private WebSocketConnectOptions mWSConnOpt;
 
     private String mUID;
+    /**
+     * 变量的描述: 观众端与主播进行连麦的时候，其连麦流程是:未链接-->向服务器发送邀请主播进行连麦的请求(观众收到邀请)-->开始连麦等待混流成功-->混流成功
+     * 这个连麦流程中，当本观众的连麦不再是未链接的状态时，MNS收到其他观众连麦推流成功的消息时，就会将其对应的播放地址存储进mUidMap集合中。
+     * 当本观众连麦的时候，走到主播同意进行连麦或者是本观众同意主播的邀请的步骤时，会获得自己的推流地址以及主播的播放地址，还有其他已经正在连麦的观众播放地址，
+     * 这时，我们就需要对mUidMap集合中的播放地址数据进行修改了，移除已经存在的播放地址。
+     * 当本观众拿着推流地址和已经连麦的观众播放地址去连麦，且暂时没有推流成功的这段时间，又有其他观众连麦成功了，mUidMap集合存储了播放地址，
+     * 当本观众推流成功了，这时就可以从mUidMap集合中获取新存储的播放地址，去调用连麦的核心代码---添加连麦
+     */
     private Map<String, String> mUidMap = new HashMap<>();
     private String mPublisherUID;
     /**
@@ -593,7 +601,6 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 
             // 判断推流成功的 uid 是不是 本观众
             if (!mUID.equals(uid) && !uid.equals(mPublisherUID) && mChatSession != null) {
-                // 本观众连麦成功了，但现有其他连麦用户推流成功
                 Log.d(TAG, "WatchLiveActivity -->Publish Success. " + mChatSession.getChatStatus());
 
                 // 1. 如果是本观众没有进行连麦，但是其他的观众进行了连麦，那么有可能进入本判断，这种情况不要管
@@ -602,7 +609,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
                     return;
                 }
 
-                // 本观众正在进行连麦的流程的同时，有其他观众连麦推流成功了，那么我们将其他连麦观众的播放地址先进行存储
+                // 本观众正在进行连麦的流程的同时(但是本观众还没有连麦成功)，有其他观众连麦推流成功了，那么我们将其他连麦观众的播放地址先进行存储，然后退出
                 if (mChatSession.getChatStatus() != VideoChatStatus.MIX_SUCC && mChatSession.getChatStatus() != VideoChatStatus.TRY_MIX) {
                     // 进入队列
                     mUidMap.put(uid, msgDataStartPublishStream.getPlayUrl());
@@ -620,8 +627,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 //                }
 
                 // 3. 如果连麦发起中, 等待连麦发起完成再add chat
-
-                // 存储数据，进行回调根据数据显示连麦者
+                // 代码走到这里说明，本观众已经连麦成功了。现在有其他的观众连麦推流成功，需要我们将连麦成功的其他观众显示出来
                 addChatSession(msgDataStartPublishStream.getPlayUrl(), uid);
                 ArrayList<String> userIdList = new ArrayList<>();
                 userIdList.add(uid);
