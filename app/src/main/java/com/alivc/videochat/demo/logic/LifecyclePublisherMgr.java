@@ -49,7 +49,7 @@ import java.util.Map;
 import retrofit2.Call;
 
 /**
- * 类的描述:
+ * 类的描述:11111
  */
 public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr, ILifecycleListener {
 
