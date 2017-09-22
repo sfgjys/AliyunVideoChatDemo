@@ -8,7 +8,7 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 
 /**
- * TODO 整个类都没什么具体用处
+ * TODO 整个类都删除
  */
 public class AlivcApplication extends Application {
 

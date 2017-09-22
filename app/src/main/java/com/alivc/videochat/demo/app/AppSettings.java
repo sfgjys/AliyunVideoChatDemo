@@ -9,7 +9,7 @@ import android.util.Log;
 import com.alivc.videochat.demo.R;
 
 /**
- * 类的描述: 这个类暂时没什么用
+ * 类的描述: TODO 整个类删除
  */
 public class AppSettings {
     private static final String TAG = "AppSettings";
