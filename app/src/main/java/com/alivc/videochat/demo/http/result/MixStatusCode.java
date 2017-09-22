@@ -1,4 +1,4 @@
-package com.alivc.videochat.demo.http.model;
+package com.alivc.videochat.demo.http.result;
 
 /**
  * 类的描述:

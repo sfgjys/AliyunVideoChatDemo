@@ -3,7 +3,7 @@ package com.alivc.videochat.demo.presenter;
 import com.alivc.videochat.demo.R;
 import com.alivc.videochat.demo.bi.AccountServiceBI;
 import com.alivc.videochat.demo.bi.ServiceBI;
-import com.alivc.videochat.demo.http.model.LoginResult;
+import com.alivc.videochat.demo.http.result.LoginResult;
 import com.alivc.videochat.demo.ui.view.LoginView;
 
 import retrofit2.Call;
@@ -40,7 +40,7 @@ public class LoginPresenter {
             mLoginView.saveLoginInfo(response.getId());
 
             // 初始化ImManager ，但是在具体实现initImManager方法时并没有内容
-            mLoginView.initImManager(response.getImUserInfo());
+            mLoginView.initImManager(null);
 
             //跳转到主页
             mLoginView.gotoMainActivity();

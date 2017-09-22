@@ -4,7 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 
 import com.alivc.videochat.demo.R;
-import com.alivc.videochat.demo.http.model.LiveCreateResult;
+import com.alivc.videochat.demo.http.result.LiveCreateResult;
 import com.alivc.videochat.demo.base.AsyncCallback;
 import com.alivc.videochat.demo.base.ContextBase;
 import com.alivc.videochat.demo.logic.IPublisherManager;

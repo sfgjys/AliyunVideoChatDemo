@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.alivc.videochat.demo.R;
-import com.alivc.videochat.demo.http.model.LiveItemResult;
+import com.alivc.videochat.demo.http.result.LiveItemResult;
 
 import java.util.List;
 

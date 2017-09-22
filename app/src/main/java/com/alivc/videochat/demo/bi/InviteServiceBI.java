@@ -3,8 +3,8 @@ package com.alivc.videochat.demo.bi;
 import com.alivc.videochat.demo.http.form.CloseVideoForm;
 import com.alivc.videochat.demo.http.form.FeedbackForm;
 import com.alivc.videochat.demo.http.form.InviteForm;
-import com.alivc.videochat.demo.http.model.HttpResponse;
-import com.alivc.videochat.demo.http.model.InviteFeedbackResult;
+import com.alivc.videochat.demo.http.result.HttpResponse;
+import com.alivc.videochat.demo.http.result.InviteFeedbackResult;
 import com.alivc.videochat.demo.http.service.NetworkServiceFactory;
 
 import java.util.List;

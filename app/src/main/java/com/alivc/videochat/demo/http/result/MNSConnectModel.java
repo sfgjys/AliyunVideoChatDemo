@@ -1,13 +1,9 @@
-package com.alivc.videochat.demo.http.model;
+package com.alivc.videochat.demo.http.result;
 
 import com.alivc.videochat.demo.http.HttpConstant;
 import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
-
-/**
- * Created by liujianghao on 16-10-21.
- */
 
 public class MNSConnectModel implements Serializable {
     @SerializedName(HttpConstant.KEY_AUTHENTICATION)

@@ -1,7 +1,7 @@
 package com.alivc.videochat.demo.ui.view;
 
-import com.alivc.videochat.demo.http.model.LiveItemResult;
-import com.alivc.videochat.demo.http.model.WatcherModel;
+import com.alivc.videochat.demo.http.result.LiveItemResult;
+import com.alivc.videochat.demo.http.result.WatcherModel;
 
 import java.util.List;
 

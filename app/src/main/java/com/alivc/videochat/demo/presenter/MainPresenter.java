@@ -3,8 +3,8 @@ package com.alivc.videochat.demo.presenter;
 import com.alivc.videochat.demo.R;
 import com.alivc.videochat.demo.bi.ServiceBI;
 import com.alivc.videochat.demo.bi.ServiceBIFactory;
-import com.alivc.videochat.demo.http.model.LiveItemResult;
-import com.alivc.videochat.demo.http.model.WatcherModel;
+import com.alivc.videochat.demo.http.result.LiveItemResult;
+import com.alivc.videochat.demo.http.result.WatcherModel;
 import com.alivc.videochat.demo.ui.view.MainView;
 
 import java.util.List;

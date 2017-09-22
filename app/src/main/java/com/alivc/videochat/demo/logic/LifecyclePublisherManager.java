@@ -24,11 +24,11 @@ import com.alivc.videochat.demo.bi.ServiceBIFactory;
 import com.alivc.videochat.demo.exception.ChatSessionException;
 import com.alivc.videochat.demo.http.form.FeedbackForm;
 import com.alivc.videochat.demo.http.form.InviteForm;
-import com.alivc.videochat.demo.http.model.InviteFeedbackResult;
-import com.alivc.videochat.demo.http.model.LiveCreateResult;
-import com.alivc.videochat.demo.http.model.MNSConnectModel;
-import com.alivc.videochat.demo.http.model.MNSModel;
-import com.alivc.videochat.demo.http.model.MixStatusCode;
+import com.alivc.videochat.demo.http.result.InviteFeedbackResult;
+import com.alivc.videochat.demo.http.result.LiveCreateResult;
+import com.alivc.videochat.demo.http.result.MNSConnectModel;
+import com.alivc.videochat.demo.http.result.MNSModel;
+import com.alivc.videochat.demo.http.result.MixStatusCode;
 import com.alivc.videochat.demo.im.ImHelper;
 import com.alivc.videochat.demo.im.ImManager;
 import com.alivc.videochat.demo.im.model.MessageType;
@@ -45,7 +45,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingDeque;
 
 import retrofit2.Call;
 

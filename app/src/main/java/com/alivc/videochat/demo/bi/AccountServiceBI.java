@@ -2,9 +2,9 @@ package com.alivc.videochat.demo.bi;
 
 import com.alivc.videochat.demo.http.form.LoginForm;
 import com.alivc.videochat.demo.http.form.MNSConnectionInfoForm;
-import com.alivc.videochat.demo.http.model.HttpResponse;
-import com.alivc.videochat.demo.http.model.LoginResult;
-import com.alivc.videochat.demo.http.model.MNSConnectModel;
+import com.alivc.videochat.demo.http.result.HttpResponse;
+import com.alivc.videochat.demo.http.result.LoginResult;
+import com.alivc.videochat.demo.http.result.MNSConnectModel;
 import com.alivc.videochat.demo.http.service.NetworkServiceFactory;
 
 import retrofit2.Call;

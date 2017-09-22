@@ -32,7 +32,7 @@ public class HttpConstant {
      * 变量的描述: 请求网络时的参数字段---观众进行评论的内容
      */
     public static final String KEY_COMMENT = "comment";
-    // 评论和点赞共用的请求网络时的参数字段
+    // --------------------------评论和点赞共用的请求网络时的参数字段--------------------------
     /**
      * 变量的描述: 请求网络时的参数字段---评论点赞的观众的id，创建直播获取推流地址的用户的id
      */
@@ -41,7 +41,7 @@ public class HttpConstant {
      * 变量的描述: 请求网络时的参数字段---评论点赞的观众所在房间id
      */
     public static final String KEY_ROOM_ID = "roomId";
-    // 评论和点赞共用的请求网络时的参数字段
+    // --------------------------评论和点赞共用的请求网络时的参数字段--------------------------
     /**
      * 变量的描述: 将观众的点赞发送给业务服务器--URL 返回的json的数据:{"code":200,"message":"成功"} 只返回了HttpResponse的内容，其子对象不需要，只要知道是否发送成功
      */
@@ -56,6 +56,27 @@ public class HttpConstant {
      */
     public static final String KEY_DESC = "description";
     // --------------------------------------------------------------------------------------------------------
+    /**
+     * 变量的描述: 请求网络获取MNS链接到服务器的所需要各种的参数，返回json数据:{"code":"200","message":"成功","data":{"authentication":"Fa91Q+YDqsa7CQOMHyYXE7OFw=","topicWebsocketServerAddress":"ws://125277.mns-websocket.cn-shanghai.aliyuncs.com/mns","accountId":"12277","accessId":"Q1dfW3pJSOJf6"}}
+     */
+    public static final String URL_WEBSOCKET_INFO = "mns/topic/websocket/info";
+    /**
+     * 变量的描述: 请求网络时的参数字段---订阅名字 默认和topic名字一样
+     */
+    public static final String KEY_SUBSCRIPTION_NAME = "subscriptionName";
+    /**
+     * 变量的描述: 请求网络时的参数字段---主题
+     */
+    public static final String KEY_TOPIC = "topic";
+    /**
+     * 变量的描述: 请求网络返回的json数据中的字段
+     */
+    public static final String KEY_AUTHENTICATION = "authentication";
+    public static final String KEY_WS_SERVER_ADDRESS = "topicWebsocketServerAddress";
+    public static final String KEY_ACCOUNT_ID = "accountId";
+    public static final String KEY_ACCESS_ID = "accessId";
+    public static final String KEY_DATE = "date";
+    // -------------------------------------------------------------------------------------------------------- 
 
 
     public static final String URL_WATCH_LIVE = "live/play";
@@ -67,8 +88,6 @@ public class HttpConstant {
     public static final String URL_INVITE_FEEDBACK = "videocall/feedback";
     public static final String URL_CLOSE_VIDEO_CALL = "videocall/close";
     public static final String URL_LEAVE_VIDEO_CALL = "videocall/leave";
-
-    public static final String URL_WEBSOCKET_INFO = "mns/topic/websocket/info";
 
 
     public static final String KEY_INVITER_UID = "inviterUid";
@@ -91,7 +110,7 @@ public class HttpConstant {
     public static final String KEY_INVITER_TYPE = "inviterType";
     public static final String KEY_INVITEE_TYPE = "inviteeType";
     public static final String KEY_INVITER_PLAY_URL = "inviterPlayUrl";
-    public static final String KEY_TOPIC = "topic";
+
     public static final String KEY_TOPIC_LOCATION = "topicLocation";
     public static final String KEY_ROOM_TAG = "roomTag";
     public static final String KEY_USER_ROOM_TAG = "userRoomTag";
@@ -103,13 +122,10 @@ public class HttpConstant {
     public static final String KEY_PLAY_URLS = "playUrls";
     public static final String KEY_RTMP_PLAY_URL = "rtmpPlayUrl";
     public static final String KEY_M3U8_PLAY_URL = "m3u8PlayUrl";
-    public static final String KEY_AUTHENTICATION = "authentication";
+
     public static final String KEY_WS_SERVER_IP = "topicWebsocketServerIp";
-    public static final String KEY_WS_SERVER_ADDRESS = "topicWebsocketServerAddress";
-    public static final String KEY_ACCOUNT_ID = "accountId";
-    public static final String KEY_ACCESS_ID = "accessId";
-    public static final String KEY_SUBSCRIPTION_NAME = "subscriptionName";
-    public static final String KEY_DATE = "date";
+
+
     public static final String KEY_LIVE_ROOM_ID = "liveRoomId";
     public static final String KEY_URL = "url";
 

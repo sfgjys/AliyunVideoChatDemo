@@ -4,15 +4,15 @@ import com.alivc.videochat.demo.http.HttpConstant;
 import com.alivc.videochat.demo.http.form.CloseVideoForm;
 import com.alivc.videochat.demo.http.form.FeedbackForm;
 import com.alivc.videochat.demo.http.form.InviteForm;
-import com.alivc.videochat.demo.http.model.HttpResponse;
-import com.alivc.videochat.demo.http.model.InviteFeedbackResult;
+import com.alivc.videochat.demo.http.result.HttpResponse;
+import com.alivc.videochat.demo.http.result.InviteFeedbackResult;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 /**
- * Created by liujianghao on 16-7-28.
+ * 类的描述:
  */
 public interface InviteNetworkService {
 

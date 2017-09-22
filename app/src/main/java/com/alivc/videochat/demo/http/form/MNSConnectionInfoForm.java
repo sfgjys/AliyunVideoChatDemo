@@ -3,10 +3,6 @@ package com.alivc.videochat.demo.http.form;
 import com.alivc.videochat.demo.http.HttpConstant;
 import com.google.gson.annotations.SerializedName;
 
-/**
- * Created by liujianghao on 16-10-21.
- */
-
 public class MNSConnectionInfoForm {
     @SerializedName(HttpConstant.KEY_TOPIC)
     private String mTopic;

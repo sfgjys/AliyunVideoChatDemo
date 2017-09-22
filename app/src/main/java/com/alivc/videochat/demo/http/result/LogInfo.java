@@ -1,4 +1,4 @@
-package com.alivc.videochat.demo.http.model;
+package com.alivc.videochat.demo.http.result;
 
 /**
  * Created by liujianghao on 16-9-22.

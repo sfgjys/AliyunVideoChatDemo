@@ -8,7 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.alivc.videochat.demo.http.model.LogInfo;
+import com.alivc.videochat.demo.http.result.LogInfo;
 
 /**
  * 类的描述: 性能列表的适配器

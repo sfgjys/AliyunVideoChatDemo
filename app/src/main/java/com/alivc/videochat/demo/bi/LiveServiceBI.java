@@ -8,12 +8,12 @@ import com.alivc.videochat.demo.http.form.ExitWatchingForm;
 import com.alivc.videochat.demo.http.form.MNSConnectionInfoForm;
 import com.alivc.videochat.demo.http.form.WatchLiveForm;
 import com.alivc.videochat.demo.http.form.WatcherListForm;
-import com.alivc.videochat.demo.http.model.HttpResponse;
-import com.alivc.videochat.demo.http.model.LiveCreateResult;
-import com.alivc.videochat.demo.http.model.LiveItemResult;
-import com.alivc.videochat.demo.http.model.MNSConnectModel;
-import com.alivc.videochat.demo.http.model.WatchLiveResult;
-import com.alivc.videochat.demo.http.model.WatcherModel;
+import com.alivc.videochat.demo.http.result.HttpResponse;
+import com.alivc.videochat.demo.http.result.LiveCreateResult;
+import com.alivc.videochat.demo.http.result.LiveItemResult;
+import com.alivc.videochat.demo.http.result.MNSConnectModel;
+import com.alivc.videochat.demo.http.result.WatchLiveResult;
+import com.alivc.videochat.demo.http.result.WatcherModel;
 import com.alivc.videochat.demo.http.service.NetworkServiceFactory;
 
 import java.util.List;

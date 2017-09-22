@@ -3,7 +3,7 @@ package com.alivc.videochat.demo.http.service;
 import com.alivc.videochat.demo.http.HttpConstant;
 import com.alivc.videochat.demo.http.form.SendCommentForm;
 import com.alivc.videochat.demo.http.form.SendLikeForm;
-import com.alivc.videochat.demo.http.model.HttpResponse;
+import com.alivc.videochat.demo.http.result.HttpResponse;
 
 import retrofit2.Call;
 import retrofit2.http.Body;

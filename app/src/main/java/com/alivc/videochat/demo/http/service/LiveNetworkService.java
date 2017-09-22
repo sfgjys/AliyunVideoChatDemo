@@ -6,11 +6,11 @@ import com.alivc.videochat.demo.http.form.CreateLiveForm;
 import com.alivc.videochat.demo.http.form.ExitWatchingForm;
 import com.alivc.videochat.demo.http.form.WatchLiveForm;
 import com.alivc.videochat.demo.http.form.WatcherListForm;
-import com.alivc.videochat.demo.http.model.HttpResponse;
-import com.alivc.videochat.demo.http.model.LiveCreateResult;
-import com.alivc.videochat.demo.http.model.LiveItemResult;
-import com.alivc.videochat.demo.http.model.WatchLiveResult;
-import com.alivc.videochat.demo.http.model.WatcherModel;
+import com.alivc.videochat.demo.http.result.HttpResponse;
+import com.alivc.videochat.demo.http.result.LiveCreateResult;
+import com.alivc.videochat.demo.http.result.LiveItemResult;
+import com.alivc.videochat.demo.http.result.WatchLiveResult;
+import com.alivc.videochat.demo.http.result.WatcherModel;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 /**
- * Created by liujianghao on 16-7-28.
+ * 类的描述: 
  */
 public interface LiveNetworkService {
 

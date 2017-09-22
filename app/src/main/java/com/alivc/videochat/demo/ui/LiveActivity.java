@@ -24,7 +24,7 @@ import com.alivc.videochat.demo.exception.APIErrorCode;
 import com.alivc.videochat.demo.exception.APIException;
 import com.alivc.videochat.demo.exception.ChatSessionException;
 import com.alivc.videochat.demo.exception.ImErrorCode;
-import com.alivc.videochat.demo.http.model.LiveItemResult;
+import com.alivc.videochat.demo.http.result.LiveItemResult;
 import com.alivc.videochat.demo.im.ImHelper;
 import com.alivc.videochat.demo.im.ImManager;
 import com.alivc.videochat.demo.presenter.ILifecycleLiveRecordPresenter;

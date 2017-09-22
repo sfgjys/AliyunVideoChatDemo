@@ -1,7 +1,6 @@
 package com.alivc.videochat.demo.ui;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -11,17 +10,15 @@ import android.support.v4.content.PermissionChecker;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.alivc.videochat.demo.R;
 import com.alivc.videochat.demo.base.BaseActivity;
-import com.alivc.videochat.demo.http.model.LiveItemResult;
-import com.alivc.videochat.demo.http.model.WatcherModel;
+import com.alivc.videochat.demo.http.result.LiveItemResult;
+import com.alivc.videochat.demo.http.result.WatcherModel;
 import com.alivc.videochat.demo.presenter.MainPresenter;
 import com.alivc.videochat.demo.ui.adapter.LiveListAdapter;
 import com.alivc.videochat.demo.ui.view.MainView;

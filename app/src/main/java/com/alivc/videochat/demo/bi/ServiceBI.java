@@ -3,7 +3,7 @@ package com.alivc.videochat.demo.bi;
 import com.alivc.videochat.demo.exception.APIErrorCode;
 import com.alivc.videochat.demo.exception.APIException;
 import com.alivc.videochat.demo.http.HttpConstant;
-import com.alivc.videochat.demo.http.model.HttpResponse;
+import com.alivc.videochat.demo.http.result.HttpResponse;
 
 import retrofit2.Call;
 import retrofit2.Response;

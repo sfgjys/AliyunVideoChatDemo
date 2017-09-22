@@ -12,7 +12,7 @@ import android.widget.Toast;
 
 import com.alivc.videochat.demo.R;
 import com.alivc.videochat.demo.base.BaseActivity;
-import com.alivc.videochat.demo.http.model.IMUserInfo;
+import com.alivc.videochat.demo.http.result.IMUserInfo;
 import com.alivc.videochat.demo.presenter.LoginPresenter;
 import com.alivc.videochat.demo.ui.view.LoginView;
 import com.alivc.videochat.demo.uitils.PreferenceUtil;

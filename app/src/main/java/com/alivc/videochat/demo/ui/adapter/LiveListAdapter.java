@@ -10,11 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.alivc.videochat.demo.R;
-import com.alivc.videochat.demo.app.AppSettings;
-import com.alivc.videochat.demo.bi.ServiceBI;
-import com.alivc.videochat.demo.bi.ServiceBIFactory;
-import com.alivc.videochat.demo.http.model.LiveItemResult;
-import com.alivc.videochat.demo.http.model.WatchLiveResult;
+import com.alivc.videochat.demo.http.result.LiveItemResult;
 import com.alivc.videochat.demo.ui.WatchLiveActivity;
 import com.alivc.videochat.demo.uitils.ToastUtils;
 

@@ -1,4 +1,4 @@
-package com.alivc.videochat.demo.http.model;
+package com.alivc.videochat.demo.http.result;
 
 import com.alivc.videochat.demo.http.HttpConstant;
 import com.alivc.videochat.demo.im.model.ParterInfo;
