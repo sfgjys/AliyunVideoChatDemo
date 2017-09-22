@@ -21,7 +21,7 @@ import retrofit2.http.POST;
 /**
  * Created by liujianghao on 16-7-28.
  */
-public interface LiveService {
+public interface LiveNetworkService {
 
     @POST(HttpConstant.URL_CREATE_LIVE)
     Call<HttpResponse<LiveCreateResult>> createLive(@Body CreateLiveForm form);// 获取推流地址

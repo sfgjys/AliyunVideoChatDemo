@@ -10,7 +10,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 /**
  * Service工厂类，根据不同的Service接口创建对应的Service对象实例，该实例对象在调用对应接口中获取Call的方法就可以获取到一个专属的Call对象
  */
-public class ServiceFactory {
+public class NetworkServiceFactory {
     private static Retrofit sRetrofit;
 
     static {
@@ -25,7 +25,7 @@ public class ServiceFactory {
                 .baseUrl(HttpConstant.HTTP_BASE_URL)
                 .client(client)
                 // 增加返回值为Gson的支持(以实体类返回)
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create())// 注意：GsonConverterFactory需要converter-gson-2.1.0架包
                 // 增加返回值为String的支持
                 // .addConverterFactory(ScalarsConverterFactory.create())
                 // 增加返回值为Oservable<T>的支持
@@ -33,10 +33,10 @@ public class ServiceFactory {
                 .build();
     }
 
-    private static LiveService sLiveService = null;
-    private static InviteService sInviteService = null;
-    private static InteractionService sInteractionService = null;
-    private static AccountService sAccountService = null;
+    private static LiveNetworkService sLiveNetworkService = null;
+    private static InviteNetworkService sInviteNetworkService = null;
+    private static InteractionNetworkService sInteractionNetworkService = null;
+    private static AccountNetworkService service = null;
 
     /**
      * 方法描述: 创建不同的网络请求接口
@@ -48,31 +48,31 @@ public class ServiceFactory {
         return sRetrofit.create(clazz);
     }
 
-    public static LiveService getLiveService() {
-        if (sLiveService == null) {
-            sLiveService = createServiceInstance(LiveService.class);
+    public static LiveNetworkService getLiveService() {
+        if (sLiveNetworkService == null) {
+            sLiveNetworkService = createServiceInstance(LiveNetworkService.class);
         }
-        return sLiveService;
+        return sLiveNetworkService;
     }
 
-    public static InviteService getInviteService() {
-        if (sInviteService == null) {
-            sInviteService = createServiceInstance(InviteService.class);
+    public static InviteNetworkService getInviteService() {
+        if (sInviteNetworkService == null) {
+            sInviteNetworkService = createServiceInstance(InviteNetworkService.class);
         }
-        return sInviteService;
+        return sInviteNetworkService;
     }
 
-    public static InteractionService getInteractionService() {
-        if (sInteractionService == null) {
-            sInteractionService = createServiceInstance(InteractionService.class);
+    public static InteractionNetworkService getInteractionService() {
+        if (sInteractionNetworkService == null) {
+            sInteractionNetworkService = createServiceInstance(InteractionNetworkService.class);
         }
-        return sInteractionService;
+        return sInteractionNetworkService;
     }
 
-    public static AccountService getAccountService() {
-        if (sAccountService == null) {
-            sAccountService = createServiceInstance(AccountService.class);
+    public static AccountNetworkService getAccountService() {
+        if (service == null) {
+            service = createServiceInstance(AccountNetworkService.class);
         }
-        return sAccountService;
+        return service;
     }
 }

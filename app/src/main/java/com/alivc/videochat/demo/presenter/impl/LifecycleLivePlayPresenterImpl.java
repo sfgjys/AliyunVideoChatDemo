@@ -9,9 +9,9 @@ import com.alivc.videochat.demo.base.AsyncCallback;
 import com.alivc.videochat.demo.base.ContextBase;
 import com.alivc.videochat.demo.exception.ChatSessionException;
 import com.alivc.videochat.demo.im.ImManager;
-import com.alivc.videochat.demo.logic.IPlayerMgr;
-import com.alivc.videochat.demo.logic.LifecycledPlayerMgr;
-import com.alivc.videochat.demo.logic.MgrCallback;
+import com.alivc.videochat.demo.logic.IPlayerManager;
+import com.alivc.videochat.demo.logic.LifecycledPlayerManager;
+import com.alivc.videochat.demo.logic.ManagerCallback;
 import com.alivc.videochat.demo.presenter.ILifecycleLivePlayPresenter;
 import com.alivc.videochat.demo.presenter.view.ILivePlayView;
 import com.alivc.videochat.demo.ui.LogInfoFragment;
@@ -20,23 +20,23 @@ import com.alivc.videochat.demo.uitils.ToastUtils;
 
 import java.util.ArrayList;
 
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_INVITE_CHAT_TIMEOUT;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_MAIN_STREAM_NOT_EXIST;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_MIX_STREAM_ERROR;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_MIX_STREAM_NOT_EXIST;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_MIX_STREAM_SUCCESS;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_MIX_STREAM_TIMEOUT;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PLAYER_AUDIO_PLAYER_ERROR;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PLAYER_INVALID_INPUTFILE;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PLAYER_NETWORK_POOR;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PLAYER_NO_NETWORK;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PLAYER_OPEN_FAILED;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PLAYER_READ_PACKET_TIMEOUT;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PLAYER_TIMEOUT;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PUBLISHER_NETWORK_POOR;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PUBLISHER_NETWORK_TIMEOUT;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PUBLISHER_NETWORK_UNCONNECT;
-import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PUBLISHER_RECONNECT_FAILURE;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_INVITE_CHAT_TIMEOUT;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_MAIN_STREAM_NOT_EXIST;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_MIX_STREAM_ERROR;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_MIX_STREAM_NOT_EXIST;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_MIX_STREAM_SUCCESS;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_MIX_STREAM_TIMEOUT;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_AUDIO_PLAYER_ERROR;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_INVALID_INPUTFILE;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_NETWORK_POOR;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_NO_NETWORK;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_OPEN_FAILED;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_READ_PACKET_TIMEOUT;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_TIMEOUT;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PUBLISHER_NETWORK_POOR;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PUBLISHER_NETWORK_TIMEOUT;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PUBLISHER_NETWORK_UNCONNECT;
+import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PUBLISHER_RECONNECT_FAILURE;
 
 /**
  * Created by apple on 2017/1/9.
@@ -44,12 +44,12 @@ import static com.alivc.videochat.demo.logic.IPlayerMgr.TYPE_PUBLISHER_RECONNECT
 public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILifecycleLivePlayPresenter {
     private static final String TAG = LifecycleLivePlayPresenterImpl.class.getName();
     private ILivePlayView mView;
-    private LifecycledPlayerMgr mPlayerMgr;
+    private LifecycledPlayerManager mPlayerMgr;
 
     public LifecycleLivePlayPresenterImpl(Context context, ILivePlayView view, ImManager imManager, String mUID) {
         super(context);
         this.mView = view;
-        this.mPlayerMgr = new LifecycledPlayerMgr(context, imManager, mUID, mCallback);
+        this.mPlayerMgr = new LifecycledPlayerManager(context, imManager, mUID, mCallback);
     }
 
     // --------------------------------------------------------------------------------------------------------
@@ -176,84 +176,84 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
 
     // --------------------------------------------------------------------------------------------------------
 
-    private MgrCallback mCallback = new MgrCallback() {
+    private ManagerCallback mCallback = new ManagerCallback() {
         @Override
         public void onEvent(int eventType, Bundle data) {
             switch (eventType) {
-                case IPlayerMgr.TYPE_PLAYER_INTERNAL_ERROR:
-                    mView.showLiveInterruptUI(R.string.error_stop_playing, data.getInt(IPlayerMgr.DATA_KEY_PLAYER_ERROR_CODE));
+                case IPlayerManager.TYPE_PLAYER_INTERNAL_ERROR:
+                    mView.showLiveInterruptUI(R.string.error_stop_playing, data.getInt(IPlayerManager.DATA_KEY_PLAYER_ERROR_CODE));
                     break;
-                case IPlayerMgr.TYPE_CHATTING_FINISHED:
+                case IPlayerManager.TYPE_CHATTING_FINISHED:
 //                    mView.showChattingFinishedUI();
                     break;
-                case IPlayerMgr.TYPE_START_CHATTING:// 本观众请求连麦，主播也同意了，所以从MNS那里获取了本观众进行连麦的信息，和其他连麦观众的信息
-                case IPlayerMgr.TYPE_OTHER_PEOPLE_JOIN_IN_CHATTING:
+                case IPlayerManager.TYPE_START_CHATTING:// 本观众请求连麦，主播也同意了，所以从MNS那里获取了本观众进行连麦的信息，和其他连麦观众的信息
+                case IPlayerManager.TYPE_OTHER_PEOPLE_JOIN_IN_CHATTING:
 
                     // 正式开始连麦
-                    ArrayList<String> inviteeUIDList = data.getStringArrayList(IPlayerMgr.DATA_KEY_INVITEE_UID_LIST);
+                    ArrayList<String> inviteeUIDList = data.getStringArrayList(IPlayerManager.DATA_KEY_INVITEE_UID_LIST);
                     if (inviteeUIDList == null) {
                         inviteeUIDList = new ArrayList<>();
                     }
                     mPlayerMgr.launchChat(mView.showLaunchChatUI(), mView.getOtherParterViews(inviteeUIDList));
 
                     break;
-                case IPlayerMgr.TYPE_OTHER_PEOPLE_EXIT_CHATTING:    //其他人退出连麦
-                    String inviteeUID = data.getString(IPlayerMgr.DATA_KEY_INVITEE_UID);
+                case IPlayerManager.TYPE_OTHER_PEOPLE_EXIT_CHATTING:    //其他人退出连麦
+                    String inviteeUID = data.getString(IPlayerManager.DATA_KEY_INVITEE_UID);
                     mView.showExitChattingUI(inviteeUID);
                     break;
-                case IPlayerMgr.TYPE_SELF_EXIT_CHATTING:
-                case IPlayerMgr.TYPE_PUBLISHER_TERMINATE_CHATTING:
+                case IPlayerManager.TYPE_SELF_EXIT_CHATTING:
+                case IPlayerManager.TYPE_PUBLISHER_TERMINATE_CHATTING:
                     mView.showSelfExitChattingUI();
                     break;
-                case IPlayerMgr.TYPE_LIVE_CLOSE:
+                case IPlayerManager.TYPE_LIVE_CLOSE:
                     mView.showLiveCloseUI();
                     break;
-                case IPlayerMgr.TYPE_PLAYER_FIRST_FRAME_RENDER_SUCCESS:
+                case IPlayerManager.TYPE_PLAYER_FIRST_FRAME_RENDER_SUCCESS:
                     mView.hideLoading();
                     mView.hideLiveInterruptUI();
                     break;
-                case IPlayerMgr.TYPE_PUBLISHER_FIRST_FRAME_RENDER_SUCCESS:
+                case IPlayerManager.TYPE_PUBLISHER_FIRST_FRAME_RENDER_SUCCESS:
                     mView.hideChattingView();
                     break;
-                case IPlayerMgr.TYPE_OFFLINE_CHAT_SUCCESS:
+                case IPlayerManager.TYPE_OFFLINE_CHAT_SUCCESS:
                     // 显示online按钮
 //                    mView.showOnlineChatBtn();
                     break;
-                case IPlayerMgr.TYPE_ONLINE_CHAT_SUCCESS:
+                case IPlayerManager.TYPE_ONLINE_CHAT_SUCCESS:
                     // 显示offline按钮
 //                    mView.showOfflineChatBtn();
                     break;
-                case IPlayerMgr.TYPE_ADD_CHAT_SUCCESS:
+                case IPlayerManager.TYPE_ADD_CHAT_SUCCESS:
 //                    mView.showOfflineChatBtn();
                     break;
-                case IPlayerMgr.TYPE_PARTER_OPT_START:
+                case IPlayerManager.TYPE_PARTER_OPT_START:
                     // 按钮不可点击
                     // 显示进度条
 //                    mView.showLoading();
                     break;
-                case IPlayerMgr.TYPE_PARTER_OPT_END:
+                case IPlayerManager.TYPE_PARTER_OPT_END:
                     // 按钮可以点击
                     // 隐藏进度条
 //                    mView.hideLoading();
                     break;
-                case IPlayerMgr.TYPE_PARTER_OPT_TIMEOUT:
+                case IPlayerManager.TYPE_PARTER_OPT_TIMEOUT:
                     mView.hideLoading();
                     mView.showLiveInterruptUI(R.string.error_video_chat_timeout, 0);
                     break;
-                case IPlayerMgr.TYPE_OPERATION_CALLED_ERROR:
+                case IPlayerManager.TYPE_OPERATION_CALLED_ERROR:
                     String msg = null;
                     if (data != null) {
-                        msg = data.getString(IPlayerMgr.DATA_KEY_PLAYER_ERROR_MSG, null);
+                        msg = data.getString(IPlayerManager.DATA_KEY_PLAYER_ERROR_MSG, null);
                     }
                     mView.showInfoDialog(msg);
                     break;
-                case IPlayerMgr.TYPE_PUBLISHER_NO_AUDIO_DATA:
+                case IPlayerManager.TYPE_PUBLISHER_NO_AUDIO_DATA:
                     mView.hideLoading();
-                    mView.showLiveInterruptUI(R.string.error_video_chat_no_audio_data, data.getInt(IPlayerMgr.DATA_KEY_PLAYER_ERROR_CODE));
+                    mView.showLiveInterruptUI(R.string.error_video_chat_no_audio_data, data.getInt(IPlayerManager.DATA_KEY_PLAYER_ERROR_CODE));
                     break;
-                case IPlayerMgr.TYPE_PUBLISHER_NO_VIDEO_DATA:
+                case IPlayerManager.TYPE_PUBLISHER_NO_VIDEO_DATA:
                     mView.hideLoading();
-                    mView.showLiveInterruptUI(R.string.error_video_chat_no_video_data, data.getInt(IPlayerMgr.DATA_KEY_PLAYER_ERROR_CODE));
+                    mView.showLiveInterruptUI(R.string.error_video_chat_no_video_data, data.getInt(IPlayerManager.DATA_KEY_PLAYER_ERROR_CODE));
                     break;
                 case TYPE_INVITE_CHAT_TIMEOUT:
                     mView.showToast(R.string.error_invite_timeout);
@@ -298,14 +298,14 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
                     mView.showLiveInterruptUI(R.string.error_publisher_network_timeout, -406);
                     break;
                 case TYPE_PLAYER_AUDIO_PLAYER_ERROR:
-                    mView.showLiveInterruptUI(R.string.error_audio_player, data.getInt(IPlayerMgr.DATA_KEY_PLAYER_ERROR_CODE));
+                    mView.showLiveInterruptUI(R.string.error_audio_player, data.getInt(IPlayerManager.DATA_KEY_PLAYER_ERROR_CODE));
                     break;
                 case TYPE_PUBLISHER_RECONNECT_FAILURE:
                     mView.showToast(R.string.network_reconnect_failure);
                     break;
                 case TYPE_PLAYER_NETWORK_POOR:
                     if (data != null) {
-                        String url = data.getString(IPlayerMgr.DATA_KEY_PLAYER_ERROR_MSG);
+                        String url = data.getString(IPlayerManager.DATA_KEY_PLAYER_ERROR_MSG);
                         ToastUtils.showToast(getContext(), "播放视频 " + url + " 网络差，可能造成延时");
                     }
                     break;

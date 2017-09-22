@@ -41,7 +41,7 @@ public class ServiceBI {
                     onFailure(call, new APIException("UnKnown Exception", APIErrorCode.ERROR_UNKNOWN));
                     return;
                 }
-                if (body.getCode() == HttpConstant.HTTP_OK && subscriber != null) {
+                if (body.getCode() == HttpConstant.HTTP_OK_CODE && subscriber != null) {
                     // 调用回调接口的方法
                     subscriber.onResponse(response.code(), response.body().getData());
                 } else {

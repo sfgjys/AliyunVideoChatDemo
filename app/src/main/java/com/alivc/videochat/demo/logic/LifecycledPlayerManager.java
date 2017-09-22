@@ -55,8 +55,8 @@ import retrofit2.Call;
 /**
  * 类的描述: 是观众界面ui与连麦观众端核心代码的链接
  */
-public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILifecycleListener {
-    private static final String TAG = LifecycledPlayerMgr.class.getName();
+public class LifecycledPlayerManager extends ContextBase implements IPlayerManager, ILifecycleListener {
+    private static final String TAG = LifecycledPlayerManager.class.getName();
 
     public static final int MAX_RECONNECT_COUNT = 10;
     private ChatSession mChatSession;       //当前观众与主播连麦的会话
@@ -100,7 +100,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 
     private boolean isLoading = false;  //是否正在缓冲
 
-    private MgrCallback mCallback;
+    private ManagerCallback mCallback;
 
     private String mTipString;
     /**
@@ -110,7 +110,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
 
     private int mReconnectCount = 0;
 
-    public LifecycledPlayerMgr(Context context, ImManager imManager, String uid, MgrCallback callback) {
+    public LifecycledPlayerManager(Context context, ImManager imManager, String uid, ManagerCallback callback) {
         super(context);
         this.mSDKHelper = new PlayerSDKHelper();
         this.mImManager = imManager;
@@ -478,7 +478,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
     // --------------------------------------------------------------------------------------------------------
 
     /**
-     * 方法描述: 将其他观众连麦推流成功后的uid传递给MgrCallback实例接口，在 MgrCallback 中可以通过uid获取对应的短延迟播发
+     * 方法描述: 将其他观众连麦推流成功后的uid传递给MgrCallback实例接口，在 ManagerCallback 中可以通过uid获取对应的短延迟播发
      * 在MgrCallback回调中也是正式开启连麦
      */
     private void handlePublishStreamMsg(ArrayList<String> userIdList) {
@@ -1171,7 +1171,7 @@ public class LifecycledPlayerMgr extends ContextBase implements IPlayerMgr, ILif
                 case MediaError.ALIVC_INFO_PLAYER_NETWORK_POOR:// 播放器网络差，不能及时下载数据包
                     if (mCallback != null) {
                         Bundle data = new Bundle();
-                        data.putString(IPublisherMgr.DATA_KEY_PLAYER_ERROR_MSG, url);
+                        data.putString(IPublisherManager.DATA_KEY_PLAYER_ERROR_MSG, url);
                         mCallback.onEvent(TYPE_PLAYER_NETWORK_POOR, data);
                     }
                     break;

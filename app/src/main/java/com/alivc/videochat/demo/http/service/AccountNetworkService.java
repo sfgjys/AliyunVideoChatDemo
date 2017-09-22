@@ -1,6 +1,5 @@
 package com.alivc.videochat.demo.http.service;
 
-
 import com.alivc.videochat.demo.http.HttpConstant;
 import com.alivc.videochat.demo.http.form.LoginForm;
 import com.alivc.videochat.demo.http.form.MNSConnectionInfoForm;
@@ -12,7 +11,10 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
 
-public interface AccountService {
+/**
+ * 类的描述: 登录网络请求，
+ */
+public interface AccountNetworkService {
     @POST(HttpConstant.URL_LOGIN)
     Call<HttpResponse<LoginResult>> login(@Body LoginForm form);// 将带有登录信息的对象参数传入获取Call任务对象
 

@@ -14,7 +14,7 @@ import retrofit2.http.POST;
 /**
  * Created by liujianghao on 16-7-28.
  */
-public interface InviteService {
+public interface InviteNetworkService {
 
     @POST(HttpConstant.URL_INVITE_VIDEO)
     Call<HttpResponse<Object>> invite(@Body InviteForm form);// 邀请对方进行连麦

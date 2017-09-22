@@ -7,8 +7,8 @@ import com.alivc.videochat.demo.R;
 import com.alivc.videochat.demo.http.model.LiveCreateResult;
 import com.alivc.videochat.demo.base.AsyncCallback;
 import com.alivc.videochat.demo.base.ContextBase;
-import com.alivc.videochat.demo.logic.IPublisherMgr;
-import com.alivc.videochat.demo.logic.LifecyclePublisherMgr;
+import com.alivc.videochat.demo.logic.IPublisherManager;
+import com.alivc.videochat.demo.logic.LifecyclePublisherManager;
 import com.alivc.videochat.demo.presenter.ILifecycleCreateLivePresenter;
 import com.alivc.videochat.demo.presenter.view.ICreateLiveView;
 import com.alivc.videochat.demo.uitils.ToastUtils;
@@ -17,10 +17,10 @@ import com.alivc.videochat.demo.uitils.ToastUtils;
  * 类的描述: 该接口实例是用于在LifecyclePublisherMgr中进行获取推流地址相关
  */
 public class LifecycleCreateLivePresenterImpl extends ContextBase implements ILifecycleCreateLivePresenter {
-    private LifecyclePublisherMgr mPublisherMgr;
+    private LifecyclePublisherManager mPublisherMgr;
     private ICreateLiveView mCreateLiveView;
 
-    public LifecycleCreateLivePresenterImpl(Context context, LifecyclePublisherMgr mgr, ICreateLiveView view) {
+    public LifecycleCreateLivePresenterImpl(Context context, LifecyclePublisherManager mgr, ICreateLiveView view) {
         super(context);
         this.mPublisherMgr = mgr;
         this.mCreateLiveView = view;
@@ -31,7 +31,7 @@ public class LifecycleCreateLivePresenterImpl extends ContextBase implements ILi
         mPublisherMgr.asyncCreateLive(description, new AsyncCallback() {
             @Override
             public void onSuccess(Bundle bundle) {
-                LiveCreateResult result = (LiveCreateResult) bundle.getSerializable(IPublisherMgr.DATA_KEY_CREATE_LIVE_RESULT);
+                LiveCreateResult result = (LiveCreateResult) bundle.getSerializable(IPublisherManager.DATA_KEY_CREATE_LIVE_RESULT);
                 if (result != null) {
                     mCreateLiveView.showPublishStreamUI(result.getRoomID(), result.getName(), result.getUid());   // 显示创建直播并推流成功的UI
                 } else {

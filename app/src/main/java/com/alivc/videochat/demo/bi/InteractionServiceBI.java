@@ -2,7 +2,7 @@ package com.alivc.videochat.demo.bi;
 
 import com.alivc.videochat.demo.http.form.SendCommentForm;
 import com.alivc.videochat.demo.http.form.SendLikeForm;
-import com.alivc.videochat.demo.http.service.ServiceFactory;
+import com.alivc.videochat.demo.http.service.NetworkServiceFactory;
 
 import retrofit2.Call;
 
@@ -22,7 +22,7 @@ public class InteractionServiceBI extends ServiceBI {
      */
     public Call sendComment(String uid, String roomID, String comment, Callback callback) {
         SendCommentForm form = new SendCommentForm(uid, roomID, comment);
-        Call call = ServiceFactory.getInteractionService().sendComment(form);
+        Call call = NetworkServiceFactory.getInteractionService().sendComment(form);
         processObservable(call, callback);
         return call;
     }
@@ -37,7 +37,7 @@ public class InteractionServiceBI extends ServiceBI {
     public Call sendLike(String roomID, String uid, Callback callback) {
         Call call;
         SendLikeForm form = new SendLikeForm(uid, roomID);
-        call = ServiceFactory.getInteractionService().sendLike(form);
+        call = NetworkServiceFactory.getInteractionService().sendLike(form);
         processObservable(call, callback);
         return call;
     }

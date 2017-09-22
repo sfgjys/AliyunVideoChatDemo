@@ -45,19 +45,44 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingDeque;
 
 import retrofit2.Call;
 
 /**
  * 类的描述:
  */
-public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr, ILifecycleListener {
+public class LifecyclePublisherManager extends ContextBase implements IPublisherManager, ILifecycleListener {
 
-    private static final String TAG = LifecyclePublisherMgr.class.getName();
+    private static final String TAG = LifecyclePublisherManager.class.getName();
+    /**
+     * 变量的描述: 连麦推流核心SDK调用类
+     */
+    private PublisherSDKHelper mPublisherSDKHelper;
+    /**
+     * 变量的描述: 推流连麦这一模块结果回调接口实例
+     */
+    private ManagerCallback mManagerCallback;
+    /**
+     * 变量的描述: key为连麦观众的id，value为连麦观众所代表的连麦流程对象
+     */
+    private Map<String, ChatSession> mChatSessionMap = new HashMap<>();
+    /**
+     * 变量的描述: 代表了是否正在调用连麦的正式API，该API包含了连麦，结束连麦等
+     */
+    private boolean mVideoChatApiCalling = false;
+    /**
+     * 变量的描述: 标记主SurfaceView(主播用来推流的)的生命周期状态
+     */
+    private SurfaceStatus mPreviewSurfaceStatus = SurfaceStatus.UNINITED;
+    /**
+     * 变量的描述: 主SurfaceView，主播推流用的控件
+     */
+    private SurfaceView mMainSurfaceView = null;
+
 
     private static final String KEY_CHATTING_UID = "chatting_uid";   //正在连麦的用户ID
 
-    private static final int MAX_RECONNECT_COUNT = 10;
 
     private static final long WAITING_FOR_MIX_SUCCESS_DELAY = 15 * 1000; //混流错误时等待重新混流成功的时间，超过这个时间会结束连麦
 
@@ -78,12 +103,6 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
      */
     private static final int MSG_WHAT_MAIN_STREAM_NOT_EXIST = 7;
 
-    private PublisherSDKHelper mSDKHelper;
-    private MgrCallback mCallback;
-    /**
-     * 变量的描述: key为连麦观众的id，value为连麦观众所代表的连麦流程对象
-     */
-    private Map<String, ChatSession> mChatSessionMap = new HashMap<>();
 
     /**
      * 变量的描述: 本集合存储的是，主播向服务器发送邀请连麦通知的网络请求，当网络请求成功或者失败时移除，该集合的目的是在主播界面结束时停止还在请求网络的任务
@@ -102,48 +121,6 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     private String mUID;
 
 
-    private SurfaceView mMainSurfaceView = null;
-    private SurfaceStatus mPreviewSurfaceStatus = SurfaceStatus.UNINITED;
-
-    /**
-     * 变量的描述: 代表了是否正在调用连麦的正式API，该API包含了连麦，结束连麦等
-     */
-    private boolean mVideoChatApiCalling = false;
-
-    private int mReconnectCount = 0;
-    // --------------------------------------------------------------------------------------------------------
-    /**
-     * 变量的描述: 主SurfaceView的变化监听回调接口实例
-     */
-    private SurfaceHolder.Callback mMainSurfaceCallback = new SurfaceHolder.Callback() {
-        @Override
-        public void surfaceCreated(SurfaceHolder holder) {
-            Log.d(TAG, "LiveActivity-->Preview surface created");
-            //记录Surface的状态
-            if (mPreviewSurfaceStatus == SurfaceStatus.UNINITED) {
-                // 主SurfaceView第一次被创建，开启预览
-                mPreviewSurfaceStatus = SurfaceStatus.CREATED;
-                // 现在开启预览是让主播在正式推流前就看见自己要直播的画面
-                mSDKHelper.startPreView(mMainSurfaceView);
-            } else if (mPreviewSurfaceStatus == SurfaceStatus.DESTROYED) {
-                // 主SurfaceView已经被销毁过，现在重新创建
-                mPreviewSurfaceStatus = SurfaceStatus.RECREATED;
-            }
-        }
-
-        @Override
-        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            Log.d(TAG, "LiveActivity-->Preview surface changed");
-            mPreviewSurfaceStatus = SurfaceStatus.CHANGED;
-
-        }
-
-        @Override
-        public void surfaceDestroyed(SurfaceHolder holder) {
-            Log.d(TAG, "LiveActivity-->Preview surface destroyed");
-            mPreviewSurfaceStatus = SurfaceStatus.DESTROYED;
-        }
-    };
     // --------------------------------------------------------------------------------------------------------
     /**
      * 变量的描述: 用来发送混流结果并做出相应响应的Handler
@@ -184,24 +161,24 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         @Override
         public void onInviteChatTimeout() {
             mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_INVITE_TIMEOUT, null);
+            if (mManagerCallback != null) {
+                mManagerCallback.onEvent(TYPE_INVITE_TIMEOUT, null);
             }
         }
 
         @Override
         public void onProcessInvitingTimeout() {// 等待主播是否同意被邀请进行连麦，超时了
             mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_PROCESS_INVITING_TIMEOUT, null);
+            if (mManagerCallback != null) {
+                mManagerCallback.onEvent(TYPE_PROCESS_INVITING_TIMEOUT, null);
             }
         }
 
         @Override
         public void onMixStreamTimeout() {
             mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MIX_STREAM_TIMEOUT, null);
+            if (mManagerCallback != null) {
+                mManagerCallback.onEvent(TYPE_MIX_STREAM_TIMEOUT, null);
             }
         }
 
@@ -211,8 +188,8 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         public void onMixStreamError() {
 //            asyncTerminateAllChatting(null);
             mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MIX_STREAM_ERROR, null);
+            if (mManagerCallback != null) {
+                mManagerCallback.onEvent(TYPE_MIX_STREAM_ERROR, null);
             }
         }
 
@@ -220,36 +197,36 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         public void onMixStreamSuccess() {
             // 混流成功，连麦api使用完毕
             mVideoChatApiCalling = false;
-            if (mCallback != null) {
+            if (mManagerCallback != null) {
                 // 回调返回混流成功的结果
-                mCallback.onEvent(TYPE_MIX_STREAM_SUCCESS, null);
+                mManagerCallback.onEvent(TYPE_MIX_STREAM_SUCCESS, null);
             }
         }
 
         @Override
         public void onMixStreamNotExist() {
             mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MIX_STREAM_NOT_EXIST, null);
+            if (mManagerCallback != null) {
+                mManagerCallback.onEvent(TYPE_MIX_STREAM_NOT_EXIST, null);
             }
         }
 
         @Override
         public void onMainStreamNotExist() {
             mVideoChatApiCalling = false;
-            if (mCallback != null) {
-                mCallback.onEvent(TYPE_MAIN_STREAM_NOT_EXIST, null);
+            if (mManagerCallback != null) {
+                mManagerCallback.onEvent(TYPE_MAIN_STREAM_NOT_EXIST, null);
             }
         }
     };
     // --------------------------------------------------------------------------------------------------------
 
-    public LifecyclePublisherMgr(Context context, MgrCallback callback, String uid, ImManager imManager) {
+    public LifecyclePublisherManager(Context context, ManagerCallback callback, String uid, ImManager imManager) {
         super(context);
 
-        this.mSDKHelper = new PublisherSDKHelper();
+        this.mPublisherSDKHelper = new PublisherSDKHelper();
 
-        this.mCallback = callback;
+        this.mManagerCallback = callback;
         this.mUID = uid;
         this.mImManager = imManager;
     }
@@ -260,7 +237,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         Context context = getContext();
         // 如果context为空则assert抛出的异常AssertionError
         if (context != null)
-            mSDKHelper.initRecorder(context, mOnErrorListener, mInfoListener); //初始化推流器
+            mPublisherSDKHelper.initRecorder(context, mOnErrorListener, mInfoListener); //初始化推流器
     }
 
     @Override
@@ -274,9 +251,11 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             // asyncCreateLive方法被调用过了，界面失去了焦点取消了所有相关订阅，然后界面有重新获得了焦点，需要订阅
             initPublishMsgProcessor();
         }
+        // 主SurfaceView在直播界面第一次获得焦点的时候会走到这个判断，第一次进来时mPreviewSurfaceStatus是SurfaceStatus.UNINITED，所以不会进入判断
+        // 只有当主SurfaceView不再是SurfaceStatus.UNINITED时，直播界面再次获得焦点时是已经暂停的状态，需要恢复推流
         if (mPreviewSurfaceStatus != SurfaceStatus.UNINITED) {
             // mSDKHelper在失去焦点时暂停过，现在重新获取了焦点需要恢复推流
-            mSDKHelper.resume();
+            mPublisherSDKHelper.resume();
         }
     }
 
@@ -294,7 +273,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             // 断开MNS链接
             mImManager.closeSession();
         }
-        mSDKHelper.pause(); //暂停推流 or 连麦
+        mPublisherSDKHelper.pause(); //暂停推流 or 连麦
     }
 
     @Override
@@ -322,9 +301,9 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         }
         asyncCloseLive(null);           //结束直播
         // TODO by xinye : 退出连麦
-        mSDKHelper.abortChat(null);     //防止因为某些原因没有停止连麦的情况，再次调用一次停止连麦
-        mSDKHelper.stopPublish();   //防止因为某些原因没有停止推理的情况，再次调用一次停止推流
-        mSDKHelper.releaseRecorder();//释放推流器资源
+        mPublisherSDKHelper.abortChat(null);     //防止因为某些原因没有停止连麦的情况，再次调用一次停止连麦
+        mPublisherSDKHelper.stopPublish();   //防止因为某些原因没有停止推理的情况，再次调用一次停止推流
+        mPublisherSDKHelper.releaseRecorder();//释放推流器资源
     }
 
     // --------------------------------------------------------------------------------------------------------
@@ -334,6 +313,39 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         this.mMainSurfaceView = previewSurfaceView;
         mMainSurfaceView.getHolder().addCallback(mMainSurfaceCallback);
     }
+
+    /**
+     * 变量的描述: 主SurfaceView的变化监听回调接口实例，其内部实现：在主SurfaceView被创建的时候就调用mPublisherSDKHelper开启了预览，而且也记录了主SurfaceView周期变化
+     */
+    private SurfaceHolder.Callback mMainSurfaceCallback = new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+            Log.d(TAG, "LiveActivity开启了主播直播的预览界面");
+            //记录主Surface的状态
+            if (mPreviewSurfaceStatus == SurfaceStatus.UNINITED) {
+                // 主SurfaceView第一次被创建，开启预览
+                mPreviewSurfaceStatus = SurfaceStatus.CREATED;
+                // 现在开启预览是让主播在正式推流前就看见自己要直播的画面
+                mPublisherSDKHelper.startPreView(mMainSurfaceView);
+            } else if (mPreviewSurfaceStatus == SurfaceStatus.DESTROYED) {
+                // 主SurfaceView已经被销毁过，现在重新创建
+                mPreviewSurfaceStatus = SurfaceStatus.RECREATED;
+            }
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            Log.d(TAG, "LiveActivity-->Preview surface changed");
+            mPreviewSurfaceStatus = SurfaceStatus.CHANGED;
+
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+            Log.d(TAG, "LiveActivity-->Preview surface destroyed");
+            mPreviewSurfaceStatus = SurfaceStatus.DESTROYED;
+        }
+    };
 
     @Override // 请求网络获取推流地址，如此asyncStartPreview方法开启的预览才能通过推流地址直播出去
     public void asyncCreateLive(String desc, final AsyncCallback callback) {
@@ -359,15 +371,15 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                 }
 
                 // 给LifecycleLiveRecordPresenterImpl回调结果
-                if (mCallback != null) {
+                if (mManagerCallback != null) {
                     // 这个回调暂时没用
-                    mCallback.onEvent(TYPE_LIVE_CREATED, data);
+                    mManagerCallback.onEvent(TYPE_LIVE_CREATED, data);
                 }
 
                 mCreateLiveCall = null;
 
                 // 创建并获取推流地址成功，开始推流
-                mSDKHelper.startPublishStream(response.getRtmpUrl());
+                mPublisherSDKHelper.startPublishStream(response.getRtmpUrl());
 
                 // 因为在直播中我们需要用到MNS，这属于直播的一部分，所以建立MNS链接是必要的。
                 // 前面我们调用ImManager的init()方法只是进行了初始化，还没有正式进行MNS链接。
@@ -407,27 +419,27 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
 
     @Override
     public void switchCamera() {
-        mSDKHelper.switchCamera();
+        mPublisherSDKHelper.switchCamera();
     }
 
     @Override
     public boolean switchBeauty() {
-        return mSDKHelper.switchBeauty();
+        return mPublisherSDKHelper.switchBeauty();
     }
 
     @Override
     public boolean switchFlash() {
-        return mSDKHelper.switchFlash();
+        return mPublisherSDKHelper.switchFlash();
     }
 
     @Override
     public void zoom(float scaleFactor) {
-        mSDKHelper.zoom(scaleFactor);
+        mPublisherSDKHelper.zoom(scaleFactor);
     }
 
     @Override
     public void autoFocus(float xRatio, float yRatio) {
-        mSDKHelper.autoFocus(xRatio, yRatio);
+        mPublisherSDKHelper.autoFocus(xRatio, yRatio);
     }
 
     @Override // 当用户点击连麦时，请求业务服务器，发送邀请连麦的请求
@@ -500,10 +512,10 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     public void launchChat(SurfaceView parterView, String playerUID) {
         // 正常的时候 mVideoChatApiCalling 在这里是false
         if (mVideoChatApiCalling) {
-            if (mCallback != null) {
+            if (mManagerCallback != null) {
                 Bundle data = new Bundle();
                 data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
-                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
+                mManagerCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
             }
             return;
         }
@@ -517,7 +529,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
         mVideoChatApiCalling = true;
         Log.e("xiongbo07", "开始发起连麦...");
         // 使用Map集合正式开始调用连麦方法
-        mSDKHelper.launchChats(urlSurfaceMap);
+        mPublisherSDKHelper.launchChats(urlSurfaceMap);
         // 连麦核心方法调用没有异常后，将SurfaceView存入连麦流程对象
         chatSession.setSurfaceView(parterView);
     }
@@ -526,10 +538,10 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     public void asyncTerminateChatting(final String playerUID, final AsyncCallback callback) {
         // 正常的时候 mVideoChatApiCalling 在这里是false
         if (mVideoChatApiCalling) {
-            if (mCallback != null) {
+            if (mManagerCallback != null) {
                 Bundle data = new Bundle();
                 data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
-                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
+                mManagerCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
             }
             return;
         }
@@ -554,7 +566,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                         playUrls.add(chatSession.getChatSessionInfo().getPlayUrl());
                         // 退出连麦,调用了连麦的API
                         mVideoChatApiCalling = true;
-                        mSDKHelper.abortChat(playUrls);
+                        mPublisherSDKHelper.abortChat(playUrls);
                         Log.e("xiongbo07", "开始REMOVE连麦... " + playerUID);
                         mChatSessionMap.remove(playerUID);
                         // 这里不用使用回调接口更新退出连麦的UI，因为这里本身就是一个回调
@@ -575,10 +587,10 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     public void asyncTerminateAllChatting(final AsyncCallback callback) {
         // 正常的时候 mVideoChatApiCalling 在这里是false
         if (mVideoChatApiCalling) {
-            if (mCallback != null) {
+            if (mManagerCallback != null) {
                 Bundle data = new Bundle();
                 data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
-                mCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
+                mManagerCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
             }
             return;
         }
@@ -597,7 +609,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                     // 调用API结束所有连麦
                     mVideoChatApiCalling = true;
                     Log.e("xiongbo07", "开始退出连麦...");
-                    mSDKHelper.abortChat(null); //调用SDK中断连麦
+                    mPublisherSDKHelper.abortChat(null); //调用SDK中断连麦
                 }
 
                 @Override
@@ -630,7 +642,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                 if (callback != null) {
                     callback.onSuccess(null);
                 }
-                mSDKHelper.stopPublish();
+                mPublisherSDKHelper.stopPublish();
             }
 
             @Override
@@ -652,7 +664,7 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
     // --------------------------------------------------------------------------------------------------------
 
     public AlivcPublisherPerformanceInfo getPublisherPerformanceInfo() {
-        // return mSDKHelper.getPublisherPerformanceInfo();
+        // return mPublisherSDKHelper.getPublisherPerformanceInfo();
         return new AlivcPublisherPerformanceInfo();
     }
 
@@ -779,11 +791,11 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                     chatSession.setChatSessionInfo(sessionInfo);
 
                     // 将这里的UID回调给mCallback，让mCallback的实例去更新UI界面，并正式开启连麦方法
-                    if (mCallback != null) {
+                    if (mManagerCallback != null) {
                         Bundle data = new Bundle();
                         data.putString(DATA_KEY_INVITEE_UID, msgDataStartPublishStream.getUid());
                         Log.d(TAG, "LiveActivity -->Publish Success. send publish stream success.");
-                        mCallback.onEvent(TYPE_PUBLISH_STREMA_SUCCESS, data);
+                        mManagerCallback.onEvent(TYPE_PUBLISH_STREMA_SUCCESS, data);
                     }
                 }
             }
@@ -807,15 +819,15 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                 // 退出连麦,调用api退出
                 mVideoChatApiCalling = true;
                 Log.e("xiongbo07", "开始退出连麦...");
-                int result = mSDKHelper.abortChat(playUrls);
+                int result = mPublisherSDKHelper.abortChat(playUrls);
                 if (result < 0) {
                     mVideoChatApiCalling = false;
                 }
                 // 通过mCallback回调更新UI界面的退出连麦
-                if (mCallback != null) {
+                if (mManagerCallback != null) {
                     Bundle data = new Bundle();
                     data.putString(DATA_KEY_PLAYER_UID, playerUID);
-                    mCallback.onEvent(TYPE_SOMEONE_EXIT_CHATTING, data);
+                    mManagerCallback.onEvent(TYPE_SOMEONE_EXIT_CHATTING, data);
                 }
             }
             mChatSessionMap.remove(playerUID);
@@ -864,73 +876,85 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
             }
         }
     };
-    // **************************************************** 推流状态信息和错误监听接口实例 ****************************************************
+// **************************************************** 推流状态信息和错误监听接口实例 ****************************************************
     /**
-     * 变量的描述: 推流错误监听器回调接口实现
+     * 变量的描述: 重连计数
+     */
+    private int mReconnectCount = 0;
+    /**
+     * 变量的描述: 最大的重连计数
+     */
+    private static final int MAX_RECONNECT_COUNT = 10;
+    /**
+     * 变量的描述: 推流错误监听器回调接口实现,
      */
     private AlivcVideoChatHost.OnErrorListener mOnErrorListener = new IVideoChatHost.OnErrorListener() {
+        /**
+         * @param what 连麦推流错误码
+         * @param url 连麦推流错误的连麦观众的播放地址
+         */
         @Override
         public boolean onError(IVideoChatHost iVideoChatHost, int what, String url) {
             if (what == 0) {
                 return false;
             }
-            Log.d(TAG, "Live stream connection error-->" + what);
+            Log.d(TAG, "直播流链接有问题：error --> " + what);
 
-            //
+            // 存储推流错误码
             final Bundle data = new Bundle();
             data.putInt(DATA_KEY_PUBLISHER_ERROR_CODE, what);
 
             // 区分错误
             switch (what) {
-                case MediaError.ALIVC_ERR_PLAYER_INVALID_INPUTFILE:// 播放无效的输入
-                    Log.d(TAG, "encounter player invalid input file.");
+                // 下面几个错误都是进行连麦重连，并弹吐司
+                case MediaError.ALIVC_ERR_PLAYER_INVALID_INPUTFILE:
+                    Log.d(TAG, "连麦播放无效的输入");
                     if (mReconnectCount++ < MAX_RECONNECT_COUNT)
-                        mSDKHelper.reconnect(url);
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_INVALID_INPUTFILE, null);
+                        mPublisherSDKHelper.reconnect(url);
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PLAYER_INVALID_INPUTFILE, null);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PLAYER_OPEN_FAILED:// 播放打开失败
-                    Log.d(TAG, "encounter player open failed.");
+                case MediaError.ALIVC_ERR_PLAYER_OPEN_FAILED:
+                    Log.d(TAG, "连麦播放打开失败");
                     if (mReconnectCount++ < MAX_RECONNECT_COUNT)
-                        mSDKHelper.reconnect(url);
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_OPEN_FAILED, null);
+                        mPublisherSDKHelper.reconnect(url);
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PLAYER_OPEN_FAILED, null);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PLAYER_NO_NETWORK:// 播放没有网络连接
-                    Log.d(TAG, "encounter player no network.");
+                case MediaError.ALIVC_ERR_PLAYER_NO_NETWORK:
+                    Log.d(TAG, "连麦播放没有网络连接");
                     if (mReconnectCount++ < MAX_RECONNECT_COUNT)
-                        mSDKHelper.reconnect(url);
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_NO_NETWORK, null);
+                        mPublisherSDKHelper.reconnect(url);
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PLAYER_NO_NETWORK, null);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PLAYER_TIMEOUT:// 播放超时
-                    Log.d(TAG, "encounter player timeout, so call restartToPlayer");
+                case MediaError.ALIVC_ERR_PLAYER_TIMEOUT://
+                    Log.d(TAG, "连麦播放超时");
                     if (mReconnectCount++ < MAX_RECONNECT_COUNT)
-                        mSDKHelper.reconnect(url);
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_TIMEOUT, null);
+                        mPublisherSDKHelper.reconnect(url);
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PLAYER_TIMEOUT, null);
                     }
                     break;
-                case MediaError.ALIVC_ERR_PLAYER_READ_PACKET_TIMEOUT:// 播放读取数据超时
-                    Log.d(TAG, "encounter player read packet timeout.");
+                case MediaError.ALIVC_ERR_PLAYER_READ_PACKET_TIMEOUT://
+                    Log.d(TAG, "连麦播放读取数据超时");
                     if (mReconnectCount++ < MAX_RECONNECT_COUNT)
-                        mSDKHelper.reconnect(url);
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_READ_PACKET_TIMEOUT, null);
+                        mPublisherSDKHelper.reconnect(url);
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PLAYER_READ_PACKET_TIMEOUT, null);
                     }
                     break;
 
+                // 下面几个错误都是弹出个对话框显示错误，点击确定时会关闭直播界面，让用户重新进入
                 case MediaError.ALIVC_ERR_PLAYER_NO_MEMORY:// 播放无足够内存
                 case MediaError.ALIVC_ERR_PLAYER_INVALID_CODEC:// 播放不支持的解码格式
                 case MediaError.ALIVC_ERR_PLAYER_NO_SURFACEVIEW:// 播放没有设置显示窗口
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_INTERNAL_ERROR, data);
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PLAYER_INTERNAL_ERROR, data);
                     }
-                    // TODO by xinye : 退出连麦
-//                    mSDKHelper.abortChat(null);
                     break;
                 case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_DISABLED:// 音频采集关闭 音频被禁止
                 case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_CAPTURE_NO_DATA:// 音频采集失败 音频采集出错
@@ -938,62 +962,61 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
                         //TODO:遍历ChatSession，并且close 连麦
                         System.out.println();
                     }
-                    //TODO:关闭连麦
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_AUDIO_CAPTURE_FAILURE, data);
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PUBLISHER_AUDIO_CAPTURE_FAILURE, data);
                     }
-
                     break;
                 case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_NO_DATA:// 视频采集出错
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_VIDEO_CAPTURE_FAILURE, data);
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PUBLISHER_VIDEO_CAPTURE_FAILURE, data);
                     }
                     break;
                 case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_DISABLED: // 摄像头开启失败 视频被禁止
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_VIDEO_CAPTURE_FAILURE, data);
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PUBLISHER_VIDEO_CAPTURE_FAILURE, data);
                     }
                     break;
+                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_UNCONNECTED:// 网络未连接
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PUBLISHER_NETWORK_UNCONNECT, data);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PUBLISHER_SEND_DATA_TIMEOUT:// 发送数据超时
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PUBLISHER_NETWORK_TIMEOUT, data);
+                    }
+                    break;
+                case MediaError.ALIVC_ERR_PLAYER_AUDIO_PLAY:// 音频播放错误
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PLAYER_AUDIO_PLAYER_ERROR, data);
+                    }
+                    break;
+
+                // 弹吐司说明下
+                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_POOR:// 网络较慢
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PUBLISHER_NETWORK_POOR, data);
+                    }
+                    break;
+
+                // 没有做出具体响应
                 case MediaError.ALIVC_ERR_PUBLISHER_ENCODE_AUDIO_FAILED:// 音频编码失败
                 case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_ENCODER_INIT_FAILED:// 视频初始化失败
                 case MediaError.ALIVC_ERR_PUBLISHER_MALLOC_FAILED:// 内存分配失败
                 case MediaError.ALIVC_ERR_PUBLISHER_ILLEGAL_ARGUMENT:// 无效的参数
-                    break;
-                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_POOR:// 网络较慢
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_NETWORK_POOR, data);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PUBLISHER_NETWORK_UNCONNECTED:// 网络未连接
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_NETWORK_UNCONNECT, data);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PUBLISHER_SEND_DATA_TIMEOUT:// 发送数据超时
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_NETWORK_TIMEOUT, data);
-                    }
-                    break;
-                case MediaError.ALIVC_ERR_PLAYER_AUDIO_PLAY:// 音频播放错误
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PLAYER_AUDIO_PLAYER_ERROR, data);
-                    }
-                    break;
                 case MediaError.ALIVC_ERR_MEMORY_POOR:// 内存不够
-                    break;
                 case MediaError.ALIVC_ERR_PUBLISHER_OPEN_FAILED:// 推流连接失败
-                    break;
                 case MediaError.ALIVC_ERR_PUBLISHER_AUDIO_ENCODER_INIT_FAILED:// 音频初始化失败
-                    break;
                 case MediaError.ALIVC_ERR_PUBLISHER_ENCODE_VIDEO_FAILED:// 视频编码失败
-                    break;
                 case MediaError.ALIVC_ERR_PUBLISHER_VIDEO_CAPTURE_FPS_SLOW:// 音频采集较慢
-                    break;
                 case MediaError.ALIVC_ERR_PLAYER_UNSUPPORTED:// 播放不支持的解码
+                    System.out.println();
                     break;
+
                 default:
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_INTERNAL_ERROR, data);
+                    if (mManagerCallback != null) {
+                        // 既然错误回调接口被调用了，说明连麦推流有问题，但是不在API给的错误内，所以时API内部问题
+                        mManagerCallback.onEvent(TYPE_PUBLISHER_INTERNAL_ERROR, data);
                     }
                     break;
             }
@@ -1004,70 +1027,73 @@ public class LifecyclePublisherMgr extends ContextBase implements IPublisherMgr,
      * 变量的描述: 推流器状态信息监听器回调接口实现
      */
     private AlivcVideoChatHost.OnInfoListener mInfoListener = new AlivcVideoChatHost.OnInfoListener() {
-
+        /**
+         * @param what 连麦推流状态信息码
+         * @param url 连麦推流状态信息的连麦观众的播放地址
+         */
         @Override
         public boolean onInfo(IVideoChatHost iVideoChatHost, int what, String url) {
-            Log.d(TAG, "LiveActivity --> what = " + what + ", extra = " + url);
+            Log.d(TAG, "连麦推流状态信息：状态信息码 = " + what + ", 播放地址 = " + url);
             switch (what) {
+                // 下面的是弹吐司说明
                 case MediaError.ALIVC_INFO_PUBLISH_NETWORK_GOOD:// 推流网络较好
-                    if (mCallback != null) {
-                        mCallback.onEvent(TYPE_PUBLISHER_NETWORK_GOOD, null);
+                    if (mManagerCallback != null) {
+                        mManagerCallback.onEvent(TYPE_PUBLISHER_NETWORK_GOOD, null);
                     }
                     break;
                 case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_FAILURE:// 重连失败
-                    if (mCallback != null) {
+                    if (mManagerCallback != null) {
                         Bundle data = new Bundle();
                         data.putInt(DATA_KEY_PUBLISHER_INFO_CODE, what);
-                        mCallback.onEvent(TYPE_PUBLISHER_RECONNECT_FAILURE, data);
+                        mManagerCallback.onEvent(TYPE_PUBLISHER_RECONNECT_FAILURE, data);
                     }
                     break;
+
+                // 调用SDK的API结束响应
                 case MediaError.ALIVC_INFO_LAUNCH_CHAT_END:// launchChat结束
                     mVideoChatApiCalling = false;
-                    Log.e("xiongbo07", "结束发起连麦...");
-                    break;
-                case MediaError.ALIVC_INFO_ABORT_CHAT_END:// abortChat结束
-                    mVideoChatApiCalling = false;
-                    Log.e("xiongbo07", "结束退出连麦...");
+                    Log.e(TAG, "调用连麦推流SDK的开始连麦的API结束");
                     break;
                 case MediaError.ALIVC_INFO_ADD_CHAT_END:// addChat结束
                     mVideoChatApiCalling = false;
-                    Log.e("xiongbo07", "结束ADD连麦...");
+                    Log.e(TAG, "调用连麦推流SDK的添加连麦的API结束");
                     break;
                 case MediaError.ALIVC_INFO_REMOVE_CHAT_END:// removeChat结束
                     mVideoChatApiCalling = false;
-                    Log.e("xiongbo07", "结束Remove连麦...");
+                    Log.e(TAG, "调用连麦推流SDK的移除连麦的API结束");
                     break;
-                case MediaError.ALIVC_INFO_PLAYER_PREPARED_PROCESS_FINISHED:// 播放准备完成通知
+                case MediaError.ALIVC_INFO_ABORT_CHAT_END:// abortChat结束
+                    mVideoChatApiCalling = false;
+                    Log.e(TAG, "调用连麦推流SDK的结束连麦的API结束");
+                    break;
+
+                // 播放准备完成通知，这里的完成有可能是重连了多少次后的完成，所以需要归零
+                case MediaError.ALIVC_INFO_PLAYER_PREPARED_PROCESS_FINISHED:
                     mReconnectCount = 0;
                     break;
+
+                // 连麦观众的播放有网络延迟，弹吐司提示下
                 case MediaError.ALIVC_INFO_PLAYER_NETWORK_POOR:// 播放器网络差，不能及时下载数据包
-                    if (mCallback != null) {
+                    if (mManagerCallback != null) {
                         Bundle data = new Bundle();
-                        data.putString(IPublisherMgr.DATA_KEY_PLAYER_ERROR_MSG, url);
-                        mCallback.onEvent(TYPE_PLAYER_NETWORK_POOR, data);
+                        data.putString(DATA_KEY_PLAYER_ERROR_MSG, url);
+                        mManagerCallback.onEvent(TYPE_PLAYER_NETWORK_POOR, data);
                     }
                     break;
+
+                // 没有做出具体响应
                 case MediaError.ALIVC_INFO_ONLINE_CHAT_END:// onlineChat结束
-                    break;
                 case MediaError.ALIVC_INFO_OFFLINE_CHAT_END:// offlineChat结束
-                    break;
                 case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_START:// 重连开始
-                    break;
                 case MediaError.ALIVC_INFO_PUBLISH_RECONNECT_SUCCESS:// 重连成功
-                    break;
                 case MediaError.ALIVC_INFO_PUBLISH_DISPLAY_FIRST_FRAME:// 推流首次显示通知
-                    break;
                 case MediaError.ALIVC_INFO_PUBLISH_START_SUCCESS:// 推流开始成功
-                    break;
                 case MediaError.ALIVC_INFO_PLAYER_FIRST_FRAME_RENDERED:// 播放首帧显示
-                    break;
                 case MediaError.ALIVC_INFO_PLAYER_BUFFERING_START:// 播放缓冲开始
-                    break;
                 case MediaError.ALIVC_INFO_PLAYER_BUFFERING_END:// 播放缓冲结束
-                    break;
                 case MediaError.ALIVC_INFO_PLAYER_INTERRUPT_PLAYING:// 播放被中断
-                    break;
                 case MediaError.ALIVC_INFO_PLAYER_STOP_PROCESS_FINISHED:// 播放结束通知
+                    System.out.println();
                     break;
             }
             return false;

@@ -5,7 +5,7 @@ import android.os.Bundle;
 /**
  * 类的描述: 管理事件回调类
  */
-public interface MgrCallback {
+public interface ManagerCallback {
     /**
      * 方法描述: 将不同类型的事件和数据回调，根据类型分类更新UI
      *

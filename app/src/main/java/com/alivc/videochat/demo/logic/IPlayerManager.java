@@ -7,11 +7,7 @@ import com.alivc.videochat.demo.exception.ChatSessionException;
 
 import java.util.Map;
 
-/**
- * Created by apple on 2017/1/3.
- */
-
-public interface IPlayerMgr {
+public interface IPlayerManager {
 
     int TYPE_PLAYER_INTERNAL_ERROR = 0x0001;    //播放出错，如果想继续播放需要重启播放器
     int TYPE_CHATTING_FINISHED = 0x0002;        //连麦结束

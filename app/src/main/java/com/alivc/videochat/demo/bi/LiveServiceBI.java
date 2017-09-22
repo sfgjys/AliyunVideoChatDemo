@@ -14,7 +14,7 @@ import com.alivc.videochat.demo.http.model.LiveItemResult;
 import com.alivc.videochat.demo.http.model.MNSConnectModel;
 import com.alivc.videochat.demo.http.model.WatchLiveResult;
 import com.alivc.videochat.demo.http.model.WatcherModel;
-import com.alivc.videochat.demo.http.service.ServiceFactory;
+import com.alivc.videochat.demo.http.service.NetworkServiceFactory;
 
 import java.util.List;
 
@@ -22,7 +22,6 @@ import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import retrofit2.Call;
-import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
@@ -41,7 +40,7 @@ public class LiveServiceBI extends ServiceBI {
         // 获取请求推流地址的Call任务
         CreateLiveForm liveForm = new CreateLiveForm(uid, desc);
         Call<HttpResponse<LiveCreateResult>> createLiveCall;
-        createLiveCall = ServiceFactory.getLiveService().createLive(liveForm);
+        createLiveCall = NetworkServiceFactory.getLiveService().createLive(liveForm);
 
         // 用于存储网络请求结果的数组
         final LiveCreateResult[] fResult = new LiveCreateResult[1];
@@ -56,13 +55,13 @@ public class LiveServiceBI extends ServiceBI {
             public void onResponse(final Call<HttpResponse<LiveCreateResult>> call, Response<HttpResponse<LiveCreateResult>> response) {
 
                 int code = response.body().getCode();
-                if (code == HttpConstant.HTTP_OK) {
+                if (code == HttpConstant.HTTP_OK_CODE) {
                     MNSConnectionInfoForm form = new MNSConnectionInfoForm(response.body().getData().getMNSModel().getTopic(), null);
                     // 存储网络请求结果
                     fResult[0] = response.body().getData();
 
                     // TODO MNS请求
-                    Call<HttpResponse<MNSConnectModel>> mnsCall = ServiceFactory.getAccountService().getMnsConnectionInfo(form);
+                    Call<HttpResponse<MNSConnectModel>> mnsCall = NetworkServiceFactory.getAccountService().getMnsConnectionInfo(form);
 
                     processObservable(mnsCall, new ServiceBI.Callback<MNSConnectModel>() {
                         @Override
@@ -109,7 +108,7 @@ public class LiveServiceBI extends ServiceBI {
         // 将房间id和登录成功后保存的信息分装进WatchLiveForm对象
         WatchLiveForm form = new WatchLiveForm(roomID, uid);
         // 获取LiveService专属的Call任务
-        watchLiveCall = ServiceFactory.getLiveService().watchLive(form);
+        watchLiveCall = NetworkServiceFactory.getLiveService().watchLive(form);
 
         RequestBody body = watchLiveCall.request().body();
         HttpUrl url = watchLiveCall.request().url();
@@ -146,7 +145,7 @@ public class LiveServiceBI extends ServiceBI {
 
                     MNSConnectionInfoForm form = new MNSConnectionInfoForm(topic, topic);
 
-                    Call<HttpResponse<MNSConnectModel>> mnsCall = ServiceFactory.getAccountService().getMnsConnectionInfo(form);
+                    Call<HttpResponse<MNSConnectModel>> mnsCall = NetworkServiceFactory.getAccountService().getMnsConnectionInfo(form);
 
                     processObservable(mnsCall, new Callback<MNSConnectModel>() {
                         @Override
@@ -199,7 +198,7 @@ public class LiveServiceBI extends ServiceBI {
     public Call closeLive(String roomID, String uid, Callback callback) {
         Call call;
         CloseLiveForm form = new CloseLiveForm(roomID, uid);
-        call = ServiceFactory.getLiveService()
+        call = NetworkServiceFactory.getLiveService()
                 .closeLive(form);
         processObservable(call, callback);
         return call;
@@ -209,7 +208,7 @@ public class LiveServiceBI extends ServiceBI {
      * 方法描述: 获取直播列表网络请求的Call，并使用Call和结果回调接口开启请求
      */
     public Call list(Callback<List<LiveItemResult>> callback) {
-        Call<HttpResponse<List<LiveItemResult>>> call = ServiceFactory.getLiveService().list();
+        Call<HttpResponse<List<LiveItemResult>>> call = NetworkServiceFactory.getLiveService().list();
         processObservable(call, callback);
         return call;
     }
@@ -221,7 +220,7 @@ public class LiveServiceBI extends ServiceBI {
     public Call watcherList(String roomID, Callback<List<WatcherModel>> callback) {
         Call<HttpResponse<List<WatcherModel>>> call;
         WatcherListForm form = new WatcherListForm(roomID);
-        call = ServiceFactory.getLiveService().watcherList(form);
+        call = NetworkServiceFactory.getLiveService().watcherList(form);
         processObservable(call, callback);
         return call;
     }
@@ -235,7 +234,7 @@ public class LiveServiceBI extends ServiceBI {
     public Call exitWatching(String roomID, String uid, Callback callback) {
         Call<HttpResponse<Object>> call;
         ExitWatchingForm form = new ExitWatchingForm(roomID, uid);
-        call = ServiceFactory.getLiveService().exitWatching(form);
+        call = NetworkServiceFactory.getLiveService().exitWatching(form);
         processObservable(call, callback);
         return call;
     }

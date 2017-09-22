@@ -5,14 +5,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
 
+import com.alivc.videochat.demo.logic.IPublisherManager;
 import com.alivc.videochat.publisher.AlivcPublisherPerformanceInfo;
 import com.alivc.videochat.demo.R;
 import com.alivc.videochat.demo.base.AsyncCallback;
 import com.alivc.videochat.demo.base.ContextBase;
 import com.alivc.videochat.demo.im.ImManager;
-import com.alivc.videochat.demo.logic.IPublisherMgr;
-import com.alivc.videochat.demo.logic.LifecyclePublisherMgr;
-import com.alivc.videochat.demo.logic.MgrCallback;
+import com.alivc.videochat.demo.logic.LifecyclePublisherManager;
+import com.alivc.videochat.demo.logic.ManagerCallback;
 import com.alivc.videochat.demo.presenter.ILifecycleLiveRecordPresenter;
 import com.alivc.videochat.demo.presenter.view.ILiveRecordView;
 import com.alivc.videochat.demo.ui.LogInfoFragment;
@@ -28,7 +28,7 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
 
     public static final String TAG = LifecycleLiveRecordPresenterImpl.class.getName();
 
-    private LifecyclePublisherMgr mPublisherMgr;
+    private LifecyclePublisherManager mPublisherMgr;
 
     /**
      * 变量的描述: 根据直播连麦操作的回调接口结果来按需求调用方法更新UI
@@ -37,7 +37,7 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
 
     public LifecycleLiveRecordPresenterImpl(Context context, ILiveRecordView view, String uid, ImManager imManager) {
         super(context);
-        this.mPublisherMgr = new LifecyclePublisherMgr(context, mPublisherCallback, uid, imManager);
+        this.mPublisherMgr = new LifecyclePublisherManager(context, mPublisherCallback, uid, imManager);
         this.mView = view;
     }
 
@@ -187,7 +187,7 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
     // --------------------------------------------------------------------------------------------------------
 
     @Override
-    public LifecyclePublisherMgr getPublisherMgr() {
+    public LifecyclePublisherManager getPublisherMgr() {
         return mPublisherMgr;
     }
 
@@ -230,112 +230,112 @@ public class LifecycleLiveRecordPresenterImpl extends ContextBase implements ILi
     /**
      * 变量的描述: 根据回调接口去更新UI,虽然有的直播连麦的操作有回调接口，但有的没有，这就需要本变量了
      */
-    private MgrCallback mPublisherCallback = new MgrCallback() {
+    private ManagerCallback mPublisherCallback = new ManagerCallback() {
         @Override
         public void onEvent(int eventType, Bundle data) {
             switch (eventType) {
-                case IPublisherMgr.TYPE_PLAYER_INTERNAL_ERROR:
+                case IPublisherManager.TYPE_PLAYER_INTERNAL_ERROR:
                     //超时等状态需要提示连麦结束
 //                    ToastUtils.showToast(getContext(), R.string.video_chatting_finished);
-                    mView.showInterruptUI(R.string.video_chatting_finished, data.getInt(IPublisherMgr.DATA_KEY_PUBLISHER_ERROR_CODE));
+                    mView.showInterruptUI(R.string.video_chatting_finished, data.getInt(IPublisherManager.DATA_KEY_PUBLISHER_ERROR_CODE));
                     break;
-                case IPublisherMgr.TYPE_PUBLISHER_AUDIO_CAPTURE_FAILURE:
-                    mView.showInterruptUI(R.string.no_audio, data.getInt(IPublisherMgr.DATA_KEY_PUBLISHER_ERROR_CODE));
+                case IPublisherManager.TYPE_PUBLISHER_AUDIO_CAPTURE_FAILURE:
+                    mView.showInterruptUI(R.string.no_audio, data.getInt(IPublisherManager.DATA_KEY_PUBLISHER_ERROR_CODE));
                     break;
-                case IPublisherMgr.TYPE_PUBLISHER_INTERNAL_ERROR:
-                    mView.showInterruptUI(R.string.publish_error, data.getInt(IPublisherMgr.DATA_KEY_PUBLISHER_ERROR_CODE));
+                case IPublisherManager.TYPE_PUBLISHER_INTERNAL_ERROR:
+                    mView.showInterruptUI(R.string.publish_error, data.getInt(IPublisherManager.DATA_KEY_PUBLISHER_ERROR_CODE));
                     Log.d(TAG, "Publisher internal error!");
                     break;
-                case IPublisherMgr.TYPE_PUBLISHER_NETWORK_GOOD:
+                case IPublisherManager.TYPE_PUBLISHER_NETWORK_GOOD:
                     ToastUtils.showToast(getContext(), R.string.good_network);
 //                    mView.hideInterruptUI();
                     break;
-                case IPublisherMgr.TYPE_PLAYER_NETWORK_POOR:
+                case IPublisherManager.TYPE_PLAYER_NETWORK_POOR:
                     if (data != null) {
-                        String url = data.getString(IPublisherMgr.DATA_KEY_PLAYER_ERROR_MSG);
+                        String url = data.getString(IPublisherManager.DATA_KEY_PLAYER_ERROR_MSG);
                         ToastUtils.showToast(getContext(), "播放视频 " + url + " 网络差，可能造成延时");
                     }
 //                    mView.hideInterruptUI();
                     break;
-                case IPublisherMgr.TYPE_PUBLISHER_NETWORK_POOR:
+                case IPublisherManager.TYPE_PUBLISHER_NETWORK_POOR:
                     ToastUtils.showToast(getContext(), R.string.poor_network);
-//                    mView.showInterruptUI(R.string.no_network, data.getInt(IPublisherMgr.DATA_KEY_PUBLISHER_ERROR_CODE));
+//                    mView.showInterruptUI(R.string.no_network, data.getInt(IPublisherManager.DATA_KEY_PUBLISHER_ERROR_CODE));
                     break;
-                case IPublisherMgr.TYPE_PUBLISHER_RECONNECT_FAILURE:
+                case IPublisherManager.TYPE_PUBLISHER_RECONNECT_FAILURE:
                     mView.showToast(R.string.network_reconnect_failure);
                     break;
-                case IPublisherMgr.TYPE_PUBLISHER_VIDEO_CAPTURE_FAILURE:
-                    mView.showInterruptUI(R.string.error_video_capture, data.getInt(IPublisherMgr.DATA_KEY_PUBLISHER_INFO_CODE));
+                case IPublisherManager.TYPE_PUBLISHER_VIDEO_CAPTURE_FAILURE:
+                    mView.showInterruptUI(R.string.error_video_capture, data.getInt(IPublisherManager.DATA_KEY_PUBLISHER_INFO_CODE));
 //                    mView.showCameraOpenFailureUI();
                     break;
-                case IPublisherMgr.TYPE_PROCESS_INVITING_TIMEOUT:   // 处理对方连麦邀请超时
+                case IPublisherManager.TYPE_PROCESS_INVITING_TIMEOUT:   // 处理对方连麦邀请超时
                     ToastUtils.showToast(getContext(), R.string.inviting_process_timeout); //提醒超时未处理，已经自动拒绝对方的连麦邀
                     break;
-                case IPublisherMgr.TYPE_PUBLISH_STREMA_SUCCESS:// 某个连麦观众推流成功，服务端获取了推流对应的播放地址，并通过MNS发送给了主播
+                case IPublisherManager.TYPE_PUBLISH_STREMA_SUCCESS:// 某个连麦观众推流成功，服务端获取了推流对应的播放地址，并通过MNS发送给了主播
                     // 主播收到了连麦观众推流的播放地址，记录播放地址后，将其uid发送过来
                     // 在UI界面上获取一个空闲的SurfaceView，并将其与uid绑定在一起
-                    String inviteeUID = data.getString(IPublisherMgr.DATA_KEY_INVITEE_UID);
+                    String inviteeUID = data.getString(IPublisherManager.DATA_KEY_INVITEE_UID);
                     SurfaceView parterView = mView.showChattingUI(inviteeUID);      //显示连麦的UI
                     if (parterView != null) {
                         // 调用正式连麦的方法
                         mPublisherMgr.launchChat(parterView, inviteeUID);
                     }
                     break;
-                case IPublisherMgr.TYPE_SOMEONE_EXIT_CHATTING:
-                    String playerUID = data.getString(IPublisherMgr.DATA_KEY_PLAYER_UID);
+                case IPublisherManager.TYPE_SOMEONE_EXIT_CHATTING:
+                    String playerUID = data.getString(IPublisherManager.DATA_KEY_PLAYER_UID);
                     mView.showTerminateChattingUI(playerUID);
                     break;
-                case IPublisherMgr.TYPE_OPERATION_CALLED_ERROR:
+                case IPublisherManager.TYPE_OPERATION_CALLED_ERROR:
                     String msg = null;
                     if (data != null) {
-                        msg = data.getString(IPublisherMgr.DATA_KEY_PLAYER_ERROR_MSG, null);
+                        msg = data.getString(IPublisherManager.DATA_KEY_PLAYER_ERROR_MSG, null);
                     }
                     mView.showInfoDialog(msg);
                     break;
-                case IPublisherMgr.TYPE_MIX_STREAM_ERROR:
+                case IPublisherManager.TYPE_MIX_STREAM_ERROR:
                     mView.showToast(R.string.mix_internal_error);
                     break;
-                case IPublisherMgr.TYPE_INVITE_TIMEOUT:     // 邀请对方进行连麦，对方响应超时
+                case IPublisherManager.TYPE_INVITE_TIMEOUT:     // 邀请对方进行连麦，对方响应超时
                     ToastUtils.showToast(getContext(), R.string.invite_timeout_tip);   //提醒：对方长时间未响应，已取消连麦流程
-//                    mView.showInviteChattingTimeoutUI(data.getString(IPublisherMgr.DATA_KEY_INVITEE_UID));
+//                    mView.showInviteChattingTimeoutUI(data.getString(IPublisherManager.DATA_KEY_INVITEE_UID));
                     break;
-                case IPublisherMgr.TYPE_MIX_STREAM_NOT_EXIST:
+                case IPublisherManager.TYPE_MIX_STREAM_NOT_EXIST:
                     mView.showToast(R.string.error_mix_stream_not_exist);
                     break;
-                case IPublisherMgr.TYPE_MIX_STREAM_SUCCESS:
+                case IPublisherManager.TYPE_MIX_STREAM_SUCCESS:
                     mView.showToast(R.string.error_mix_stream_success);
                     break;
-                case IPublisherMgr.TYPE_MIX_STREAM_TIMEOUT:
+                case IPublisherManager.TYPE_MIX_STREAM_TIMEOUT:
                     mView.showToast(R.string.error_mix_stream_timeout);
                     break;
-                case IPublisherMgr.TYPE_MAIN_STREAM_NOT_EXIST:
+                case IPublisherManager.TYPE_MAIN_STREAM_NOT_EXIST:
                     mView.showToast(R.string.error_main_stream_not_exist);
                     break;
-                case IPublisherMgr.TYPE_PLAYER_INVALID_INPUTFILE:
+                case IPublisherManager.TYPE_PLAYER_INVALID_INPUTFILE:
                     mView.showToast(R.string.error_player_invalid_inputfile);
                     break;
-                case IPublisherMgr.TYPE_PLAYER_OPEN_FAILED:
+                case IPublisherManager.TYPE_PLAYER_OPEN_FAILED:
                     mView.showToast(R.string.error_player_open_failed);
                     break;
-                case IPublisherMgr.TYPE_PLAYER_NO_NETWORK:
+                case IPublisherManager.TYPE_PLAYER_NO_NETWORK:
                     mView.showToast(R.string.error_player_no_network);
                     break;
-                case IPublisherMgr.TYPE_PLAYER_TIMEOUT:
+                case IPublisherManager.TYPE_PLAYER_TIMEOUT:
                     mView.showToast(R.string.error_player_timeout);
                     break;
-                case IPublisherMgr.TYPE_PLAYER_READ_PACKET_TIMEOUT:
+                case IPublisherManager.TYPE_PLAYER_READ_PACKET_TIMEOUT:
                     mView.showToast(R.string.error_player_read_packet_timeout);
                     break;
-                case IPublisherMgr.TYPE_PUBLISHER_NETWORK_UNCONNECT:
+                case IPublisherManager.TYPE_PUBLISHER_NETWORK_UNCONNECT:
                     mView.showInterruptUI(R.string.error_publisher_network_unconnect, -400);
                     break;
-                case IPublisherMgr.TYPE_PUBLISHER_NETWORK_TIMEOUT:
+                case IPublisherManager.TYPE_PUBLISHER_NETWORK_TIMEOUT:
                     mView.showInterruptUI(R.string.error_publisher_network_timeout, -406);
                     break;
-                case IPublisherMgr.TYPE_PLAYER_AUDIO_PLAYER_ERROR:
+                case IPublisherManager.TYPE_PLAYER_AUDIO_PLAYER_ERROR:
                     mView.showInterruptUI(R.string.error_publisher_network_unconnect, 412);
                     break;
-                case IPublisherMgr.TYPE_LIVE_CREATED:
+                case IPublisherManager.TYPE_LIVE_CREATED:
                     break;
             }
         }

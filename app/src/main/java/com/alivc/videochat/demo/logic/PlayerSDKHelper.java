@@ -73,12 +73,12 @@ public class PlayerSDKHelper {
     /**
      * 方法描述: 将本类操作结果回调给 MgrCallback接口的实例 该接口实例是要根据播放核心类操作结果去更新Ui的，所以实例在LifecycleLivePlayPresenterImpl中实现
      */
-    MgrCallback mCallback;
+    ManagerCallback mCallback;
 
     /**
      * 方法描述: 初始化播放器
      */
-    public void initPlayer(Context context, IVideoChatParter.OnErrorListener errorListener, IVideoChatParter.OnInfoListener infoListener, MgrCallback callback) {
+    public void initPlayer(Context context, IVideoChatParter.OnErrorListener errorListener, IVideoChatParter.OnInfoListener infoListener, ManagerCallback callback) {
         mMediaParam.put(MediaConstants.PUBLISHER_PARAM_ORIGINAL_BITRATE, "" + 800000);
         mMediaParam.put(MediaConstants.PUBLISHER_PARAM_MIN_BITRATE, "" + 600000);
         mMediaParam.put(MediaConstants.PUBLISHER_PARAM_MAX_BITRATE, "" + 1000000);
@@ -110,7 +110,7 @@ public class PlayerSDKHelper {
     public void startToPlay(String playUrl, final SurfaceView surfaceView) {
         if (!isPlaying) {
             Log.d(TAG, "Call mChatParter.startToPlay()");
-            mCallback.onEvent(IPlayerMgr.TYPE_PARTER_OPT_START, null);
+            mCallback.onEvent(IPlayerManager.TYPE_PARTER_OPT_START, null);
             mChatParter.startToPlay(playUrl, surfaceView); //开始直播
             isPlaying = true;
         }
@@ -170,7 +170,7 @@ public class PlayerSDKHelper {
         //TODO:这里需要SDK支持？？？？？
         if (!hasOnlineChats && !isChatting) {
             Log.d(TAG, "Call mChatParter.onlineChats() surface is valid ? " + previewSurface.getHolder().getSurface().isValid());
-            mCallback.onEvent(IPlayerMgr.TYPE_PARTER_OPT_START, null);// 回调内容暂时被注释了
+            mCallback.onEvent(IPlayerManager.TYPE_PARTER_OPT_START, null);// 回调内容暂时被注释了
             // 参数二三代表编码视频的宽和高。
             mChatParter.onlineChats(publisherUrl, 180, 320, previewSurface, mMediaParam, hostPlayUrl, urlSurfaceMap);// 返回值： 0表示成功；非0表示失败。
             hasOnlineChats = true;
@@ -227,7 +227,7 @@ public class PlayerSDKHelper {
         //TODO:需要SDK支持？？？？？
         if (isChatting) {
             Log.d(TAG, "Call mChatParter.addChats()");
-            mCallback.onEvent(IPlayerMgr.TYPE_PARTER_OPT_START, null);
+            mCallback.onEvent(IPlayerManager.TYPE_PARTER_OPT_START, null);
             mChatParter.addChats(urlSurfaceMap);// 返回值： 0表示成功；非0表示失败。
         }
     }
@@ -242,7 +242,7 @@ public class PlayerSDKHelper {
         //TODO:需要SDK支持？？？？？
         if (isChatting) {
             Log.d(TAG, "Call mChatParter.removeChats()");
-            mCallback.onEvent(IPlayerMgr.TYPE_PARTER_OPT_START, null);
+            mCallback.onEvent(IPlayerManager.TYPE_PARTER_OPT_START, null);
             return mChatParter.removeChats(playUrls);// 返回值： 0表示成功；非0表示失败。
         }
         return -1;
@@ -255,7 +255,7 @@ public class PlayerSDKHelper {
     public void abortChat() {
         if (mChatParter != null && isChatting) {
             Log.d(TAG, "Call mChatParter.offlineChat()");
-            mCallback.onEvent(IPlayerMgr.TYPE_PARTER_OPT_START, null);
+            mCallback.onEvent(IPlayerManager.TYPE_PARTER_OPT_START, null);
             mChatParter.offlineChat();// 返回值： 0表示成功；非0表示失败。
             isChatting = false;
             hasOnlineChats = false;
@@ -269,7 +269,7 @@ public class PlayerSDKHelper {
     public void stopPlaying() {
         if (mChatParter != null && isPlaying) {
             Log.d(TAG, "Call mChatParter.stopPlaying()");
-            mCallback.onEvent(IPlayerMgr.TYPE_PARTER_OPT_START, null);
+            mCallback.onEvent(IPlayerManager.TYPE_PARTER_OPT_START, null);
             mChatParter.stopPlaying();
             isPlaying = false;
         }

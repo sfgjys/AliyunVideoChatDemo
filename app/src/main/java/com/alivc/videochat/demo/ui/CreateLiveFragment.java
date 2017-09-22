@@ -13,7 +13,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 
 import com.alivc.videochat.demo.R;
-import com.alivc.videochat.demo.logic.LifecyclePublisherMgr;
+import com.alivc.videochat.demo.logic.LifecyclePublisherManager;
 import com.alivc.videochat.demo.presenter.ILifecycleCreateLivePresenter;
 import com.alivc.videochat.demo.presenter.impl.LifecycleCreateLivePresenterImpl;
 import com.alivc.videochat.demo.presenter.view.ICreateLiveView;
@@ -49,12 +49,12 @@ public class CreateLiveFragment extends Fragment implements View.OnClickListener
     private OnPendingPublishListener mPendingPublishListener;
 
     //TODO：这里如果使用DI来做（比如dagger2）加入注入对象生命周期管理就不需要单独保存一个Mgr对象了，正常情况Mgr应该对UI层透明的
-    private LifecyclePublisherMgr mPublisherMgr;
+    private LifecyclePublisherManager mPublisherMgr;
 
     /**
      * 方法描述: 方法内是创建一个本类对象，并且在将参数赋值给本类对象，方便本类对象去进行创建LifecycleCreateLivePresenterImpl对象
      */
-    public static CreateLiveFragment newInstance(LifecyclePublisherMgr publisherMgr) {
+    public static CreateLiveFragment newInstance(LifecyclePublisherManager publisherMgr) {
         CreateLiveFragment fragment = new CreateLiveFragment();
         fragment.mPublisherMgr = publisherMgr;
         return fragment;

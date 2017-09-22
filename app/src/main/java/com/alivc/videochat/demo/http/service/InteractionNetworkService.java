@@ -10,15 +10,12 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 /**
- * Created by liujianghao on 16-7-28.
+ * 类的描述: 交互网络请求服务(包含:发送评论，点赞)
  */
-public interface InteractionService {
-
+public interface InteractionNetworkService {
     @POST(HttpConstant.URL_SEND_COMMEND)
-    Call<HttpResponse<Object>>
-    sendComment(@Body SendCommentForm form);
+    Call<HttpResponse<Object>> sendComment(@Body SendCommentForm form);// 发送给业务服务器观众的评论信息
 
     @POST(HttpConstant.URL_SEND_LIKE)
-    Call<HttpResponse<Object>>
-    sendLike(@Body SendLikeForm form);
+    Call<HttpResponse<Object>> sendLike(@Body SendLikeForm form);// 发送给业务服务器观众的点赞信息
 }
