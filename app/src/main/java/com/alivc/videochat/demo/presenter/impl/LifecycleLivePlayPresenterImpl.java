@@ -176,7 +176,7 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
                     mPlayerMgr.launchChat(mView.showLaunchChatUI(), mView.getOtherParterViews(inviteeUIDList));
 
                     break;
-                case IPlayerManager.TYPE_OTHER_PEOPLE_EXIT_CHATTING:    //其他人退出连麦
+                case IPlayerManager.TYPE_OTHER_PEOPLE_EXIT_CHATTING:    // 其他人退出连麦
                     String inviteeUID = data.getString(IPlayerManager.DATA_KEY_INVITEE_UID);
                     mView.showExitChattingUI(inviteeUID);
                     break;
@@ -193,17 +193,6 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
                     break;
                 case IPlayerManager.TYPE_PUBLISHER_FIRST_FRAME_RENDER_SUCCESS:
                     mView.hideChattingView();
-                    break;
-                case IPlayerManager.TYPE_OFFLINE_CHAT_SUCCESS:
-                    // 显示online按钮
-//                    mView.showOnlineChatBtn();
-                    break;
-                case IPlayerManager.TYPE_ONLINE_CHAT_SUCCESS:
-                    // 显示offline按钮
-//                    mView.showOfflineChatBtn();
-                    break;
-                case IPlayerManager.TYPE_ADD_CHAT_SUCCESS:
-//                    mView.showOfflineChatBtn();
                     break;
                 case IPlayerManager.TYPE_PARTER_OPT_START:
                     // 按钮不可点击

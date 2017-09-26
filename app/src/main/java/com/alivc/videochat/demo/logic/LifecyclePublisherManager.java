@@ -159,6 +159,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
     private ChatSessionCallback mChatSessionCallback = new ChatSessionCallback() {
         @Override
         public void onInviteChatTimeout() {
+            // TODO 超时后没有移除mChatSessionMap中存储的这个超时连麦流程
             mVideoChatApiCalling = false;
             if (mManagerCallback != null) {
                 mManagerCallback.onEvent(TYPE_INVITE_TIMEOUT, null);
@@ -495,6 +496,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
                     public void onFailure(Throwable t) {
                         // 向服务器发送邀请的请求失败
                         for (String playerUID : playerUIDs) {
+                            mChatSessionMap.get(playerUID).notifyInviteFailure();
                             mChatSessionMap.remove(playerUID);// 因为失败，所以移除playerUID所代表的连麦流程
                             Log.d(TAG, "xiongbo21: remove chat session for " + playerUID);
                         }

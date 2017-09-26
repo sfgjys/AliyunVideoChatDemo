@@ -8,13 +8,13 @@ public class ChatSessionInfo {
     /**
      * 变量的描述: 推流地址
      */
-    private String mRtmpUrl;        //
+    private String mRtmpUrl;
     // --------------------------------------------------------------------------------------------------------
     private String mPlayerUID;
     /**
      * 变量的描述: 短延时播放地址
      */
-    private String mPlayUrl;       //
+    private String mPlayUrl;
 
     protected ChatSessionInfo() {
     }

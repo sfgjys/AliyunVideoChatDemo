@@ -568,8 +568,357 @@ public class LifecyclePlayerManager extends ContextBase implements IPlayerManage
 //        return mPlayerSDKHelper.getPlayerPerformanceInfo(url);
         return new AlivcPlayerPerformanceInfo();
     }
-
     // --------------------------------------------------------------------------------------------------------
+
+    // **************************************************** 对MNS的消息进行对应的执行操作 ****************************************************
+
+    /**
+     * 变量的描述: 观众进行连麦的时候，需要进行推流，将视频推出去，所以这里是对推流成功的消息进行处理Action
+     * 备注：只作为本观众的话，这里的消息处理不需要，而如果是作为其他连麦观众中的其中一人，就需要进行处理
+     */
+    private ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
+        @Override
+        public void action(MsgDataStartPublishStream msgDataStartPublishStream) {
+            // 获取推流成功的uid，该uid有可能是本观众的，也有可能是其他连麦观众的
+            String uid = msgDataStartPublishStream.getUid();
+            Log.d(TAG, "WatchLiveActivity -->出现推流成功的ID: " + uid);
+
+            // 判断推流成功的 uid 是不是 本观众
+            if (!mUID.equals(uid) && !uid.equals(mPublisherUID) && mChatSession != null) {
+                Log.d(TAG, "WatchLiveActivity -->出现推流成功，本观众的连麦流程状态为: " + mChatSession.getChatStatus());
+
+                // 1. 如果是本观众没有进行连麦，但是其他的观众进行了连麦，那么有可能进入本判断，这种情况不要管
+                if (mChatSession.getChatStatus() == VideoChatStatus.UNCHAT) {
+                    Log.d(TAG, "WatchLiveActivity -->出现推流成功,但是本观众没有进行连麦流程");
+                    return;
+                }
+
+                // 本观众正在进行连麦的流程的同时(但是本观众还没有连麦成功，也没有尝试混流)，
+                // 有其他观众连麦推流成功了，那么我们将其他连麦观众的播放地址先进行存储，然后退出
+                // TODO 这里的判断有一定的问题
+                if (mChatSession.getChatStatus() != VideoChatStatus.MIX_SUCC && mChatSession.getChatStatus() != VideoChatStatus.TRY_MIX) {
+                    // 进入队列
+                    mUidMap.put(uid, msgDataStartPublishStream.getPlayUrl());
+                    Log.d(TAG, "WatchLiveActivity -->出现推流成功,将推流成功的信息先进行存储");
+                    return;
+                }
+                // 2. 如果连麦中,add chat
+//                int count = 0;
+//                while ((mChatSession.getChatStatus() != VideoChatStatus.MIX_SUCC) && count++ < 10) {
+//                    try {
+//                        Thread.sleep(200);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+
+                // 3. 如果连麦发起中, 等待连麦发起完成再add chat
+                // 代码走到这里说明，本观众已经连麦成功了。现在有其他的观众连麦推流成功，需要我们将连麦成功的其他观众显示出来
+                addChatSession(msgDataStartPublishStream.getPlayUrl(), uid);
+                ArrayList<String> userIdList = new ArrayList<>();
+                userIdList.add(uid);
+                handlePublishStreamMsg(userIdList);
+
+                Log.d(TAG, "WatchLiveActivity -->出现推流成功,将推流成功的添加进连麦，该连麦的ID: " + uid);
+            } else if (mUID.equals(uid)) {
+                // 本观众正在进行连麦操作，推流成功
+
+                // 如果在本观众进行连麦操作的时候，且没有推流成功前，有其他观众推流成功了，这时下面的代码就有意义了
+                // 先将先我们一步推流成功的其他连麦观众存储进mOtherChatSessionMap，这样本观众的连麦就可以显示比本观众早推流成功的播放了
+                ArrayList<String> userIdList = new ArrayList<>();
+                for (String userId : mUidMap.keySet()) {
+                    userIdList.add(userId);
+                    Log.d(TAG, "WatchLiveActivity -->本观众推流成功,添加后来推流程成功的其他连麦观众的信息: " + userId);
+                    addChatSession(mUidMap.get(userId), userId);
+                }
+                if (!userIdList.isEmpty()) {
+                    handlePublishStreamMsg(userIdList);
+                    mUidMap.clear();
+                }
+            }
+        }
+    };
+    /**
+     * 变量的描述: 连麦推流成功后，连麦过程中混流的状态码回调
+     */
+    private ImHelper.Func<MsgDataMixStatusCode> mMixStatusCodeFunc = new ImHelper.Func<MsgDataMixStatusCode>() {
+        @Override
+        public void action(MsgDataMixStatusCode msgDataMixStatusCode) {
+            if (msgDataMixStatusCode != null && mChatSession != null) {
+                String code = msgDataMixStatusCode.getCode();
+                if (MixStatusCode.INTERNAL_ERROR.toString().equals(code)) {
+                    mChatSession.notifyInternalError();
+                } else if (MixStatusCode.MAIN_STREAM_NOT_EXIST.toString().equals(code)) {
+                    mChatSession.notifyMainStreamNotExist();
+                } else if (MixStatusCode.MIX_STREAM_NOT_EXIST.toString().equals(code)) {
+                    mChatSession.notifyMixStreamNotExist();
+                } else if (MixStatusCode.SUCCESS.toString().equals(code)) {
+                    // 如果是其他连麦人推流成功的话，改变其连麦状态
+                    ChatSession session = mOtherChatSessionMap.get(msgDataMixStatusCode.getMixUid());
+                    if (session != null) {
+                        session.setChatStatus(VideoChatStatus.MIX_SUCC);
+                    }
+//                    mChatSession.notifyMixStreamSuccess();
+                }
+                Log.d(TAG, "混流状态码: " + msgDataMixStatusCode.getCode());
+            }
+        }
+    };
+    /**
+     * 变量的描述: 被邀请连麦的人的同意连麦的消息被MNS服务端发送到了本MNS的客户端，在此处进行处理Action
+     */
+    private ImHelper.Func<MsgDataAgreeVideoCall> mAgreeFunc = new ImHelper.Func<MsgDataAgreeVideoCall>() {
+        @Override
+        public void action(final MsgDataAgreeVideoCall msgDataAgreeVideoCall) {
+            // 如果超时了，那么对于主播的同意信息就不进行处理了,这是因为主播即使在10秒内同意了，但是经过业务服务器发来到观众这，已经超时了
+            if (mChatSession == null || mChatSession.getChatStatus() == VideoChatStatus.UNCHAT) {
+                return;
+            }
+            ChatSession chatSession;
+            ChatSessionInfo sessionInfo;
+            String inviteeUID;
+            Bundle data = new Bundle();
+
+            // ★★★★★★★★ 给在调用asyncInviteChatting方法时创建mChatSession对象添加本观众连麦时使用的推流地址和主播的短延迟播发地址信息(通过ChatSessionInfo对象)
+            // 这里存储的是本观众连麦时使用的推流地址和主播的短延迟播发地址
+            ChatSessionInfo chatSessionInfo = new ChatSessionInfo();
+            chatSessionInfo.setRtmpUrl(msgDataAgreeVideoCall.getRtmpUrl());
+            chatSessionInfo.setPlayUrl(msgDataAgreeVideoCall.getMainPlayUrl());
+            // mChatSession是在调用asyncInviteChatting方法时创建的对象
+            mChatSession.setChatSessionInfo(chatSessionInfo); // TODO 怎么可能此处为空？？？
+
+
+            // 传递主播uid
+            data.putString(DATA_KEY_INVITER_UID, mPublisherUID);
+
+
+            // ★★★★★★★★ 给mCallback传递一个包含了 其他连麦观众的uid 数据的集合过去
+            // 这里获取的是MNS传递过来的其他连麦观众的短延迟播放地址和其对应的uid
+            List<ParterInfo> parterInfos = msgDataAgreeVideoCall.getParterInfos();
+            // 存储其他已经连麦成功的观众的UID的集合
+            ArrayList<String> inviteeUIDList = new ArrayList<>();
+            if (parterInfos != null && parterInfos.size() > 0) {
+                for (ParterInfo parterInfo : parterInfos) {
+                    inviteeUID = parterInfo.getUID();
+                    mUidMap.remove(inviteeUID);
+
+                    // 将其他连麦观众的uid和对应的播放地址存储进一个ChatSessionInfo对象，在将ChatSessionInfo对象存储进一个新的ChatSession对象
+                    chatSession = new ChatSession(mChatSessionCallback);// 这里用不到session的状态管理，只用到了信息缓存功能
+                    sessionInfo = new ChatSessionInfo();
+                    sessionInfo.setPlayerUID(inviteeUID);
+                    sessionInfo.setPlayUrl(parterInfo.getPlayUrl());
+                    chatSession.setChatSessionInfo(sessionInfo);
+
+                    // 根据其他连麦观众的uid找对应的ChatSession对象
+                    mOtherChatSessionMap.put(inviteeUID, chatSession);
+
+                    inviteeUIDList.add(inviteeUID);
+                }
+                // 传递其他连麦观众的uid，如此可以根据uid从mOtherChatSessionMap获取对应的短延迟播放url
+                data.putStringArrayList(DATA_KEY_INVITEE_UID_LIST, inviteeUIDList);
+            }
+            if (mManagerCallback != null) {
+                mManagerCallback.onEvent(TYPE_START_CHATTING, data);
+            }
+
+            // ★★★★★★★★ 改变ChatSession的状态
+            mChatSession.notifyParterAgreeInviting();
+        }
+    };
+    /**
+     * 变量的描述: 被邀请连麦的人的不同意连麦的消息被发送倒本MNS客户端，处理Action
+     */
+    private ImHelper.Func<MsgDataNotAgreeVideoCall> mNotAgreeFunc = new ImHelper.Func<MsgDataNotAgreeVideoCall>() {
+        @Override
+        public void action(final MsgDataNotAgreeVideoCall notAgreeVideoCall) {
+            if (mChatSession != null) {
+                mChatSession.notifyNotAgreeInviting(notAgreeVideoCall);
+            }
+        }
+    };
+    /**
+     * 变量的描述: 混流成功的消息处理Action  这个只有在第一次进行连麦混流时才会被调用
+     */
+    private ImHelper.Func<MsgDataMergeStream> mMergeStreamSuccFunc = new ImHelper.Func<MsgDataMergeStream>() {
+        @Override
+        public void action(MsgDataMergeStream msgDataMergeStream) {
+            System.out.println();
+        }
+    };
+    /**
+     * 变量的描述: 混流失败的消息处理Action
+     */
+    private ImHelper.Func<MsgDataMergeStream> mMergeStreamFailedFunc = new ImHelper.Func<MsgDataMergeStream>() {
+        @Override
+        public void action(MsgDataMergeStream msgDataMergeStream) {
+            System.out.println();
+        }
+    };
+    /**
+     * 变量的描述: 观众自己或者主播指定观众退出连麦时(这里的观众可以自己，也可以是其他连麦的观众)，消息处理Action
+     */
+    private ImHelper.Func<MsgDataExitChatting> mExitingChattingFunc = new ImHelper.Func<MsgDataExitChatting>() {
+        @Override
+        public void action(MsgDataExitChatting msgDataExitChatting) {
+            Log.d(TAG, "Someone exit chatting");
+            // 获取退出连麦的人的uid
+            String inviteeUID = msgDataExitChatting.getUID();
+            if (!mUID.equals(inviteeUID)) {// 其他人退出连麦
+                // 如果本观众正在发起连麦,而这个时候其他观众退出连麦,不需要处理此消息
+                if (mChatSession == null || (mChatSession.getChatStatus() != VideoChatStatus.MIX_SUCC && mChatSession.getChatStatus() != VideoChatStatus.TRY_MIX)) {
+                    if (mChatSession != null)
+                        Log.d(TAG, "chat session status = " + mChatSession.getChatStatus());
+                    return;
+                }
+
+                // 从mOtherChatSessionMap移除对应退出连麦的uid,并将uid对应的播放地址存储进playUrls
+                ChatSession chatSession;
+                List<String> playUrls = new ArrayList<>();
+                if ((chatSession = mOtherChatSessionMap.get(inviteeUID)) != null) {
+                    playUrls.add(chatSession.getChatSessionInfo().getPlayUrl());
+                    mOtherChatSessionMap.remove(inviteeUID);
+                }
+                // 这里代表的是使用的了SDK的核心api---removeChats方法
+                mVideoChatApiCalling = true;
+                Log.e(TAG + "---API", "开始Remove连麦...");
+                int result = mPlayerSDKHelper.removeChats(playUrls);// 调用核心代码移除连麦
+                if (result != 0) {
+                    // 核心代码调用失败
+                    mVideoChatApiCalling = false;
+                } else {
+                    // 核心代码调用成功
+                    if (mManagerCallback != null) {
+                        Bundle data = new Bundle();
+                        data.putString(DATA_KEY_INVITEE_UID, inviteeUID);
+                        mManagerCallback.onEvent(TYPE_OTHER_PEOPLE_EXIT_CHATTING, data);
+                    }
+                }
+            } else {//自己退出连麦
+                mPlayerSDKHelper.abortChat();
+                mChatSession = null;
+                if (mManagerCallback != null) {
+                    mManagerCallback.onEvent(TYPE_SELF_EXIT_CHATTING, null);
+                }
+            }
+        }
+    };
+    /**
+     * 变量的描述: 结束所有正在连麦的时候，消息处理Action 这里是在主播端直接请求业务服务器结束所有连麦时，这里会接收到消息，其实质是让所有的连麦观众客户端代码中直接关闭自己的连麦
+     */
+    private ImHelper.Func<MsgDataCloseVideoCall> mCloseChatFunc = new ImHelper.Func<MsgDataCloseVideoCall>() {
+        @Override
+        public void action(MsgDataCloseVideoCall msgDataCloseVideoCall) {
+            // 这里的结束所有正在连麦，其实就是让本观众自己的连麦退出
+            if (mChatSession != null)
+                mChatSession.abortChat();
+            mPlayerSDKHelper.abortChat(); //结束连麦
+            if (mManagerCallback != null) {
+                mManagerCallback.onEvent(TYPE_PUBLISHER_TERMINATE_CHATTING, null);
+            }
+        }
+    };
+    /**
+     * 变量的描述: 观众观看直播时，主播结束直播的时候，消息处理Action
+     */
+    private ImHelper.Func<MsgDataLiveClose> mLiveCloseFunc = new ImHelper.Func<MsgDataLiveClose>() {
+        @Override
+        public void action(MsgDataLiveClose msgDataLiveClose) {
+            if (mChatSession != null) {
+                mPlayerSDKHelper.abortChat();
+                mChatSession = null;
+                mOtherChatSessionMap.clear();
+            }
+            if (mManagerCallback != null) {
+                mManagerCallback.onEvent(TYPE_LIVE_CLOSE, null);
+            }
+        }
+    };
+    /**
+     * 变量的描述: 观众观看的主播对本观众发起了连麦邀请的时候，消息处理Action
+     */
+    private ImHelper.Func<MsgDataInvite> mInviteFunc = new ImHelper.Func<MsgDataInvite>() {
+        @Override
+        public void action(final MsgDataInvite msgDataInvite) {
+            mUidMap.clear();
+            mChatSession = new ChatSession(mChatSessionCallback);
+            mChatSession.notifyReceivedInviting(msgDataInvite.getInviterUID(), mUID);
+            //自动同意连麦
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            asyncFeedbackInviting(msgDataInvite.getInviterUID());
+        }
+    };
+
+    /**
+     * 方法描述: 当本观众被主播邀请时，需要将观众是否进行连麦的结果反馈给业务服务器
+     *
+     * @param publisherUID 主播ID，也是邀请本观众进行连麦的id
+     */
+    private void asyncFeedbackInviting(final String publisherUID) {
+        if (ServiceBI.isCalling(mFeedbackCall)) {
+            mFeedbackCall.cancel();
+        }
+        mChatSession.feedbactInviting(true);
+
+        // 通过网络请求告诉业务服务器本观众同意与主播进行连麦
+        mFeedbackCall = mInviteServiceBI.feedback(FeedbackForm.INVITE_TYPE_WATCHER, FeedbackForm.INVITE_TYPE_ANCHOR, publisherUID, mUID, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.STATUS_AGREE, new ServiceBI.Callback<InviteFeedbackResult>() {
+            @Override
+            public void onResponse(int code, InviteFeedbackResult response) {
+
+                ChatSession chatSession;
+                ChatSessionInfo sessionInfo;
+                String inviteeUID;
+                ArrayList<String> inviteeUIDList = new ArrayList<>();
+                Bundle data = new Bundle();
+
+                // 更新连麦状态为开始混流， 等待混流成功
+                mChatSession.notifyFeedbackSuccess();
+
+                // 设置 这里存储的是本观众连麦时使用的推流地址和主播的短延迟播发地址
+                ChatSessionInfo chatSessionInfo = new ChatSessionInfo();
+                chatSessionInfo.setRtmpUrl(response.getRtmpUrl());
+                chatSessionInfo.setPlayUrl(response.getMainPlayUrl());
+                mChatSession.setChatSessionInfo(chatSessionInfo);
+
+                //  给mCallback传递一个包含了 其他连麦观众的uid 数据的集合过去
+                data.putString(DATA_KEY_INVITER_UID, publisherUID);
+                List<ParterInfo> parterInfos = response.getOtherParterInfos();
+                if (parterInfos != null && parterInfos.size() > 0) {
+                    for (ParterInfo parterInfo : parterInfos) {
+                        inviteeUID = parterInfo.getUID();
+                        mUidMap.remove(inviteeUID);
+                        chatSession = new ChatSession(mChatSessionCallback);//这里用不到session的状态管理，只用到了信息缓存功能
+                        sessionInfo = new ChatSessionInfo();
+                        sessionInfo.setPlayerUID(inviteeUID);
+                        sessionInfo.setPlayUrl(parterInfo.getPlayUrl());
+                        chatSession.setChatSessionInfo(sessionInfo);
+                        mOtherChatSessionMap.put(inviteeUID, chatSession);
+                        inviteeUIDList.add(inviteeUID);
+                    }
+                    data.putStringArrayList(DATA_KEY_INVITEE_UID_LIST, inviteeUIDList);
+                }
+                if (mManagerCallback != null) {
+                    mManagerCallback.onEvent(TYPE_START_CHATTING, data);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (mChatSession != null) {
+                    System.out.println();
+                }
+                if (mManagerCallback != null) {
+                    // TODO 收到邀请后，反馈失败了
+                    System.out.println();
+                }
+            }
+        });
+    }
+
+    //  --------------------------------------------------------------------------------------------------------
 
     private ChatSessionCallback mChatSessionCallback = new ChatSessionCallback() {
         @Override
@@ -580,7 +929,6 @@ public class LifecyclePlayerManager extends ContextBase implements IPlayerManage
             if (mChatSession != null) {
                 mChatSession.notifyNotAgreeInviting(null);
             }
-
             if (mManagerCallback != null) {
                 mManagerCallback.onEvent(TYPE_INVITE_CHAT_TIMEOUT, null);
             }
@@ -632,381 +980,6 @@ public class LifecyclePlayerManager extends ContextBase implements IPlayerManage
             }
         }
     };
-
-    // --------------------------------------------------------------------------------------------------------
-
-    // **************************************************** 对MNS的消息进行对应的执行操作 ****************************************************
-
-    /**
-     * 变量的描述: 观众进行连麦的时候，需要进行推流，将视频推出去，所以这里是对推流成功的消息进行处理Action
-     * 备注：只作为本观众的话，这里的消息处理不需要，而如果是作为其他连麦观众中的其中一人，就需要进行处理
-     */
-    private ImHelper.Func<MsgDataStartPublishStream> mPublishStreamFunc = new ImHelper.Func<MsgDataStartPublishStream>() {
-        @Override
-        public void action(MsgDataStartPublishStream msgDataStartPublishStream) {
-            // 获取推流成功的uid，该uid有可能是本观众的，也有可能是其他连麦观众的
-            String uid = msgDataStartPublishStream.getUid();
-            Log.d(TAG, "WatchLiveActivity -->Publish Success. " + uid);
-
-            // 判断推流成功的 uid 是不是 本观众
-            if (!mUID.equals(uid) && !uid.equals(mPublisherUID) && mChatSession != null) {
-                Log.d(TAG, "WatchLiveActivity -->Publish Success. " + mChatSession.getChatStatus());
-
-                // 1. 如果是本观众没有进行连麦，但是其他的观众进行了连麦，那么有可能进入本判断，这种情况不要管
-                if (mChatSession.getChatStatus() == VideoChatStatus.UNCHAT) {
-                    Log.d(TAG, "WatchLiveActivity -->Publish Success. unchat return");
-                    return;
-                }
-
-                // 本观众正在进行连麦的流程的同时(但是本观众还没有连麦成功)，有其他观众连麦推流成功了，那么我们将其他连麦观众的播放地址先进行存储，然后退出
-                if (mChatSession.getChatStatus() != VideoChatStatus.MIX_SUCC && mChatSession.getChatStatus() != VideoChatStatus.TRY_MIX) {
-                    // 进入队列
-                    mUidMap.put(uid, msgDataStartPublishStream.getPlayUrl());
-                    Log.d(TAG, "WatchLiveActivity -->Publish Success. put to map");
-                    return;
-                }
-                // 2. 如果连麦中,add chat
-//                int count = 0;
-//                while ((mChatSession.getChatStatus() != VideoChatStatus.MIX_SUCC) && count++ < 10) {
-//                    try {
-//                        Thread.sleep(200);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-
-                // 3. 如果连麦发起中, 等待连麦发起完成再add chat
-                // 代码走到这里说明，本观众已经连麦成功了。现在有其他的观众连麦推流成功，需要我们将连麦成功的其他观众显示出来
-                addChatSession(msgDataStartPublishStream.getPlayUrl(), uid);
-                ArrayList<String> userIdList = new ArrayList<>();
-                userIdList.add(uid);
-                handlePublishStreamMsg(userIdList);
-
-                Log.d(TAG, "WatchLiveActivity -->Publish Success. add chat " + uid);
-            } else if (mUID.equals(uid)) {
-                // 本观众正在进行连麦操作，推流成功
-
-                // 如果在本观众进行连麦操作的时候，且没有推流成功前，有其他观众推流成功了，这时下面的代码就有意义了
-                // 先将先我们一步推流成功的其他连麦观众存储进mOtherChatSessionMap，这样本观众的连麦就可以显示比本观众早推流成功的播放了
-                ArrayList<String> userIdList = new ArrayList<>();
-                for (String userId : mUidMap.keySet()) {
-                    userIdList.add(userId);
-                    Log.d(TAG, "WatchLiveActivity -->Publish Success. add chat " + userId);
-                    addChatSession(mUidMap.get(userId), userId);
-                }
-                if (!userIdList.isEmpty()) {
-                    handlePublishStreamMsg(userIdList);
-                    mUidMap.clear();
-                }
-            }
-        }
-    };
-    /**
-     * 变量的描述: 连麦推流成功后，连麦过程中混流的状态码回调
-     */
-    private ImHelper.Func<MsgDataMixStatusCode> mMixStatusCodeFunc = new ImHelper.Func<MsgDataMixStatusCode>() {
-        @Override
-        public void action(MsgDataMixStatusCode msgDataMixStatusCode) {
-            if (msgDataMixStatusCode != null && mChatSession != null) {
-                String code = msgDataMixStatusCode.getCode();
-                if (MixStatusCode.INTERNAL_ERROR.toString().equals(code)) {
-                    mChatSession.notifyInternalError();
-                } else if (MixStatusCode.MAIN_STREAM_NOT_EXIST.toString().equals(code)) {
-                    mChatSession.notifyMainStreamNotExist();
-                } else if (MixStatusCode.MIX_STREAM_NOT_EXIST.toString().equals(code)) {
-                    mChatSession.notifyMixStreamNotExist();
-                } else if (MixStatusCode.SUCCESS.toString().equals(code)) {
-                    // 如果是其他连麦人推流成功的话，改变其连麦状态
-                    ChatSession session = mOtherChatSessionMap.get(msgDataMixStatusCode.getMixUid());
-                    if (session != null) {
-                        session.setChatStatus(VideoChatStatus.MIX_SUCC);
-                    }
-//                    mChatSession.notifyMixStreamSuccess();
-                }
-                Log.d(TAG, "Mix statusCode: " + msgDataMixStatusCode.getCode());
-            }
-            assert msgDataMixStatusCode != null;
-            Log.d(TAG, "Mix status code:" + msgDataMixStatusCode.getCode());
-
-        }
-    };
-    /**
-     * 变量的描述: 被邀请连麦的人的同意连麦的消息被MNS服务端发送到了本MNS的客户端，在此处进行处理Action
-     */
-    private ImHelper.Func<MsgDataAgreeVideoCall> mAgreeFunc = new ImHelper.Func<MsgDataAgreeVideoCall>() {
-        @Override
-        public void action(final MsgDataAgreeVideoCall msgDataAgreeVideoCall) {
-            // 如果超时了，那么对于主播的同意信息就不进行处理了,这是因为主播即使在10秒内同意了，但是经过业务服务器发来到观众这，已经超时了
-            if (mChatSession == null || mChatSession.getChatStatus() == VideoChatStatus.UNCHAT) {
-                return;
-            }
-            ChatSession chatSession;
-            ChatSessionInfo sessionInfo;
-            String inviteeUID;
-            Bundle data = new Bundle();
-
-            // ★★★★★★★★ 给在调用asyncInviteChatting方法时创建mChatSession对象添加本观众连麦时使用的推流地址和主播的短延迟播发地址信息(通过ChatSessionInfo对象)
-            // 这里存储的是本观众连麦时使用的推流地址和主播的短延迟播发地址
-            ChatSessionInfo chatSessionInfo = new ChatSessionInfo();
-            chatSessionInfo.setRtmpUrl(msgDataAgreeVideoCall.getRtmpUrl());
-            chatSessionInfo.setPlayUrl(msgDataAgreeVideoCall.getMainPlayUrl());
-            // mChatSession是在调用asyncInviteChatting方法时创建的对象
-            mChatSession.setChatSessionInfo(chatSessionInfo); // TODO 怎么可能此处为空？？？
-
-
-            // 传递主播uid
-            data.putString(DATA_KEY_INVITER_UID, mPublisherUID);
-
-
-            // ★★★★★★★★ 给mCallback传递一个包含了 其他连麦观众的uid 数据的集合过去
-            // 这里获取的是MNS传递过来的其他连麦观众的短延迟播放地址和其对应的uid
-            List<ParterInfo> parterInfos = msgDataAgreeVideoCall.getParterInfos();
-            ArrayList<String> inviteeUIDList = new ArrayList<>();
-            if (parterInfos != null && parterInfos.size() > 0) {
-                for (ParterInfo parterInfo : parterInfos) {
-                    inviteeUID = parterInfo.getUID();
-                    mUidMap.remove(inviteeUID);
-
-                    // 将其他连麦观众的uid和对应的播放地址存储进一个ChatSessionInfo对象，在将ChatSessionInfo对象存储进一个新的ChatSession对象
-                    chatSession = new ChatSession(mChatSessionCallback);// 这里用不到session的状态管理，只用到了信息缓存功能
-                    sessionInfo = new ChatSessionInfo();
-                    sessionInfo.setPlayerUID(inviteeUID);
-                    sessionInfo.setPlayUrl(parterInfo.getPlayUrl());
-                    chatSession.setChatSessionInfo(sessionInfo);
-
-                    // 根据其他连麦观众的uid找对应的ChatSession对象
-                    mOtherChatSessionMap.put(inviteeUID, chatSession);
-
-                    inviteeUIDList.add(inviteeUID);
-                }
-                // 传递其他连麦观众的uid，如此可以根据uid从mOtherChatSessionMap获取对应的短延迟播放url
-                data.putStringArrayList(DATA_KEY_INVITEE_UID_LIST, inviteeUIDList);
-            }
-            if (mManagerCallback != null) {
-                mManagerCallback.onEvent(TYPE_START_CHATTING, data);
-            }
-
-            // ★★★★★★★★ 改变ChatSession的状态
-            mChatSession.notifyParterAgreeInviting();
-        }
-    };
-    /**
-     * 变量的描述: 被邀请连麦的人的不同意连麦的消息被发送倒本MNS客户端，处理Action
-     */
-    private ImHelper.Func<MsgDataNotAgreeVideoCall> mNotAgreeFunc = new ImHelper.Func<MsgDataNotAgreeVideoCall>() {
-        @Override
-        public void action(final MsgDataNotAgreeVideoCall notAgreeVideoCall) {
-            if (mChatSession != null) {
-                mChatSession.notifyNotAgreeInviting(notAgreeVideoCall);
-            }
-        }
-    };
-    /**
-     * 变量的描述: 混流成功的消息处理Action  这个只有在第一次进行连麦混流时才会被调用
-     */
-    private ImHelper.Func<MsgDataMergeStream> mMergeStreamSuccFunc = new ImHelper.Func<MsgDataMergeStream>() {
-        @Override
-        public void action(MsgDataMergeStream msgDataMergeStream) {
-            System.out.println();
-//            if (mChatStatus == VideoChatStatus.TRY_MIX) {
-//                if (mRoomID.equals(msgDataMergeStream.getInviteeRoomID())) {
-//                    mChatRoomID = msgDataMergeStream.getInviterRoomID();
-//                } else if (mRoomID.equals(msgDataMergeStream.getInviterRoomID())) {
-//                    mChatRoomID = msgDataMergeStream.getInviteeRoomID();
-//                } else {
-//                    mView.showToast(R.string.merge_stream_failed);
-//                    return;
-//                }
-//                if (TextUtils.isEmpty(mChatRoomID)) {
-//                    Log.d(TAG, "Merge stream succeed, but mChatRoomID is null");
-//                }
-//
-//                updateChatState(VideoChatStatus.MIX_SUCC);  //更新当前连麦状态为混流成功
-//            }
-        }
-    };
-    /**
-     * 变量的描述: 混流失败的消息处理Action
-     */
-    private ImHelper.Func<MsgDataMergeStream> mMergeStreamFailedFunc = new ImHelper.Func<MsgDataMergeStream>() {
-        @Override
-        public void action(MsgDataMergeStream msgDataMergeStream) {
-//            if (mChatStatus == VideoChatStatus.TRY_MIX) {
-//                mView.showToast(R.string.merge_stream_failed);
-//            }
-            System.out.println();
-        }
-    };
-    /**
-     * 变量的描述: 观众自己或者主播指定观众退出连麦时(这里的观众可以自己，也可以是其他连麦的观众)，消息处理Action
-     */
-    private ImHelper.Func<MsgDataExitChatting> mExitingChattingFunc = new ImHelper.Func<MsgDataExitChatting>() {
-        @Override
-        public void action(MsgDataExitChatting msgDataExitChatting) {
-            Log.d(TAG, "Someone exit chatting");
-            // 获取退出连麦的人的uid
-            String inviteeUID = msgDataExitChatting.getUID();
-            if (!mUID.equals(inviteeUID)) {// 其他人退出连麦
-                // 如果本观众正在发起连麦,而这个时候其他观众退出连麦,不需要处理此消息
-                if (mChatSession == null || (mChatSession.getChatStatus() != VideoChatStatus.MIX_SUCC && mChatSession.getChatStatus() != VideoChatStatus.TRY_MIX)) {
-                    if (mChatSession != null)
-                        Log.d(TAG, "chat session status = " + mChatSession.getChatStatus());
-                    return;
-                }
-
-                // 从mOtherChatSessionMap移除对应退出连麦的uid,并将uid对应的播放地址存储进playUrls
-                ChatSession chatSession;
-                List<String> playUrls = new ArrayList<>();
-                if ((chatSession = mOtherChatSessionMap.get(inviteeUID)) != null) {
-                    playUrls.add(chatSession.getChatSessionInfo().getPlayUrl());
-                    mOtherChatSessionMap.remove(inviteeUID);
-                }
-                // TODO by xinye : 其他观众退出连麦
-                mVideoChatApiCalling = true;
-                Log.e(TAG + "---API", "开始Remove连麦...");
-                int result = mPlayerSDKHelper.removeChats(playUrls);// 调用核心代码移除连麦
-                if (result != 0) {
-                    // 核心代码调用失败
-                    mVideoChatApiCalling = false;
-                } else {
-                    // 核心代码调用成功
-                    if (mManagerCallback != null) {
-                        Bundle data = new Bundle();
-                        data.putString(DATA_KEY_INVITEE_UID, inviteeUID);
-                        mManagerCallback.onEvent(TYPE_OTHER_PEOPLE_EXIT_CHATTING, data);
-                    }
-                }
-            } else {//自己退出连麦
-                // TODO by xinye : 退出连麦
-                // 下面的代码在asyncTerminateChatting方法中就已经做过了
-                mPlayerSDKHelper.abortChat();
-                mChatSession = null;
-                if (mManagerCallback != null) {
-                    mManagerCallback.onEvent(TYPE_SELF_EXIT_CHATTING, null);
-                }
-            }
-        }
-    };
-    /**
-     * 变量的描述: 结束所有正在连麦的时候，消息处理Action 这里是在主播端直接请求业务服务器结束所有连麦时，这里会接收到消息，其实质是让所有的连麦观众客户端代码中直接关闭自己的连麦
-     */
-    private ImHelper.Func<MsgDataCloseVideoCall> mCloseChatFunc = new ImHelper.Func<MsgDataCloseVideoCall>() {
-        @Override
-        public void action(MsgDataCloseVideoCall msgDataCloseVideoCall) {
-            // TODO by xinye : 退出连麦
-            if (mChatSession != null)
-                mChatSession.abortChat();
-            mPlayerSDKHelper.abortChat(); //结束连麦
-            if (mManagerCallback != null) {
-                mManagerCallback.onEvent(TYPE_PUBLISHER_TERMINATE_CHATTING, null);
-            }
-        }
-    };
-    /**
-     * 变量的描述: 观众观看直播时，主播结束直播的时候，消息处理Action
-     */
-    private ImHelper.Func<MsgDataLiveClose> mLiveCloseFunc = new ImHelper.Func<MsgDataLiveClose>() {
-        @Override
-        public void action(MsgDataLiveClose msgDataLiveClose) {
-            if (mChatSession != null) {
-                // TODO by xinye : 退出连麦
-                mPlayerSDKHelper.abortChat();
-                mChatSession = null;
-                mOtherChatSessionMap.clear();
-            }
-            if (mManagerCallback != null) {
-                mManagerCallback.onEvent(TYPE_LIVE_CLOSE, null);
-            }
-        }
-    };
-    /**
-     * 变量的描述: 观众观看的主播对本观众发起了连麦邀请的时候，消息处理Action
-     */
-    private ImHelper.Func<MsgDataInvite> mInviteFunc = new ImHelper.Func<MsgDataInvite>() {
-        @Override
-        public void action(final MsgDataInvite msgDataInvite) {
-            mUidMap.clear();
-            mChatSession = new ChatSession(mChatSessionCallback);
-            mChatSession.notifyReceivedInviting(msgDataInvite.getInviterUID(), mUID);
-            //自动同意连麦
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            asyncFeedbackInviting(msgDataInvite.getInviterUID());
-        }
-    };
-
-    /**
-     * 方法描述: 当本观众被主播邀请时，需要将观众是否进行连麦的结果反馈给业务服务器
-     *
-     * @param publisherUID 主播ID，也是邀请本观众进行连麦的id
-     */
-    private void asyncFeedbackInviting(final String publisherUID) {
-        if (ServiceBI.isCalling(mFeedbackCall)) {
-            mFeedbackCall.cancel();
-        }
-        mChatSession.feedbactInviting(true);
-
-        mFeedbackCall = mInviteServiceBI.feedback(FeedbackForm.INVITE_TYPE_WATCHER,
-                FeedbackForm.INVITE_TYPE_ANCHOR, publisherUID, mUID,
-                InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.STATUS_AGREE, new ServiceBI.Callback<InviteFeedbackResult>() {
-                    @Override
-                    public void onResponse(int code, InviteFeedbackResult response) {
-
-                        ChatSession chatSession;
-                        ChatSessionInfo sessionInfo;
-                        String inviteeUID;
-                        ArrayList<String> inviteeUIDList = new ArrayList<>();
-                        Bundle data = new Bundle();
-
-                        // 更新连麦状态为开始混流， 等待混流成功
-                        mChatSession.notifyFeedbackSuccess();
-
-                        // 设置 这里存储的是本观众连麦时使用的推流地址和主播的短延迟播发地址
-                        ChatSessionInfo chatSessionInfo = new ChatSessionInfo();
-                        chatSessionInfo.setRtmpUrl(response.getRtmpUrl());
-                        chatSessionInfo.setPlayUrl(response.getMainPlayUrl());
-                        mChatSession.setChatSessionInfo(chatSessionInfo);
-
-                        //  给mCallback传递一个包含了 其他连麦观众的uid 数据的集合过去
-                        data.putString(DATA_KEY_INVITER_UID, publisherUID);
-                        List<ParterInfo> parterInfos = response.getOtherParterInfos();
-                        if (parterInfos != null && parterInfos.size() > 0) {
-                            for (ParterInfo parterInfo : parterInfos) {
-                                inviteeUID = parterInfo.getUID();
-                                mUidMap.remove(inviteeUID);
-                                chatSession = new ChatSession(mChatSessionCallback);//这里用不到session的状态管理，只用到了信息缓存功能
-                                sessionInfo = new ChatSessionInfo();
-                                sessionInfo.setPlayerUID(inviteeUID);
-                                sessionInfo.setPlayUrl(parterInfo.getPlayUrl());
-                                chatSession.setChatSessionInfo(sessionInfo);
-                                mOtherChatSessionMap.put(inviteeUID, chatSession);
-                                inviteeUIDList.add(inviteeUID);
-                            }
-                            data.putStringArrayList(DATA_KEY_INVITEE_UID_LIST, inviteeUIDList);
-                        }
-                        if (mManagerCallback != null) {
-                            mManagerCallback.onEvent(TYPE_START_CHATTING, data);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        if (mChatSession != null) {
-//                            mChatSession.
-                            System.out.println();
-                        }
-                        if (mManagerCallback != null) {
-                            //TODO：收到邀请后，反馈失败了
-                            System.out.println();
-                        }
-                    }
-                });
-    }
-
-    //  --------------------------------------------------------------------------------------------------------
 
     // **************************************************** 错误和信息监听器 ****************************************************
     /**
