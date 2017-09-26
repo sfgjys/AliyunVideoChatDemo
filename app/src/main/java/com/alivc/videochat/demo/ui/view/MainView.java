@@ -1,7 +1,7 @@
 package com.alivc.videochat.demo.ui.view;
 
 import com.alivc.videochat.demo.http.result.LiveItemResult;
-import com.alivc.videochat.demo.http.result.WatcherModel;
+import com.alivc.videochat.demo.http.result.WatcherResult;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public interface MainView {
     /**
      * 方法描述: 根据观众参数进行list展示
      */
-    void showWatcherList(List<WatcherModel> dataList);
+    void showWatcherList(List<WatcherResult> dataList);
 
     /**
      * 方法描述: 展示完成后

@@ -5,9 +5,6 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-/**
- * Created by liujianghao on 16-8-2.
- */
 public class InviteForm {
     /**
      * 变量的描述: 并排
@@ -18,20 +15,16 @@ public class InviteForm {
      */
     public static final String TYPE_PIC_BY_PIC = "picture_in_picture";
 
-    @SerializedName(HttpConstant.KEY_INVITER_UID)
-    private String inviterUID;
-
     private List<String> inviteeUIDList;
 
+    @SerializedName(HttpConstant.KEY_INVITER_UID)
+    private String inviterUID;
     @SerializedName(HttpConstant.KEY_INVITEE_UID_LIST)      //TODO:这里是为了兼容IOS乱码的问题，所以数组都要拼装成字符串
     private String mInviteeUIDs;
-
     @SerializedName(HttpConstant.KEY_TYPE)
     private String type;
-
     @SerializedName(HttpConstant.KEY_INVITER_TYPE)
     private int inviterType;
-
     @SerializedName(HttpConstant.KEY_LIVE_ROOM_ID)
     private String liveRoomId;
 

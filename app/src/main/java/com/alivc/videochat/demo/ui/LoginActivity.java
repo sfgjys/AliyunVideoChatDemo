@@ -130,9 +130,6 @@ public class LoginActivity extends BaseActivity {
          */
         @Override
         public void initImManager(IMUserInfo imUserInfo) {
-//            if(imUserInfo != null) {
-//                ((AlivcApplication)getApplication()).getImManager().init(LoginActivity.this, imUserInfo.getUsername());
-//            }
         }
     };
 

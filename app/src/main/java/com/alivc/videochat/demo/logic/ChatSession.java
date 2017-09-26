@@ -79,7 +79,7 @@ public class ChatSession {
     }
 
     /**
-     * 方法描述:
+     * 方法描述: 修改连麦流程会话的状态为请求网络邀请对方连麦
      *
      * @param publisherUID 主播的UID
      * @param playerUID    观众自己的UID
@@ -87,6 +87,8 @@ public class ChatSession {
     public int invite(String publisherUID, String playerUID) {
         if (mChatStatus == VideoChatStatus.UNCHAT) {
 
+            // 在观众界面和主播界面中调用本方法的时候，本对象先是重新new出来的，且没有设置mChatSessionInfo对象，所以mChatSessionInfo为null
+            // 所以下面的判断应该是进不去了
             if (mChatSessionInfo != null) {
                 mChatSessionInfo.setPublisherUID(publisherUID);
                 mChatSessionInfo.setPlayerUID(playerUID);
@@ -227,6 +229,9 @@ public class ChatSession {
         return mChatStatus == VideoChatStatus.MIX_SUCC;
     }
 
+    /**
+     * 变量的描述: 判断本 连麦流程会话 是否处于连麦流程中
+     */
     boolean isActive() {
         return mChatStatus != VideoChatStatus.UNCHAT;
     }

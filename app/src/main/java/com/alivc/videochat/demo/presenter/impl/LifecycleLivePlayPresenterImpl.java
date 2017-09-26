@@ -10,7 +10,7 @@ import com.alivc.videochat.demo.base.ContextBase;
 import com.alivc.videochat.demo.exception.ChatSessionException;
 import com.alivc.videochat.demo.im.ImManager;
 import com.alivc.videochat.demo.logic.IPlayerManager;
-import com.alivc.videochat.demo.logic.LifecycledPlayerManager;
+import com.alivc.videochat.demo.logic.LifecyclePlayerManager;
 import com.alivc.videochat.demo.logic.ManagerCallback;
 import com.alivc.videochat.demo.presenter.ILifecycleLivePlayPresenter;
 import com.alivc.videochat.demo.presenter.view.ILivePlayView;
@@ -20,36 +20,15 @@ import com.alivc.videochat.demo.uitils.ToastUtils;
 
 import java.util.ArrayList;
 
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_INVITE_CHAT_TIMEOUT;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_MAIN_STREAM_NOT_EXIST;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_MIX_STREAM_ERROR;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_MIX_STREAM_NOT_EXIST;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_MIX_STREAM_SUCCESS;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_MIX_STREAM_TIMEOUT;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_AUDIO_PLAYER_ERROR;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_INVALID_INPUTFILE;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_NETWORK_POOR;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_NO_NETWORK;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_OPEN_FAILED;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_READ_PACKET_TIMEOUT;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PLAYER_TIMEOUT;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PUBLISHER_NETWORK_POOR;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PUBLISHER_NETWORK_TIMEOUT;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PUBLISHER_NETWORK_UNCONNECT;
-import static com.alivc.videochat.demo.logic.IPlayerManager.TYPE_PUBLISHER_RECONNECT_FAILURE;
-
-/**
- * Created by apple on 2017/1/9.
- */
 public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILifecycleLivePlayPresenter {
     private static final String TAG = LifecycleLivePlayPresenterImpl.class.getName();
     private ILivePlayView mView;
-    private LifecycledPlayerManager mPlayerMgr;
+    private LifecyclePlayerManager mPlayerMgr;
 
     public LifecycleLivePlayPresenterImpl(Context context, ILivePlayView view, ImManager imManager, String mUID) {
         super(context);
         this.mView = view;
-        this.mPlayerMgr = new LifecycledPlayerManager(context, imManager, mUID, mCallback);
+        this.mPlayerMgr = new LifecyclePlayerManager(context, imManager, mUID, mCallback);
     }
 
     // --------------------------------------------------------------------------------------------------------
@@ -255,57 +234,57 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
                     mView.hideLoading();
                     mView.showLiveInterruptUI(R.string.error_video_chat_no_video_data, data.getInt(IPlayerManager.DATA_KEY_PLAYER_ERROR_CODE));
                     break;
-                case TYPE_INVITE_CHAT_TIMEOUT:
+                case IPlayerManager.TYPE_INVITE_CHAT_TIMEOUT:
                     mView.showToast(R.string.error_invite_timeout);
                     break;
-                case TYPE_MIX_STREAM_ERROR:
+                case IPlayerManager.TYPE_MIX_STREAM_ERROR:
                     mView.showToast(R.string.error_mix_stream_error);
                     break;
-                case TYPE_MIX_STREAM_NOT_EXIST:
+                case IPlayerManager.TYPE_MIX_STREAM_NOT_EXIST:
                     mView.showToast(R.string.error_mix_stream_not_exist);
                     break;
-                case TYPE_MIX_STREAM_SUCCESS:
+                case IPlayerManager.TYPE_MIX_STREAM_SUCCESS:
                     mView.showToast(R.string.error_mix_stream_success);
                     break;
-                case TYPE_MIX_STREAM_TIMEOUT:
+                case IPlayerManager.TYPE_MIX_STREAM_TIMEOUT:
                     mView.showToast(R.string.error_mix_stream_timeout);
                     break;
-                case TYPE_MAIN_STREAM_NOT_EXIST:
+                case IPlayerManager.TYPE_MAIN_STREAM_NOT_EXIST:
                     mView.showToast(R.string.error_main_stream_not_exist);
                     break;
-                case TYPE_PLAYER_INVALID_INPUTFILE:
+                case IPlayerManager.TYPE_PLAYER_INVALID_INPUTFILE:
                     mView.showToast(R.string.error_player_invalid_inputfile);
                     break;
-                case TYPE_PLAYER_OPEN_FAILED:
+                case IPlayerManager.TYPE_PLAYER_OPEN_FAILED:
                     mView.showToast(R.string.error_player_open_failed);
                     break;
-                case TYPE_PLAYER_NO_NETWORK:
+                case IPlayerManager.TYPE_PLAYER_NO_NETWORK:
                     mView.showToast(R.string.error_player_no_network);
                     break;
-                case TYPE_PLAYER_TIMEOUT:
+                case IPlayerManager.TYPE_PLAYER_TIMEOUT:
                     mView.showToast(R.string.error_player_timeout);
                     break;
-                case TYPE_PLAYER_READ_PACKET_TIMEOUT:
+                case IPlayerManager.TYPE_PLAYER_READ_PACKET_TIMEOUT:
                     mView.showToast(R.string.error_player_read_packet_timeout);
                     break;
-                case TYPE_PUBLISHER_NETWORK_POOR:
+                case IPlayerManager.TYPE_PUBLISHER_NETWORK_POOR:
                     mView.showToast(R.string.poor_network);
                     break;
-                case TYPE_PUBLISHER_NETWORK_UNCONNECT:
+                case IPlayerManager.TYPE_PUBLISHER_NETWORK_UNCONNECT:
                     mView.showLiveInterruptUI(R.string.error_publisher_network_unconnect, -400);
                     break;
-                case TYPE_PUBLISHER_NETWORK_TIMEOUT:
+                case IPlayerManager.TYPE_PUBLISHER_NETWORK_TIMEOUT:
                     mView.showLiveInterruptUI(R.string.error_publisher_network_timeout, -406);
                     break;
-                case TYPE_PLAYER_AUDIO_PLAYER_ERROR:
+                case IPlayerManager.TYPE_PLAYER_AUDIO_PLAYER_ERROR:
                     mView.showLiveInterruptUI(R.string.error_audio_player, data.getInt(IPlayerManager.DATA_KEY_PLAYER_ERROR_CODE));
                     break;
-                case TYPE_PUBLISHER_RECONNECT_FAILURE:
+                case IPlayerManager.TYPE_PUBLISHER_RECONNECT_FAILURE:
                     mView.showToast(R.string.network_reconnect_failure);
                     break;
-                case TYPE_PLAYER_NETWORK_POOR:
+                case IPlayerManager.TYPE_PLAYER_NETWORK_POOR:
                     if (data != null) {
-                        String url = data.getString(IPlayerManager.DATA_KEY_PLAYER_ERROR_MSG);
+                        String url = data.getString(IPlayerManager.DATA_KEY_PLAYER_NETWORK_BAD);
                         ToastUtils.showToast(getContext(), "播放视频 " + url + " 网络差，可能造成延时");
                     }
                     break;

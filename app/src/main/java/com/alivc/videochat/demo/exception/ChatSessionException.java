@@ -1,9 +1,5 @@
 package com.alivc.videochat.demo.exception;
 
-/**
- * Created by apple on 2017/1/4.
- */
-
 public class ChatSessionException extends Throwable {
     /**
      * 变量的描述: 当前正在进行连麦流程

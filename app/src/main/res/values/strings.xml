@@ -34,7 +34,7 @@
     <string name="error_video_chat_timeout">连麦炒作超时！</string>
     <string name="error_audio_player">音频播放器停止播放！</string>
     <string name="error_video_chat_no_audio_data">采集音频声音错误！</string>
-    <string name="error_video_chat_no_video_data">采集音频声音错误！</string>
+    <string name="error_video_chat_no_video_data">采集视频时有错误！</string>
     <string name="error_invite_timeout">邀请连麦超时！</string>
     <string name="error_mix_stream_success">连麦混流成功！</string>
     <string name="error_mix_stream_error">连麦混流失败，请退出连麦！</string>

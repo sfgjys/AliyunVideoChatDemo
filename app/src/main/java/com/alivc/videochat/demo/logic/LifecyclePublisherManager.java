@@ -477,7 +477,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
         final int callIndex = mInviteCalls.size();
         //  向服务器发送邀请参数二所代表的用户进行连麦的请求
         final Call call = mInviteServiceBI.inviteCall(mUID, playerUIDs, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.INVITE_TYPE_ANCHOR, mRoomID,
-                new ServiceBI.Callback() {
+                new ServiceBI.Callback<Object>() {
                     @Override
                     public void onResponse(int code, Object response) {
                         // 向服务器发送邀请的请求成功
@@ -599,7 +599,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
         ChatSession chatSession;
         if (mChatSessionMap.size() > 0) {// 当前还有正在连麦
             // 请求网络，告诉服务器我们将要断开所有连麦
-            mInviteServiceBI.terminateCall(mRoomID, new ServiceBI.Callback() {
+            mInviteServiceBI.terminateCall(mRoomID, new ServiceBI.Callback<Object>() {
                 @Override
                 public void onResponse(int code, Object response) {
                     if (callback != null) {
@@ -635,7 +635,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
 
     @Override // 请求网络，告诉业务服务器直播将要被关闭
     public void asyncCloseLive(final AsyncCallback callback) {
-        mLiveServiceBI.closeLive(mRoomID, mUID, new ServiceBI.Callback() {
+        mLiveServiceBI.closeLive(mRoomID, mUID, new ServiceBI.Callback<Object>() {
             @Override
             public void onResponse(int code, Object response) {
                 if (callback != null) {

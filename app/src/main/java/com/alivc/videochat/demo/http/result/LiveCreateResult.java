@@ -5,9 +5,6 @@ import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
 
-/**
- * Created by liujianghao on 16-7-28.
- */
 public class LiveCreateResult implements Serializable{
 
     @SerializedName(HttpConstant.KEY_UID)

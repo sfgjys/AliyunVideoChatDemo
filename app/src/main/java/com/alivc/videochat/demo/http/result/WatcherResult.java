@@ -3,10 +3,7 @@ package com.alivc.videochat.demo.http.result;
 import com.alivc.videochat.demo.http.HttpConstant;
 import com.google.gson.annotations.SerializedName;
 
-/**
- * Created by liujianghao on 16-9-13.
- */
-public class WatcherModel {
+public class WatcherResult {
     @SerializedName(HttpConstant.KEY_NAME)
     private String name;
     @SerializedName(HttpConstant.KEY_ID)

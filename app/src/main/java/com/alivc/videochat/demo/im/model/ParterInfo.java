@@ -3,10 +3,6 @@ package com.alivc.videochat.demo.im.model;
 import com.alivc.videochat.demo.http.HttpConstant;
 import com.google.gson.annotations.SerializedName;
 
-/**
- * Created by apple on 2017/1/11.
- */
-
 public class ParterInfo {
     @SerializedName(HttpConstant.KEY_UID)
     private String mUID;// 其他连麦观众uid

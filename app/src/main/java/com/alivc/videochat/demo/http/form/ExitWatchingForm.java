@@ -3,10 +3,6 @@ package com.alivc.videochat.demo.http.form;
 import com.alivc.videochat.demo.http.HttpConstant;
 import com.google.gson.annotations.SerializedName;
 
-/**
- * Created by liujianghao on 16-10-26.
- */
-
 public class ExitWatchingForm {
     @SerializedName(HttpConstant.KEY_ROOM_ID)
     private String mRoomID;

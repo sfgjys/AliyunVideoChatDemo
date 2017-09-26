@@ -5,9 +5,6 @@ import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
 
-/**
- * Created by liujianghao on 16-8-9.
- */
 public class LiveItemResult implements Serializable {
     /**
      * 变量的描述: 状态为流没有创建

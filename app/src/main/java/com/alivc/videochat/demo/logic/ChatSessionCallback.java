@@ -7,18 +7,33 @@ public interface ChatSessionCallback {
      */
     void onInviteChatTimeout();
 
-    //收到连麦邀请处理超时
+    /**
+     * 方法描述: 收到连麦邀请处理超时
+     */
     void onProcessInvitingTimeout();
 
-    //连麦混流错误(超时、CDN internal error code)，首先提示用户，并且结束连麦
+    /**
+     * 方法描述: 连麦混流错误(超时、CDN internal error code)，首先提示用户，并且结束连麦
+     */
     void onMixStreamError();
 
-    // 连麦混流超时，首先提示用户，并且结束连麦
+    /**
+     * 方法描述: 连麦混流超时，首先提示用户，并且结束连麦
+     */
     void onMixStreamTimeout();
 
+    /**
+     * 方法描述: 混流成功
+     */
     void onMixStreamSuccess();
 
+    /**
+     * 方法描述: 混流失败，混流(观众流)不存在
+     */
     void onMixStreamNotExist();
 
+    /**
+     * 方法描述: 混流失败，主播流不存在
+     */
     void onMainStreamNotExist();
 }

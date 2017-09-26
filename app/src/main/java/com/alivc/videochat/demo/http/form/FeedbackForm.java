@@ -3,9 +3,6 @@ package com.alivc.videochat.demo.http.form;
 import com.alivc.videochat.demo.http.HttpConstant;
 import com.google.gson.annotations.SerializedName;
 
-/**
- * Created by liujianghao on 16-8-18.
- */
 public class FeedbackForm {
     public static final int STATUS_NOT_AGREE = 2;
     public static final int STATUS_AGREE = 1;

@@ -21,17 +21,13 @@ public class WatchBottomPresenter extends ContextBase {
     }
 
     /**
-     * 发送评论
-     *
-     * @param uid
-     * @param roomID
-     * @param comment
+     * 方法描述: 发送给业务服务器观众的评论信息
      */
     public void sendComment(String uid, String roomID, String comment) {
         ServiceBIFactory.getInteractionServiceBI().sendComment(uid, roomID, comment, mCommentCallback);
     }
 
-    private ServiceBI.Callback mCommentCallback = new ServiceBI.Callback() {
+    private ServiceBI.Callback<Object> mCommentCallback = new ServiceBI.Callback<Object>() {
 
         @Override
         public void onResponse(int code, Object response) {
@@ -52,16 +48,13 @@ public class WatchBottomPresenter extends ContextBase {
 
 
     /**
-     * 发送赞
-     *
-     * @param roomID
-     * @param uid
+     * 方法描述: 发送给业务服务器观众的点赞信息
      */
     public void sendLike(String roomID, String uid) {
         ServiceBIFactory.getInteractionServiceBI().sendLike(roomID, uid, mLikeCallback);
     }
 
-    private ServiceBI.Callback mLikeCallback = new ServiceBI.Callback() {
+    private ServiceBI.Callback<Object> mLikeCallback = new ServiceBI.Callback<Object>() {
         @Override
         public void onResponse(int code, Object response) {
             Log.d(TAG, "send like succeed");

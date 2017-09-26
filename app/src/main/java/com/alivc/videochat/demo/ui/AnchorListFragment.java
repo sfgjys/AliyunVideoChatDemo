@@ -16,7 +16,7 @@ import com.alivc.videochat.demo.base.ActionFragment;
 import com.alivc.videochat.demo.base.BaseActivity;
 import com.alivc.videochat.demo.http.form.FeedbackForm;
 import com.alivc.videochat.demo.http.result.LiveItemResult;
-import com.alivc.videochat.demo.http.result.WatcherModel;
+import com.alivc.videochat.demo.http.result.WatcherResult;
 import com.alivc.videochat.demo.presenter.MainPresenter;
 import com.alivc.videochat.demo.ui.adapter.AnchorListAdapter;
 import com.alivc.videochat.demo.ui.view.MainView;
@@ -205,20 +205,20 @@ public class AnchorListFragment extends ActionFragment implements AnchorListAdap
         }
 
         @Override
-        public void showWatcherList(List<WatcherModel> dataList) {
+        public void showWatcherList(List<WatcherResult> dataList) {
             // 将观众数据源转换直播数据源格式，在使用showLiveList展示
             LiveItemResult item;
-            WatcherModel watcherModel;
+            WatcherResult watcherResult;
             List<LiveItemResult> watcherList;
             if (dataList != null) {
                 int count = dataList.size();
                 watcherList = new ArrayList<>(count);
 
                 for (int i = 0; i < count; i++) {
-                    watcherModel = dataList.get(i);
+                    watcherResult = dataList.get(i);
                     item = new LiveItemResult();
-                    item.setUid(watcherModel.getUid());
-                    item.setName(watcherModel.getName());
+                    item.setUid(watcherResult.getUid());
+                    item.setName(watcherResult.getName());
                     watcherList.add(item);
                 }
                 showLiveList(watcherList);

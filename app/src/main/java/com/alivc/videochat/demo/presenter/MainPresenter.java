@@ -4,7 +4,7 @@ import com.alivc.videochat.demo.R;
 import com.alivc.videochat.demo.bi.ServiceBI;
 import com.alivc.videochat.demo.bi.ServiceBIFactory;
 import com.alivc.videochat.demo.http.result.LiveItemResult;
-import com.alivc.videochat.demo.http.result.WatcherModel;
+import com.alivc.videochat.demo.http.result.WatcherResult;
 import com.alivc.videochat.demo.ui.view.MainView;
 
 import java.util.List;
@@ -79,9 +79,9 @@ public class MainPresenter {
     /**
      * 变量的描述: 请求观众列表的网络结果回调接口实例
      */
-    private ServiceBI.Callback<List<WatcherModel>> mLoadWatcherCallback = new ServiceBI.Callback<List<WatcherModel>>() {
+    private ServiceBI.Callback<List<WatcherResult>> mLoadWatcherCallback = new ServiceBI.Callback<List<WatcherResult>>() {
         @Override
-        public void onResponse(int code, List<WatcherModel> results) {
+        public void onResponse(int code, List<WatcherResult> results) {
             // 根据数据源加载列表，并停止刷新
             mMainView.showWatcherList(results);
             mLoadWatcherCall = null;

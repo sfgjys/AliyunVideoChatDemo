@@ -1,14 +1,9 @@
 package com.alivc.videochat.demo.ui;
 
-import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.PermissionChecker;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -24,7 +19,6 @@ import android.widget.TextView;
 
 import com.alibaba.sdk.mns.MNSClientImpl;
 import com.alivc.videochat.demo.R;
-import com.alivc.videochat.demo.app.AppSettings;
 import com.alivc.videochat.demo.base.BaseActivity;
 import com.alivc.videochat.demo.base.FragmentInteraction;
 import com.alivc.videochat.demo.exception.APIErrorCode;
@@ -404,10 +398,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
             case R.id.iv_close:
                 onBackPressed();
                 break;
-
-//            case R.id.iv_abort_chat:
-//                showChatCloseConfirmDialog();
-//                break;
         }
     }
 

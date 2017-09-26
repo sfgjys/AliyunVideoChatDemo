@@ -6,9 +6,6 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-/**
- * Created by liujianghao on 16-7-28.
- */
 public class InviteFeedbackResult {
 
     @SerializedName(HttpConstant.KEY_MAIN_PLAY_URL)

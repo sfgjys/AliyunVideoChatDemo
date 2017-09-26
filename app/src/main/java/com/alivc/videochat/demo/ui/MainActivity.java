@@ -18,7 +18,7 @@ import android.widget.Toast;
 import com.alivc.videochat.demo.R;
 import com.alivc.videochat.demo.base.BaseActivity;
 import com.alivc.videochat.demo.http.result.LiveItemResult;
-import com.alivc.videochat.demo.http.result.WatcherModel;
+import com.alivc.videochat.demo.http.result.WatcherResult;
 import com.alivc.videochat.demo.presenter.MainPresenter;
 import com.alivc.videochat.demo.ui.adapter.LiveListAdapter;
 import com.alivc.videochat.demo.ui.view.MainView;
@@ -114,7 +114,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener, 
         }
 
         @Override
-        public void showWatcherList(List<WatcherModel> dataList) {
+        public void showWatcherList(List<WatcherResult> dataList) {
 
         }
 

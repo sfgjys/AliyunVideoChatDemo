@@ -13,7 +13,7 @@ import com.alivc.videochat.demo.http.result.LiveCreateResult;
 import com.alivc.videochat.demo.http.result.LiveItemResult;
 import com.alivc.videochat.demo.http.result.MNSConnectModel;
 import com.alivc.videochat.demo.http.result.WatchLiveResult;
-import com.alivc.videochat.demo.http.result.WatcherModel;
+import com.alivc.videochat.demo.http.result.WatcherResult;
 import com.alivc.videochat.demo.http.service.NetworkServiceFactory;
 
 import java.util.List;
@@ -24,9 +24,6 @@ import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Response;
 
-/**
- * Created by liujianghao on 16-7-29.
- */
 public class LiveServiceBI extends ServiceBI {
 
     /**
@@ -60,7 +57,7 @@ public class LiveServiceBI extends ServiceBI {
                     // 存储网络请求结果
                     fResult[0] = response.body().getData();
 
-                    // TODO MNS请求
+                    // 阿里MNS管理 获取MNS链接所需要的参数
                     Call<HttpResponse<MNSConnectModel>> mnsCall = NetworkServiceFactory.getAccountService().getMnsConnectionInfo(form);
 
                     processObservable(mnsCall, new ServiceBI.Callback<MNSConnectModel>() {
@@ -97,9 +94,7 @@ public class LiveServiceBI extends ServiceBI {
     }
 
     /**
-     * @param roomID
-     * @param uid
-     * @param callback
+     * 方法描述: 请求网络获取播放地址
      */
     public Call watchLive(String roomID, String uid, final Callback<WatchLiveResult> callback) {
         final WatchLiveResult[] fResult = new WatchLiveResult[1];
@@ -145,6 +140,7 @@ public class LiveServiceBI extends ServiceBI {
 
                     MNSConnectionInfoForm form = new MNSConnectionInfoForm(topic, topic);
 
+                    // 阿里MNS管理 获取MNS链接所需要的参数
                     Call<HttpResponse<MNSConnectModel>> mnsCall = NetworkServiceFactory.getAccountService().getMnsConnectionInfo(form);
 
                     processObservable(mnsCall, new Callback<MNSConnectModel>() {
@@ -191,15 +187,12 @@ public class LiveServiceBI extends ServiceBI {
     }
 
     /**
-     * @param roomID
-     * @param uid
-     * @param callback
+     * 方法描述: 请求网络，告诉业务服务器直播将要被关闭
      */
-    public Call closeLive(String roomID, String uid, Callback callback) {
-        Call call;
+    public Call closeLive(String roomID, String uid, Callback<Object> callback) {
+        Call<HttpResponse<Object>> call;
         CloseLiveForm form = new CloseLiveForm(roomID, uid);
-        call = NetworkServiceFactory.getLiveService()
-                .closeLive(form);
+        call = NetworkServiceFactory.getLiveService().closeLive(form);
         processObservable(call, callback);
         return call;
     }
@@ -213,12 +206,11 @@ public class LiveServiceBI extends ServiceBI {
         return call;
     }
 
-
     /**
      * 方法描述: 使用roomId去开启网络请求，获取观众列表
      */
-    public Call watcherList(String roomID, Callback<List<WatcherModel>> callback) {
-        Call<HttpResponse<List<WatcherModel>>> call;
+    public Call watcherList(String roomID, Callback<List<WatcherResult>> callback) {
+        Call<HttpResponse<List<WatcherResult>>> call;
         WatcherListForm form = new WatcherListForm(roomID);
         call = NetworkServiceFactory.getLiveService().watcherList(form);
         processObservable(call, callback);
@@ -226,12 +218,12 @@ public class LiveServiceBI extends ServiceBI {
     }
 
     /**
-     * 退出观看直播
+     * 方法描述: 请求网络告诉业务服务器本观众退出直播间了
      *
      * @param roomID 直播间ID
-     * @param uid 用户ID
+     * @param uid    用户ID
      */
-    public Call exitWatching(String roomID, String uid, Callback callback) {
+    public Call exitWatching(String roomID, String uid, Callback<Object> callback) {
         Call<HttpResponse<Object>> call;
         ExitWatchingForm form = new ExitWatchingForm(roomID, uid);
         call = NetworkServiceFactory.getLiveService().exitWatching(form);
