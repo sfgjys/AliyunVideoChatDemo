@@ -102,6 +102,18 @@ public class PlayerSDKHelper {
     }
 
     /**
+     * 方法描述: 释放AlivcVideoChatParter类。
+     */
+    public void releaseChatParter() {
+        if (mChatParter != null) {
+            Log.d(TAG, "Call mChatParter.release()");
+            mChatParter.release();
+        }
+    }
+
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
      * 方法描述: 开始观看直播。调用该函数将启动直播播放器，并播放获取到的直播流。开始直播播放（大窗）
      *
      * @param playUrl     直播地址。
@@ -117,41 +129,19 @@ public class PlayerSDKHelper {
     }
 
     /**
-     * 方法描述: 切换摄像头。
-     * 备注：该函数可以在连麦的过程中随时进行调用。
+     * 方法描述: 结束观看直播。调用该函数将关闭直播播放器，并销毁所有资源。
+     * 备注: 若当前处在连麦状态下，需要先调用offlineChat函数结束连麦，然后在调用该函数结束观看直播
      */
-    public void switchCamera() {
-        Log.d(TAG, "Call mChatParter.switchCamera()");
-        if (mChatParter != null) {
-            mChatParter.switchCamera();
+    public void stopPlaying() {
+        if (mChatParter != null && isPlaying) {
+            Log.d(TAG, "Call mChatParter.stopPlaying()");
+            mCallback.onEvent(IPlayerManager.TYPE_PARTER_OPT_START, null);
+            mChatParter.stopPlaying();
+            isPlaying = false;
         }
     }
 
-    /**
-     * 方法描述: 设置滤镜的相关参数。
-     * 备注：该函数可以在连麦过程中随时进行调用。
-     */
-    public boolean switchBeauty() {
-        if (mChatParter != null) {
-            mFilterMap.put(AlivcVideoChatParter.ALIVC_FILTER_PARAM_BEAUTY_ON, Boolean.toString(!isBeautyOn));
-            mChatParter.setFilterParam(mFilterMap);// 设置滤镜的相关参数。
-            isBeautyOn = !isBeautyOn;
-        }
-        return isBeautyOn;
-    }
-
-    /**
-     * 方法描述: 设置是否打开闪关灯。
-     * 备注：该函数可以在连麦过程中随时进行调用。
-     */
-    public boolean switchFlash() {
-        Log.d(TAG, "Call mChatParter.switchFlash()");
-        if (mChatParter != null) {
-            mChatParter.setFlashOn(!isFlashOn);
-            isFlashOn = !isFlashOn;
-        }
-        return isFlashOn;
-    }
+    // --------------------------------------------------------------------------------------------------------
 
     /**
      * 方法描述: 开始多人连麦。调用该函数将开启音视频的采集设备、启动预览功能、启动音视频编码功能并将压缩后的音视频流上传。同时将播放地址切换到具备短延时功能的新地址，并且播放其他连麦中的流。
@@ -179,42 +169,6 @@ public class PlayerSDKHelper {
             // 增加连麦人数
             addChats(urlSurfaceMap);
         }
-    }
-
-    /**
-     * 方法描述: 暂停播放或连麦。在播放或连麦过程中，观众如果退入后台、锁屏或有电话接入，可以调用本接口。
-     */
-    public void pause() {
-        if (mChatParter != null && isPlaying && !mIsPublishPaused) {
-            mChatParter.pause();
-            Log.d(TAG, "Call mChatParter.pause()");
-            mIsPublishPaused = true;
-        }
-    }
-
-    /**
-     * 方法描述: 恢复推流或连麦。在观看或连麦过程中，观众如果发生退入后台、锁屏或有电话接入的情况，希望能够回到前台继续播放或推流，可以调用本接口。
-     * 备注：必须先调用pause，然后才能调用resume。
-     */
-    public void resume() {
-        if (mChatParter != null && mIsPublishPaused) {
-            Log.d(TAG, "Call mChatParter.resume()");
-            mChatParter.resume(); //TODO:需要SDK支持？？？？？
-            mIsPublishPaused = false;
-        }
-    }
-
-    /**
-     * 方法描述: 当播放视频超时或者遇到网络切换断流时，调用此函数进行重新连接打开。
-     * 备注: 此函数不会有黑屏的情况。
-     *
-     * @param url 指定重新连接的播放地址。
-     */
-    public void reconnect(String url) {
-//        if (isPlaying) {
-        Log.d(TAG, "Call mChatParter.reconnect(" + url + ")");
-        mChatParter.reconnect(url);
-//        }
     }
 
     /**
@@ -262,29 +216,82 @@ public class PlayerSDKHelper {
         }
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
     /**
-     * 方法描述: 结束观看直播。调用该函数将关闭直播播放器，并销毁所有资源。
-     * 备注: 若当前处在连麦状态下，需要先调用offlineChat函数结束连麦，然后在调用该函数结束观看直播
+     * 方法描述: 暂停播放或连麦。在播放或连麦过程中，观众如果退入后台、锁屏或有电话接入，可以调用本接口。
      */
-    public void stopPlaying() {
-        if (mChatParter != null && isPlaying) {
-            Log.d(TAG, "Call mChatParter.stopPlaying()");
-            mCallback.onEvent(IPlayerManager.TYPE_PARTER_OPT_START, null);
-            mChatParter.stopPlaying();
-            isPlaying = false;
+    public void pause() {
+        if (mChatParter != null && isPlaying && !mIsPublishPaused) {
+            mChatParter.pause();
+            Log.d(TAG, "Call mChatParter.pause()");
+            mIsPublishPaused = true;
         }
     }
 
     /**
-     * 方法描述: 释放AlivcVideoChatParter类。
+     * 方法描述: 恢复推流或连麦。在观看或连麦过程中，观众如果发生退入后台、锁屏或有电话接入的情况，希望能够回到前台继续播放或推流，可以调用本接口。
+     * 备注：必须先调用pause，然后才能调用resume。
      */
-    public void releaseChatParter() {
+    public void resume() {
+        if (mChatParter != null && mIsPublishPaused) {
+            Log.d(TAG, "Call mChatParter.resume()");
+            mChatParter.resume(); //TODO:需要SDK支持？？？？？
+            mIsPublishPaused = false;
+        }
+    }
+
+    /**
+     * 方法描述: 当播放视频超时或者遇到网络切换断流时，调用此函数进行重新连接打开。
+     * 备注: 此函数不会有黑屏的情况。
+     *
+     * @param url 指定重新连接的播放地址。
+     */
+    public void reconnect(String url) {
+//        if (isPlaying) {
+        Log.d(TAG, "Call mChatParter.reconnect(" + url + ")");
+        mChatParter.reconnect(url);
+//        }
+    }
+
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * 方法描述: 切换摄像头。
+     * 备注：该函数可以在连麦的过程中随时进行调用。
+     */
+    public void switchCamera() {
+        Log.d(TAG, "Call mChatParter.switchCamera()");
         if (mChatParter != null) {
-            Log.d(TAG, "Call mChatParter.release()");
-            mChatParter.release();
+            mChatParter.switchCamera();
         }
     }
 
+    /**
+     * 方法描述: 设置滤镜的相关参数。
+     * 备注：该函数可以在连麦过程中随时进行调用。
+     */
+    public boolean switchBeauty() {
+        if (mChatParter != null) {
+            mFilterMap.put(AlivcVideoChatParter.ALIVC_FILTER_PARAM_BEAUTY_ON, Boolean.toString(!isBeautyOn));
+            mChatParter.setFilterParam(mFilterMap);// 设置滤镜的相关参数。
+            isBeautyOn = !isBeautyOn;
+        }
+        return isBeautyOn;
+    }
+
+    /**
+     * 方法描述: 设置是否打开闪关灯。
+     * 备注：该函数可以在连麦过程中随时进行调用。
+     */
+    public boolean switchFlash() {
+        Log.d(TAG, "Call mChatParter.switchFlash()");
+        if (mChatParter != null) {
+            mChatParter.setFlashOn(!isFlashOn);
+            isFlashOn = !isFlashOn;
+        }
+        return isFlashOn;
+    }
 
     /**
      * 方法描述: 获得与推流相关的性能参数

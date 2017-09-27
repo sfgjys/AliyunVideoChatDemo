@@ -67,6 +67,14 @@ public class LifecyclePlayerManager extends ContextBase implements IPlayerManage
      */
     private Map<String, String> mUidMap = new HashMap<>();
     /**
+     * 变量的描述: 本观众与主播进行连麦的连麦流程会话对象
+     */
+    private ChatSession mChatSession;
+    /**
+     * 变量的描述: 存储其他参与连麦的观众的连麦流程会话对象
+     */
+    private HashMap<String, ChatSession> mOtherChatSessionMap = new HashMap<>();
+    /**
      * 变量的描述: 连麦播放核心SDK调用类
      */
     private PlayerSDKHelper mPlayerSDKHelper;
@@ -107,14 +115,6 @@ public class LifecyclePlayerManager extends ContextBase implements IPlayerManage
      */
     private InviteServiceBI mInviteServiceBI = ServiceBIFactory.getInviteServiceBI();
     /**
-     * 变量的描述: 本观众与主播进行连麦的连麦流程会话对象
-     */
-    private ChatSession mChatSession;
-    /**
-     * 变量的描述: 存储其他参与连麦的观众的连麦流程会话对象
-     */
-    private HashMap<String, ChatSession> mOtherChatSessionMap = new HashMap<>();
-    /**
      * 变量的描述: 获取主播直播的播放地址的网络请求
      */
     private Call mGetMainAnchorPlayUrlCall;
@@ -142,11 +142,6 @@ public class LifecyclePlayerManager extends ContextBase implements IPlayerManage
      * 变量的描述: 用于提示连麦流程中使用了什么连麦API
      */
     private String mUseChatApiString;
-
-
-    private boolean isLoading = false;  //是否正在缓冲
-
-
     // --------------------------------------------------------------------------------------------------------
 
     public LifecyclePlayerManager(Context context, ImManager imManager, String uid, ManagerCallback callback) {
