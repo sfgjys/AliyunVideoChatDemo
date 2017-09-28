@@ -105,7 +105,6 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
             mPlayerMgr.asyncInviteChatting(new AsyncCallback() {
                 @Override
                 public void onSuccess(Bundle bundle) {
-
                 }
 
                 @Override
@@ -130,7 +129,6 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
 
             @Override
             public void onFailure(Bundle bundle, Throwable e) {
-
             }
         });
     }
@@ -143,12 +141,10 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
         mPlayerMgr.asyncExitRoom(new AsyncCallback() {
             @Override
             public void onSuccess(Bundle bundle) {
-
             }
 
             @Override
             public void onFailure(Bundle bundle, Throwable e) {
-
             }
         });
     }
@@ -159,61 +155,9 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
         @Override
         public void onEvent(int eventType, Bundle data) {
             switch (eventType) {
+                // 弹出对话框显示错误信息，点击对话框的“确定”按钮可以退出观看界面
                 case IPlayerManager.TYPE_PLAYER_INTERNAL_ERROR:
                     mView.showLiveInterruptUI(R.string.error_stop_playing, data.getInt(IPlayerManager.DATA_KEY_PLAYER_ERROR_CODE));
-                    break;
-                case IPlayerManager.TYPE_CHATTING_FINISHED:
-//                    mView.showChattingFinishedUI();
-                    break;
-                case IPlayerManager.TYPE_START_CHATTING:// 本观众请求连麦，主播也同意了，所以从MNS那里获取了本观众进行连麦的信息，和其他连麦观众的信息
-                case IPlayerManager.TYPE_OTHER_PEOPLE_JOIN_IN_CHATTING:
-
-                    // 正式开始连麦
-                    ArrayList<String> inviteeUIDList = data.getStringArrayList(IPlayerManager.DATA_KEY_INVITEE_UID_LIST);
-                    if (inviteeUIDList == null) {
-                        inviteeUIDList = new ArrayList<>();
-                    }
-                    mPlayerMgr.launchChat(mView.showLaunchChatUI(), mView.getOtherParterViews(inviteeUIDList));
-
-                    break;
-                case IPlayerManager.TYPE_OTHER_PEOPLE_EXIT_CHATTING:    // 其他人退出连麦
-                    String inviteeUID = data.getString(IPlayerManager.DATA_KEY_INVITEE_UID);
-                    mView.showExitChattingUI(inviteeUID);
-                    break;
-                case IPlayerManager.TYPE_SELF_EXIT_CHATTING:
-                case IPlayerManager.TYPE_PUBLISHER_TERMINATE_CHATTING:
-                    mView.showSelfExitChattingUI();
-                    break;
-                case IPlayerManager.TYPE_LIVE_CLOSE:
-                    mView.showLiveCloseUI();
-                    break;
-                case IPlayerManager.TYPE_PLAYER_FIRST_FRAME_RENDER_SUCCESS:
-                    mView.hideLoading();
-                    mView.hideLiveInterruptUI();
-                    break;
-                case IPlayerManager.TYPE_PUBLISHER_FIRST_FRAME_RENDER_SUCCESS:
-                    mView.hideChattingView();
-                    break;
-                case IPlayerManager.TYPE_PARTER_OPT_START:
-                    // 按钮不可点击
-                    // 显示进度条
-//                    mView.showLoading();
-                    break;
-                case IPlayerManager.TYPE_PARTER_OPT_END:
-                    // 按钮可以点击
-                    // 隐藏进度条
-//                    mView.hideLoading();
-                    break;
-                case IPlayerManager.TYPE_PARTER_OPT_TIMEOUT:
-                    mView.hideLoading();
-                    mView.showLiveInterruptUI(R.string.error_video_chat_timeout, 0);
-                    break;
-                case IPlayerManager.TYPE_OPERATION_CALLED_ERROR:
-                    String msg = null;
-                    if (data != null) {
-                        msg = data.getString(IPlayerManager.DATA_KEY_PLAYER_ERROR_MSG, null);
-                    }
-                    mView.showInfoDialog(msg);
                     break;
                 case IPlayerManager.TYPE_PUBLISHER_NO_AUDIO_DATA:
                     mView.hideLoading();
@@ -223,6 +167,22 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
                     mView.hideLoading();
                     mView.showLiveInterruptUI(R.string.error_video_chat_no_video_data, data.getInt(IPlayerManager.DATA_KEY_PLAYER_ERROR_CODE));
                     break;
+                case IPlayerManager.TYPE_PARTER_OPT_TIMEOUT:
+                    mView.hideLoading();
+                    mView.showLiveInterruptUI(R.string.error_video_chat_timeout, 0);
+                    break;
+                case IPlayerManager.TYPE_PUBLISHER_NETWORK_UNCONNECT:
+                    mView.showLiveInterruptUI(R.string.error_publisher_network_unconnect, -400);
+                    break;
+                case IPlayerManager.TYPE_PUBLISHER_NETWORK_TIMEOUT:
+                    mView.showLiveInterruptUI(R.string.error_publisher_network_timeout, -406);
+                    break;
+                case IPlayerManager.TYPE_PLAYER_AUDIO_PLAYER_ERROR:
+                    mView.showLiveInterruptUI(R.string.error_audio_player, data.getInt(IPlayerManager.DATA_KEY_PLAYER_ERROR_CODE));
+                    break;
+                // --------------------------------------------------------------------------------------------------------
+
+                // 弹吐司显示错误或者状态信息
                 case IPlayerManager.TYPE_INVITE_CHAT_TIMEOUT:
                     mView.showToast(R.string.error_invite_timeout);
                     break;
@@ -259,25 +219,79 @@ public class LifecycleLivePlayPresenterImpl extends ContextBase implements ILife
                 case IPlayerManager.TYPE_PUBLISHER_NETWORK_POOR:
                     mView.showToast(R.string.poor_network);
                     break;
-                case IPlayerManager.TYPE_PUBLISHER_NETWORK_UNCONNECT:
-                    mView.showLiveInterruptUI(R.string.error_publisher_network_unconnect, -400);
-                    break;
-                case IPlayerManager.TYPE_PUBLISHER_NETWORK_TIMEOUT:
-                    mView.showLiveInterruptUI(R.string.error_publisher_network_timeout, -406);
-                    break;
-                case IPlayerManager.TYPE_PLAYER_AUDIO_PLAYER_ERROR:
-                    mView.showLiveInterruptUI(R.string.error_audio_player, data.getInt(IPlayerManager.DATA_KEY_PLAYER_ERROR_CODE));
-                    break;
                 case IPlayerManager.TYPE_PUBLISHER_RECONNECT_FAILURE:
                     mView.showToast(R.string.network_reconnect_failure);
                     break;
                 case IPlayerManager.TYPE_PLAYER_NETWORK_POOR:
                     if (data != null) {
                         String url = data.getString(IPlayerManager.DATA_KEY_PLAYER_NETWORK_BAD);
-                        ToastUtils.showToast(getContext(), "播放视频 " + url + " 网络差，可能造成延时");
+                        ToastUtils.showToast(getContext(), "播放视频: " + url + " 网络差，可能造成延时");
                     }
                     break;
+                // --------------------------------------------------------------------------------------------------------
 
+                case IPlayerManager.TYPE_START_CHATTING:// 本观众请求连麦，主播也同意了，所以从MNS那里获取了本观众进行连麦的信息，和其他连麦观众的信息
+                case IPlayerManager.TYPE_OTHER_PEOPLE_JOIN_IN_CHATTING:
+                    // 正式开始连麦
+                    ArrayList<String> inviteeUIDList = data.getStringArrayList(IPlayerManager.DATA_KEY_INVITEE_UID_LIST);
+                    if (inviteeUIDList == null) {
+                        inviteeUIDList = new ArrayList<>();
+                    }
+                    mPlayerMgr.launchChat(mView.showLaunchChatUI(), mView.getOtherParterViews(inviteeUIDList));
+                    break;
+                // --------------------------------------------------------------------------------------------------------
+
+                case IPlayerManager.TYPE_OTHER_PEOPLE_EXIT_CHATTING:    // 其他人退出连麦
+                    String inviteeUID = data.getString(IPlayerManager.DATA_KEY_INVITEE_UID);
+                    mView.showExitChattingUI(inviteeUID);
+                    break;
+                // --------------------------------------------------------------------------------------------------------
+
+                case IPlayerManager.TYPE_SELF_EXIT_CHATTING:
+                case IPlayerManager.TYPE_PUBLISHER_TERMINATE_CHATTING:
+                    mView.showSelfExitChattingUI();
+                    break;
+                // --------------------------------------------------------------------------------------------------------
+
+                case IPlayerManager.TYPE_LIVE_CLOSE:
+                    mView.showLiveCloseUI();
+                    break;
+                // --------------------------------------------------------------------------------------------------------
+
+                case IPlayerManager.TYPE_PLAYER_FIRST_FRAME_RENDER_SUCCESS:
+                    mView.hideLoading();
+                    mView.hideLiveInterruptUI();
+                    break;
+                // --------------------------------------------------------------------------------------------------------
+
+                case IPlayerManager.TYPE_PUBLISHER_FIRST_FRAME_RENDER_SUCCESS:
+                    mView.hideChattingView();
+                    break;
+                // --------------------------------------------------------------------------------------------------------
+
+                case IPlayerManager.TYPE_OPERATION_CALLED_ERROR:
+                    String msg = null;
+                    if (data != null) {
+                        msg = data.getString(IPlayerManager.DATA_KEY_PLAYER_ERROR_MSG, null);
+                    }
+                    mView.showInfoDialog(msg);
+                    break;
+                // --------------------------------------------------------------------------------------------------------
+
+                // 下面的没有实际意义
+                case IPlayerManager.TYPE_CHATTING_FINISHED:
+//                    mView.showChattingFinishedUI();
+                    break;
+                case IPlayerManager.TYPE_PARTER_OPT_START:
+                    // 按钮不可点击
+                    // 显示进度条
+//                    mView.showLoading();
+                    break;
+                case IPlayerManager.TYPE_PARTER_OPT_END:
+                    // 按钮可以点击
+                    // 隐藏进度条
+//                    mView.hideLoading();
+                    break;
             }
         }
     };
