@@ -559,43 +559,6 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
 
     // **************************************************** 根据直播，连麦等操作的结果来自定义UI更新内容 ****************************************************
     private ILiveRecordView mView = new ILiveRecordView() {
-        @Override
-        public void hideInterruptUI() {
-        }
-
-        @Override
-        public void showInterruptUI(int msgResID, int what) {
-            if (isFinishing())
-                return;
-
-            try {
-                AlertDialog.Builder normalDialog =
-                        new AlertDialog.Builder(LiveActivity.this);
-                normalDialog.setTitle("错误提示");
-                normalDialog.setMessage(getString(msgResID) + ", ErrorCode: " + what);
-                normalDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        finish();
-                    }
-                });
-
-                normalDialog.show();
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        }
-
-        @Override
-        public void showCameraOpenFailureUI() {
-            ToastUtils.showToast(LiveActivity.this, R.string.camera_open_failure_for_live);
-            finish();
-        }
-
-        @Override
-        public void showInviteChattingTimeoutUI(String uid) {
-//            mLiveBottomFragment.setInviteUIEnable(true);    //显示连麦对方响应超时的UI
-        }
 
         @Override
         public SurfaceView showChattingUI(final String uid) {
@@ -630,13 +593,6 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
             });
             showSurfaceView(viewHolder.mChatSurfaceView);
             return viewHolder.mChatSurfaceView;
-        }
-
-        @Override
-        public void showInviteVideoChatSuccessfulUI() {
-            ToastUtils.showToast(LiveActivity.this, R.string.invite_succeed);
-            dismissAnchorListDialog();                  //关闭选择连麦对象的Dialog
-//            mLiveBottomFragment.setInviteUIEnable(false);   //禁用底部的连麦按钮
         }
 
         @Override
@@ -699,8 +655,50 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
         }
 
         @Override
+        public void showLiveCloseUI() {
+            hideInterruptUI();      //隐藏其他的提示UI
+            if (mLiveCloseDialog == null) {
+                mLiveCloseDialog = LiveCloseDialog.newInstance(getString(R.string.live_cannot_publish));
+            }
+            if (!mLiveCloseDialog.isShow()) {
+                mLiveCloseDialog.show(getSupportFragmentManager(), LiveCloseDialog.TAG);
+            }
+        }
+        // --------------------------------------------------------------------------------------------------------
+
+        // **************************************************** 吐司形式 ****************************************************
+        @Override
         public void showToast(int msgId) {
             ToastUtils.showToast(LiveActivity.this, msgId);
+        }
+
+        @Override
+        public void showInviteVideoChatSuccessfulUI() {
+            ToastUtils.showToast(LiveActivity.this, R.string.invite_succeed);
+            dismissAnchorListDialog();                  //关闭选择连麦对象的Dialog
+//            mLiveBottomFragment.setInviteUIEnable(false);   //禁用底部的连麦按钮
+        }
+        // --------------------------------------------------------------------------------------------------------
+
+        // **************************************************** 对话框形式 ****************************************************
+        @Override
+        public void showInterruptUI(int msgResID, int what) {
+            if (isFinishing())
+                return;
+            try {
+                AlertDialog.Builder normalDialog = new AlertDialog.Builder(LiveActivity.this);
+                normalDialog.setTitle("错误提示");
+                normalDialog.setMessage(getString(msgResID) + ", ErrorCode: " + what);
+                normalDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                });
+                normalDialog.show();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
         }
 
         @Override
@@ -722,18 +720,6 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
         }
 
         @Override
-        public void updateBeautyUI(boolean beautyOn) {
-            if (mLiveBottomFragment != null) {
-                mLiveBottomFragment.setBeautyUI(true);
-            }
-        }
-
-        @Override
-        public void finishActivity() {
-            finish();
-        }
-
-        @Override
         public void showImInitFailedDialog(final int tipResID, final int errorType) {
             if (mImInitFailedDialog == null) {
                 mImInitFailedDialog = new AlertDialog.Builder(LiveActivity.this)
@@ -752,32 +738,47 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
             }
             mImInitFailedDialog.show();
         }
+        // --------------------------------------------------------------------------------------------------------
 
+        // **************************************************** 下面的方法没有用 ****************************************************
+        @Override
+        public void showCameraOpenFailureUI() {
+            ToastUtils.showToast(LiveActivity.this, R.string.camera_open_failure_for_live);
+            finish();
+        }
+
+        @Override
+        public void updateBeautyUI(boolean beautyOn) {
+            if (mLiveBottomFragment != null) {
+                mLiveBottomFragment.setBeautyUI(true);
+            }
+        }
+
+        @Override
+        public void finishActivity() {
+            finish();
+        }
+
+        @Override
+        public void showCloseChatFailedUI() {
+            ToastUtils.showToast(LiveActivity.this, R.string.close_chat_failed_for_new_chat);
+        }
+
+        @Override
+        public void showInviteChattingTimeoutUI(String uid) {
+//            mLiveBottomFragment.setInviteUIEnable(true);    //显示连麦对方响应超时的UI
+        }
 
         @Override
         public void showNoPermissionTip() {
         }
 
         @Override
+        public void hideInterruptUI() {
+        }
+
+        @Override
         public void showChatCloseNotifyDialog(String name) {
-        }
-
-
-        @Override
-        public void showLiveCloseUI() {
-            hideInterruptUI();      //隐藏其他的提示UI
-            if (mLiveCloseDialog == null) {
-                mLiveCloseDialog = LiveCloseDialog.newInstance(getString(R.string.live_cannot_publish));
-            }
-            if (!mLiveCloseDialog.isShow()) {
-                mLiveCloseDialog.show(getSupportFragmentManager(), LiveCloseDialog.TAG);
-            }
-        }
-
-
-        @Override
-        public void showCloseChatFailedUI() {
-            ToastUtils.showToast(LiveActivity.this, R.string.close_chat_failed_for_new_chat);
         }
     };
 

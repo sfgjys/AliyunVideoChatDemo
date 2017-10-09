@@ -78,13 +78,6 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
      * 变量的描述: 主SurfaceView，主播推流用的控件
      */
     private SurfaceView mMainSurfaceView = null;
-
-
-    private static final String KEY_CHATTING_UID = "chatting_uid";   //正在连麦的用户ID
-
-
-    private static final long WAITING_FOR_MIX_SUCCESS_DELAY = 15 * 1000; //混流错误时等待重新混流成功的时间，超过这个时间会结束连麦
-
     /**
      * 变量的描述: Handler识别标识混流内部异常
      */
@@ -101,24 +94,48 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
      * 变量的描述: Handler识别标识主播流不存在
      */
     private static final int MSG_WHAT_MAIN_STREAM_NOT_EXIST = 7;
-
-
     /**
      * 变量的描述: 本集合存储的是，主播向服务器发送邀请连麦通知的网络请求，当网络请求成功或者失败时移除，该集合的目的是在主播界面结束时停止还在请求网络的任务
      */
     private List<Call> mInviteCalls = new ArrayList<>();        //当前发起的邀请请求
-    private Call mCreateLiveCall;
-
-    private InviteServiceBI mInviteServiceBI = ServiceBIFactory.getInviteServiceBI();
-    private LiveServiceBI mLiveServiceBI = ServiceBIFactory.getLiveServiceBI();
-
-    private ImManager mImManager;
-    private WebSocketConnectOptions mWSConnOpts;    //MNS建立WebSocket链接使用的参数
-    private MnsControlBody mControlBody;            //服务端返回的组装WebSocketConnectOptions所使用信息
-
-    private String mRoomID = null;
+    /**
+     * 变量的描述: 登录用户的uid
+     */
     private String mUID;
+    /**
+     * 变量的描述: MNS的消息管理对象
+     */
+    private ImManager mImManager;
+    /**
+     * 变量的描述: MNS建立WebSocket链接使用的参数
+     */
+    private WebSocketConnectOptions mWSConnOpts;
+    /**
+     * 变量的描述: 服务端返回的组装WebSocketConnectOptions所使用信息 MNS建立WebSocket链接使用的参数
+     */
+    private MnsControlBody mControlBody;
+    /**
+     * 变量的描述: 直播间的Id
+     */
+    private String mRoomID = null;
+    /**
+     * 变量的描述: 获取推流地址的网络请求Call
+     */
+    private Call mCreateLiveCall;
+    /**
+     * 变量的描述: 包含多个关于直播的网络请求方法的对象，例如：请求获取推流地址，请求获取直播播放地址
+     */
+    private LiveServiceBI mLiveServiceBI = ServiceBIFactory.getLiveServiceBI();
+    /**
+     * 变量的描述: 包含多个关于直播连麦的网络请求方法的对象
+     */
+    private InviteServiceBI mInviteServiceBI = ServiceBIFactory.getInviteServiceBI();
+    /**
+     * 变量的描述: 用于存储 正在连麦的用户ID 的Key
+     */
+    private static final String KEY_CHATTING_UID = "chatting_uid";
 
+    private static final long WAITING_FOR_MIX_SUCCESS_DELAY = 15 * 1000; //混流错误时等待重新混流成功的时间，超过这个时间会结束连麦
 
     // --------------------------------------------------------------------------------------------------------
     /**
@@ -129,14 +146,14 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             switch (msg.what) {
-                case MSG_WHAT_MIX_STREAM_ERROR: // 混流内部异常
-                    if (mChatSessionCallback != null) {
-                        mChatSessionCallback.onMixStreamError();
-                    }
-                    break;
                 case MSG_WHAT_MIX_STREAM_SUCCESS:// 混流成功
                     if (mChatSessionCallback != null) {
                         mChatSessionCallback.onMixStreamSuccess();
+                    }
+                    break;
+                case MSG_WHAT_MIX_STREAM_ERROR: // 混流内部异常
+                    if (mChatSessionCallback != null) {
+                        mChatSessionCallback.onMixStreamError();
                     }
                     break;
                 case MSG_WHAT_MIX_STREAM_NOT_EXIST:// 混流(连麦观众流)不存在
@@ -300,7 +317,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
             asyncTerminateAllChatting(null);
         }
         asyncCloseLive(null);           //结束直播
-        // TODO by xinye : 退出连麦
+        //  退出连麦
         mPublisherSDKHelper.abortChat(null);     //防止因为某些原因没有停止连麦的情况，再次调用一次停止连麦
         mPublisherSDKHelper.stopPublish();   //防止因为某些原因没有停止推理的情况，再次调用一次停止推流
         mPublisherSDKHelper.releaseRecorder();//释放推流器资源
@@ -442,7 +459,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
         mPublisherSDKHelper.autoFocus(xRatio, yRatio);
     }
 
-    @Override // 当用户点击连麦时，请求业务服务器，发送邀请连麦的请求
+    @Override // 主播主动点击请求连麦时，请求业务服务器，发送邀请连麦的请求
     public void asyncInviteChatting(final List<String> playerUIDs, final AsyncCallback callback) {
         // ChatSession.MAX_SESSION_NUM是写死的最大连麦数
         if (mChatSessionMap.size() >= ChatSession.MAX_SESSION_NUM) {// 目前最多只支持同时进行连麦流程的只有3个观众
@@ -462,7 +479,8 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
             }
         }
 
-        for (String playerUID : playerUIDs) {// 检查邀请的用户是否有正在进行连麦流程的
+        // 检查邀请的用户是否有正在进行连麦流程的 ，如果没有那么将uid与创建的ChatSession进行存储
+        for (String playerUID : playerUIDs) {
             ChatSession chatSession = new ChatSession(mChatSessionCallback);
             if (chatSession.invite(mUID, playerUID) != ChatSession.RESULT_OK) {
                 // 当前playerUID所代表的观众正在进行连麦流程
@@ -471,51 +489,50 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
                 callback.onFailure(bundle, new ChatSessionException(ChatSessionException.ERROR_CURR_CHATTING));
                 return;
             }
-            Log.d(TAG, "xiongbo21: put session after invite for " + playerUID + ", status = " + chatSession.getChatStatus());
+            Log.d(TAG, "主播主动邀请连麦的观众uid: " + playerUID + ", 其对应的连麦流程会话的状态是: " + chatSession.getChatStatus());
             mChatSessionMap.put(playerUID, chatSession);
         }
 
         final int callIndex = mInviteCalls.size();
         //  向服务器发送邀请参数二所代表的用户进行连麦的请求
-        final Call call = mInviteServiceBI.inviteCall(mUID, playerUIDs, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.INVITE_TYPE_ANCHOR, mRoomID,
-                new ServiceBI.Callback<Object>() {
-                    @Override
-                    public void onResponse(int code, Object response) {
-                        // 向服务器发送邀请的请求成功
-                        for (String playerUID : playerUIDs) {
-                            mChatSessionMap.get(playerUID).notifyInviteSuccess();   // 通知ChatSession 发送邀请的网络请求成功
-                            Log.d(TAG, "xiongbo21: notify invite success for " + playerUID + ", status = " + mChatSessionMap.get(playerUID).getChatStatus());
-                        }
-                        mInviteCalls.remove(callIndex);// 网络请求完成，移除
-                        if (callback != null) {
-                            callback.onSuccess(null);
-                        }
-                    }
+        final Call call = mInviteServiceBI.inviteCall(mUID, playerUIDs, InviteForm.TYPE_PIC_BY_PIC, FeedbackForm.INVITE_TYPE_ANCHOR, mRoomID, new ServiceBI.Callback<Object>() {
+            @Override
+            public void onResponse(int code, Object response) {
+                // 向服务器发送邀请的请求成功
+                for (String playerUID : playerUIDs) {
+                    mChatSessionMap.get(playerUID).notifyInviteSuccess();   // 通知ChatSession 发送邀请的网络请求成功
+                    Log.d(TAG, "xiongbo21: notify invite success for " + playerUID + ", status = " + mChatSessionMap.get(playerUID).getChatStatus());
+                }
+                mInviteCalls.remove(callIndex);// 网络请求完成，移除
+                if (callback != null) {
+                    callback.onSuccess(null);
+                }
+            }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        // 向服务器发送邀请的请求失败
-                        for (String playerUID : playerUIDs) {
-                            mChatSessionMap.get(playerUID).notifyInviteFailure();
-                            mChatSessionMap.remove(playerUID);// 因为失败，所以移除playerUID所代表的连麦流程
-                            Log.d(TAG, "xiongbo21: remove chat session for " + playerUID);
-                        }
-                        mInviteCalls.remove(callIndex);// 网络请求完成，移除
-                        if (callback != null) {
-                            callback.onFailure(null, t);
-                        }
-                    }
-                });
+            @Override
+            public void onFailure(Throwable t) {
+                // 向服务器发送邀请的请求失败
+                for (String playerUID : playerUIDs) {
+                    mChatSessionMap.get(playerUID).notifyInviteFailure();
+                    mChatSessionMap.remove(playerUID);// 因为失败，所以移除playerUID所代表的连麦流程
+                    Log.d(TAG, "xiongbo21: remove chat session for " + playerUID);
+                }
+                mInviteCalls.remove(callIndex);// 网络请求完成，移除
+                if (callback != null) {
+                    callback.onFailure(null, t);
+                }
+            }
+        });
         mInviteCalls.add(call);// 添加网络请求，以便于在特定的时候进行操作
     }
 
-    @Override // 正式的开启连麦，因为时主播界面的连麦，所以其内部主要是播放连麦人的推流视频
+    @Override // 正式的开启连麦，因为是主播界面的连麦，所以其内部主要是播放连麦人的推流视频
     public void launchChat(SurfaceView parterView, String playerUID) {
         // 正常的时候 mVideoChatApiCalling 在这里是false
         if (mVideoChatApiCalling) {
             if (mManagerCallback != null) {
                 Bundle data = new Bundle();
-                data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
+                data.putString(DATA_KEY_CHATTING_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
                 mManagerCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
             }
             return;
@@ -541,7 +558,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
         if (mVideoChatApiCalling) {
             if (mManagerCallback != null) {
                 Bundle data = new Bundle();
-                data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
+                data.putString(DATA_KEY_CHATTING_ERROR_MSG, TAG + "的asyncTerminateChatting方法中mVideoChatApiCalling出现异常");
                 mManagerCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
             }
             return;
@@ -590,7 +607,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
         if (mVideoChatApiCalling) {
             if (mManagerCallback != null) {
                 Bundle data = new Bundle();
-                data.putString(DATA_KEY_PLAYER_ERROR_MSG, TAG + "的launchChat方法中mVideoChatApiCalling出现异常");
+                data.putString(DATA_KEY_CHATTING_ERROR_MSG, TAG + "的asyncTerminateAllChatting方法中mVideoChatApiCalling出现异常");
                 mManagerCallback.onEvent(TYPE_OPERATION_CALLED_ERROR, data);
             }
             return;
@@ -610,7 +627,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
                     // 调用API结束所有连麦
                     mVideoChatApiCalling = true;
                     Log.e("xiongbo07", "开始退出连麦...");
-                    mPublisherSDKHelper.abortChat(null); //调用SDK中断连麦
+                    mPublisherSDKHelper.abortChat(null); // 调用SDK中断连麦
                 }
 
                 @Override
@@ -662,8 +679,6 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
 
     // --------------------------------------------------------------------------------------------------------
 
-    // --------------------------------------------------------------------------------------------------------
-
     public AlivcPublisherPerformanceInfo getPublisherPerformanceInfo() {
         // return mPublisherSDKHelper.getPublisherPerformanceInfo();
         return new AlivcPublisherPerformanceInfo();
@@ -692,10 +707,9 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
         @Override
         public void action(final MsgDataInvite msgDataInvite) {
             if (mChatSessionMap.containsKey(msgDataInvite.getInviterUID())) {// 判断发起连麦的观众是否处于连麦流程，是就不接受再次邀请
-                // TODO 这里的处理不是很明白
                 ChatSession mChatSession = mChatSessionMap.get(msgDataInvite.getInviterUID());
-                if (mChatSession.getChatStatus() == VideoChatStatus.MIX_SUCC ||
-                        mChatSession.getChatStatus() == VideoChatStatus.TRY_MIX) {
+                // TODO 这里的处理不是很明白，为什么是这两个判断
+                if (mChatSession.getChatStatus() == VideoChatStatus.MIX_SUCC || mChatSession.getChatStatus() == VideoChatStatus.TRY_MIX) {
                     return;
                 }
             }
@@ -877,7 +891,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
             }
         }
     };
-// **************************************************** 推流状态信息和错误监听接口实例 ****************************************************
+    // **************************************************** 推流状态信息和错误监听接口实例 ****************************************************
     /**
      * 变量的描述: 重连计数
      */
@@ -1024,6 +1038,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
             return false;
         }
     };
+
     /**
      * 变量的描述: 推流器状态信息监听器回调接口实现
      */
@@ -1077,7 +1092,7 @@ public class LifecyclePublisherManager extends ContextBase implements IPublisher
                 case MediaError.ALIVC_INFO_PLAYER_NETWORK_POOR:// 播放器网络差，不能及时下载数据包
                     if (mManagerCallback != null) {
                         Bundle data = new Bundle();
-                        data.putString(DATA_KEY_PLAYER_ERROR_MSG, url);
+                        data.putString(DATA_KEY_PLAYER_URL, url);
                         mManagerCallback.onEvent(TYPE_PLAYER_NETWORK_POOR, data);
                     }
                     break;

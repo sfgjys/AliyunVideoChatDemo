@@ -90,6 +90,8 @@ public class PublisherSDKHelper {
      */
     private int mStatus = STATUS_MASK;
 
+    // --------------------------------------------------------------------------------------------------------
+
     /**
      * 方法描述: 初始化推流器
      *
@@ -126,7 +128,6 @@ public class PublisherSDKHelper {
         mChatHost.setFilterParam(mFilterMap);
     }
 
-
     /**
      * 方法描述: 准备推流
      *
@@ -149,7 +150,6 @@ public class PublisherSDKHelper {
         }
     }
 
-
     /**
      * 方法描述: 开始推流，调用该函数将启动音视频的编码，并将压缩后的音视频流打包上传到服务器。
      *
@@ -166,6 +166,40 @@ public class PublisherSDKHelper {
             mStatus |= STATUS_PUBLISHING;
         }
     }
+
+    /**
+     * 停止推流
+     */
+    public void stopPublish() {
+        if (null != mChatHost && (mStatus & STATUS_PREVIEW) == STATUS_PREVIEW) {
+            Log.d(TAG, "Call mChatHost.stopPublishing()");
+            // 结束推流。调用该函数将结束本次的直播推流，并关闭音视频编码功能，但采集、滤镜功能仍然运行，预览功能仍然保留。
+            // 备注：若在连麦状态下调用该函数，则sdk会先停止连麦，再结束推流。
+            // 本接口为同步接口。
+            // 对应startToPublish方法
+            mChatHost.stopPublishing();
+            Log.d(TAG, "Call mChatHost.finishPublishing()");
+            // 退出推流直播。调用该函数将停止采集、滤镜功能，销毁预览窗口，释放所有资源。
+            // 备注：若调用了函数startToPublish，则必须调用函数stopPublishing以后才可以调用该函数。
+            // 本接口为同步接口。
+            // 对应prepareToPublish方法
+            mChatHost.finishPublishing();
+            mStatus = STATUS_MASK;
+        }
+    }
+
+    /**
+     * 释放推流器资源
+     */
+    public void releaseRecorder() {
+        if (mChatHost != null) {
+            Log.d(TAG, "Call mChatHost.release()");
+            // 释放AlivcVideoChatHost类。
+            mChatHost.release();
+            mChatHost = null;
+        }
+    }
+    // --------------------------------------------------------------------------------------------------------
 
     /**
      * 方法描述: 切换摄像头,该函数可以在连麦的过程中随时进行调用。
@@ -216,20 +250,6 @@ public class PublisherSDKHelper {
         return isBeautyOn;
     }
 
-
-    /**
-     * 方法描述: 连麦重连
-     *
-     * @param url 指定重新连接的播放地址。
-     */
-    public void reconnect(String url) {
-        Log.d(TAG, "Call mChatHost.reconnectChat(" + url + ")");
-        // 当播放视频超时或者遇到网络切换断流时，调用此函数进行重新连接打开。
-        // 此函数不会有黑屏的情况。
-        mChatHost.reconnectChat(url);
-    }
-
-
     /**
      * 方法描述: 摄像头缩放
      *
@@ -257,6 +277,45 @@ public class PublisherSDKHelper {
             mChatHost.focusCameraAtAdjustedPoint(x, y);
         }
     }
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * 方法描述: 暂停播放或连麦。在播放或连麦过程中，观众如果退入后台、锁屏或有电话接入，可以调用本接口。
+     */
+    public void pause() {
+        if (mChatHost != null && (mStatus & STATUS_PAUSED) == STATUS_MASK) {
+            Log.d(TAG, "Call mChatHost.pause()");
+            //暂停推流
+            mChatHost.pause();
+            mStatus |= STATUS_PAUSED;
+        }
+    }
+
+    /**
+     * 方法描述: 恢复推流或连麦。在观看或连麦过程中，观众如果发生退入后台、锁屏或有电话接入的情况，希望能够回到前台继续播放或推流，可以调用本接口。
+     * 备注：必须先调用pause，然后才能调用resume。
+     */
+    public void resume() {
+        if (mChatHost != null && (mStatus & STATUS_PAUSED) == STATUS_PAUSED) {
+            Log.d(TAG, "Call mChatHost.resume()");
+            mChatHost.resume();
+            // 两个值转换为二进制，进行异或位运算，相同取0，不同取1
+            mStatus ^= STATUS_PAUSED;
+        }
+    }
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * 方法描述: 手动连麦重连
+     *
+     * @param url 指定重新连接的播放地址。
+     */
+    public void reconnect(String url) {
+        Log.d(TAG, "Call mChatHost.reconnectChat(" + url + ")");
+        // 当播放视频超时或者遇到网络切换断流时，调用此函数进行重新连接打开。
+        // 此函数不会有黑屏的情况。
+        mChatHost.reconnectChat(url);
+    }
 
     /**
      * 方法描述: 连麦（适用于多人）,方法内容有开启第一次连麦，也有在连麦的基础上在添加连麦
@@ -283,31 +342,6 @@ public class PublisherSDKHelper {
             // 备注：必须调用函数launchChats后才能调用该函数。
             mChatHost.addChats(urlSurfaceMap);
             mChattingUrls.addAll(urlSurfaceMap.keySet());
-        }
-    }
-
-    /**
-     * 方法描述: 暂停播放或连麦。在播放或连麦过程中，观众如果退入后台、锁屏或有电话接入，可以调用本接口。
-     */
-    public void pause() {
-        if (mChatHost != null && (mStatus & STATUS_PAUSED) == STATUS_MASK) {
-            Log.d(TAG, "Call mChatHost.pause()");
-            //暂停推流
-            mChatHost.pause();
-            mStatus |= STATUS_PAUSED;
-        }
-    }
-
-    /**
-     * 方法描述: 恢复推流或连麦。在观看或连麦过程中，观众如果发生退入后台、锁屏或有电话接入的情况，希望能够回到前台继续播放或推流，可以调用本接口。
-     * 备注：必须先调用pause，然后才能调用resume。
-     */
-    public void resume() {
-        if (mChatHost != null && (mStatus & STATUS_PAUSED) == STATUS_PAUSED) {
-            Log.d(TAG, "Call mChatHost.resume()");
-            mChatHost.resume();
-            // 两个值转换为二进制，进行异或位运算，相同取0，不同取1
-            mStatus ^= STATUS_PAUSED;
         }
     }
 
@@ -342,40 +376,6 @@ public class PublisherSDKHelper {
             return 0;
         } else {
             return -1;
-        }
-    }
-
-    /**
-     * 停止推流
-     */
-    public void stopPublish() {
-        if (null != mChatHost && (mStatus & STATUS_PREVIEW) == STATUS_PREVIEW) {
-            Log.d(TAG, "Call mChatHost.stopPublishing()");
-            // 结束推流。调用该函数将结束本次的直播推流，并关闭音视频编码功能，但采集、滤镜功能仍然运行，预览功能仍然保留。
-            // 备注：若在连麦状态下调用该函数，则sdk会先停止连麦，再结束推流。
-            // 本接口为同步接口。
-            // 对应startToPublish方法
-            mChatHost.stopPublishing();
-            Log.d(TAG, "Call mChatHost.finishPublishing()");
-            // 退出推流直播。调用该函数将停止采集、滤镜功能，销毁预览窗口，释放所有资源。
-            // 备注：若调用了函数startToPublish，则必须调用函数stopPublishing以后才可以调用该函数。
-            // 本接口为同步接口。
-            // 对应prepareToPublish方法
-            mChatHost.finishPublishing();
-            mStatus = STATUS_MASK;
-        }
-    }
-
-
-    /**
-     * 释放推流器资源
-     */
-    public void releaseRecorder() {
-        if (mChatHost != null) {
-            Log.d(TAG, "Call mChatHost.release()");
-            // 释放AlivcVideoChatHost类。
-            mChatHost.release();
-            mChatHost = null;
         }
     }
 

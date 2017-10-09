@@ -69,31 +69,6 @@ public interface IPublisherManager {
      */
     void asyncCloseLive(AsyncCallback callback);
 
-    // --------------------------------------------------------------------------------------------------------
-
-
-    int TYPE_PROCESS_INVITING_TIMEOUT = 0x0010;         //处理对方连麦响应超时
-    /**
-     * 变量的描述: 某个连麦观众推流成功，服务端获取了推流对应的播放地址，并通过MNS发送给了主播
-     */
-    int TYPE_PUBLISH_STREMA_SUCCESS = 0x0011;           //
-    int TYPE_RECEIVED_CHAT_INVITING = 0x0012;           //收到连麦邀请
-    /**
-     * 变量的描述: 获取直播推流地址成功
-     */
-    int TYPE_LIVE_CREATED = 0x0013;
-    int TYPE_SOMEONE_EXIT_CHATTING = 0x0015;            //某人退出连麦
-
-
-    int TYPE_OPERATION_CALLED_ERROR = 0x0104;
-
-
-    int TYPE_INVITE_TIMEOUT = 0x0021;                   //连麦对方响应超时
-    int TYPE_MIX_STREAM_ERROR = 0x0022;                 //混流错误
-    int TYPE_MIX_STREAM_SUCCESS = 0x0027;
-    int TYPE_MIX_STREAM_NOT_EXIST = 0x0028;
-    int TYPE_MAIN_STREAM_NOT_EXIST = 0x0029;
-    int TYPE_MIX_STREAM_TIMEOUT = 0x0030;
     // **************************************************** 下面的时连麦推流状态信息的范畴 ****************************************************
     /**
      * 变量的描述: 区分连麦推流回调状态结果-->一般时从差的网络恢复到网络较好，推流器网络状况良好
@@ -165,7 +140,56 @@ public interface IPublisherManager {
      */
     int TYPE_PUBLISHER_NETWORK_POOR = 0x0001;
     // --------------------------------------------------------------------------------------------------------
-
+    /**
+     * 变量的描述: 区分回调结果-->获取直播推流地址成功
+     */
+    int TYPE_LIVE_CREATED = 0x0013;
+    /**
+     * 变量的描述: 区分回调结果-->在进行连麦的时候出现操作错误
+     */
+    int TYPE_OPERATION_CALLED_ERROR = 0x0104;
+    /**
+     * 变量的描述: 区分回调结果-->某个连麦观众推流成功，服务端获取了推流对应的播放地址，并通过MNS发送给了主播
+     */
+    int TYPE_PUBLISH_STREMA_SUCCESS = 0x0011;
+    /**
+     * 变量的描述: 区分回调结果-->某人退出连麦
+     */
+    int TYPE_SOMEONE_EXIT_CHATTING = 0x0015;
+    /**
+     * 变量的描述: 没人用
+     */
+    int TYPE_RECEIVED_CHAT_INVITING = 0x0012;           //收到连麦邀请
+    // --------------------------------------------------------------------------------------------------------
+    /**
+     * 变量的描述: 区分回调结果-->处理对方连麦响应超时，主播收到观众的连麦邀请，但是一直没有处理，超时了
+     */
+    int TYPE_PROCESS_INVITING_TIMEOUT = 0x0010;         //
+    /**
+     * 变量的描述: 区分回调结果-->邀请观众进行连麦，但是观众一直没有进行响应，超时了
+     */
+    int TYPE_INVITE_TIMEOUT = 0x0021;                   //连麦对方响应超时
+    /**
+     * 变量的描述: 区分回调结果-->连麦混流错误(超时、CDN internal error code)
+     */
+    int TYPE_MIX_STREAM_ERROR = 0x0022;                 //混流错误
+    /**
+     * 变量的描述: 区分回调结果-->混流成功
+     */
+    int TYPE_MIX_STREAM_SUCCESS = 0x0027;
+    /**
+     * 变量的描述: 区分回调结果-->混流失败，混流(观众流)不存在
+     */
+    int TYPE_MIX_STREAM_NOT_EXIST = 0x0028;
+    /**
+     * 变量的描述: 区分回调结果-->混流失败，主播流不存在
+     */
+    int TYPE_MAIN_STREAM_NOT_EXIST = 0x0029;
+    /**
+     * 变量的描述: 区分回调结果-->混流超时，但是暂时没什么用
+     */
+    int TYPE_MIX_STREAM_TIMEOUT = 0x0030;
+    // --------------------------------------------------------------------------------------------------------
     /**
      * 变量的描述: 存储连麦推流状态码的Key
      */
@@ -175,13 +199,27 @@ public interface IPublisherManager {
      */
     String DATA_KEY_PUBLISHER_ERROR_CODE = "publisher_error_code";
     /**
+     * 变量的描述: 存储 连麦时出现的操作错误 的Key
+     */
+    String DATA_KEY_CHATTING_ERROR_MSG = "chatting_error_msg";
+    /**
      * 变量的描述: 存储连麦推流状态的播放地址的Key
      */
-    String DATA_KEY_PLAYER_ERROR_MSG = "player_error_msg";
-
+    String DATA_KEY_PLAYER_URL = "player_url";
+    /**
+     * 变量的描述: 存储 请求网络获取推流地址信息结果对象 的Key
+     */
     String DATA_KEY_CREATE_LIVE_RESULT = "create_live_result";
-    String DATA_KEY_PUBLISH_STREAM_SUCCESS_INFO = "publish_stream_success_info";
+    /**
+     * 变量的描述: 存储 连麦推流成功的观众的uid 的Key
+     */
     String DATA_KEY_INVITEE_UID = "invitee_uid";        //被邀请人的UID
+    /**
+     * 变量的描述: 存储 某个退出连麦的观众的uid 的Key
+     */
     String DATA_KEY_PLAYER_UID = "player_uid";          //观众的UID
-
+    /**
+     * 变量的描述: 没人用
+     */
+    String DATA_KEY_PUBLISH_STREAM_SUCCESS_INFO = "publish_stream_success_info";
 }
