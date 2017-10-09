@@ -12,7 +12,7 @@ import android.widget.TextView;
 import com.alivc.videochat.demo.R;
 
 /**
- * Created by Liujianghao on 2016/1/15.
+ * 类的描述: 直播结束时显示的Ui对话框
  */
 public class LiveCloseDialog extends BaseTransparentDialog implements View.OnClickListener {
     public static final String TAG = LiveCloseDialog.class.getName();
@@ -20,13 +20,11 @@ public class LiveCloseDialog extends BaseTransparentDialog implements View.OnCli
 
     private TextView mTvBack;
 
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        this.getDialog().setOnKeyListener(new DialogInterface.OnKeyListener()
-        {
-            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event){
+        this.getDialog().setOnKeyListener(new DialogInterface.OnKeyListener() {
+            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
                 if (keyCode == KeyEvent.KEYCODE_BACK) {
                     backClick();
                     return true;
@@ -51,7 +49,6 @@ public class LiveCloseDialog extends BaseTransparentDialog implements View.OnCli
         mTvBack.callOnClick();
     }
 
-
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -61,7 +58,7 @@ public class LiveCloseDialog extends BaseTransparentDialog implements View.OnCli
         }
     }
 
-    public static final LiveCloseDialog newInstance(String message) {
+    public static LiveCloseDialog newInstance(String message) {
         LiveCloseDialog dialog = new LiveCloseDialog();
         Bundle bundle = new Bundle();
         bundle.putString(EXTRA_MESSAGE, message);

@@ -1,5 +1,6 @@
 package com.alivc.videochat.demo.ui;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -41,9 +42,8 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Created by liujianghao on 16-7-27.
+ * 类的描述: 直播观看界面
  */
-
 public class WatchLiveActivity extends BaseActivity implements View.OnClickListener, FragmentInteraction {
 
     /**
@@ -69,7 +69,6 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     public static final int INTERACTION_TYPE_INVITE = 1;
 
     private static final String TAG = "WatchLivePresenter";
-
     /**
      * 变量的描述: 封装了连麦副麦 上 此控件用来显示其他连麦观众的短延迟播放
      */
@@ -85,7 +84,7 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     /**
      * 变量的描述: 用来存储刚封装好的ChattingViewHolder对象，且这里的ChattingViewHolder对象都是暂时没有使用的，使用后就存储在这了
      */
-    private TreeMap<Integer, ChattingViewHolder> mFreeHolderMap = new TreeMap<>();  //连麦小窗View容器，用来管理连麦的小窗
+    private final TreeMap<Integer, ChattingViewHolder> mFreeHolderMap = new TreeMap<>();  //连麦小窗View容器，用来管理连麦的小窗
     /**
      * 变量的描述: 用来存储已经被使用的ChattingViewHolder，key值为对应的其他连麦uid
      */
@@ -94,12 +93,14 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
      * 变量的描述: 主播放Surface
      */
     private SurfaceView mPlaySurfaceView;
+    /**
+     * 变量的描述: 根容器控件
+     */
     private FrameLayout mRootContainer;
     /**
      * 变量的描述: 一个正在加载中的显示界面控件
      */
     private View mLoadingView = null;
-
     /**
      * 变量的描述: 展示性能的控件
      */
@@ -108,21 +109,37 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
      * 变量的描述: 显示首帧耗时的时间
      */
     private TextView mTvFirstFrameTime;
-
-
+    /**
+     * 变量的描述: 直播界面结束对话框界面
+     */
     private LiveCloseDialog mLiveCloseDialog = null;
+    /**
+     * 变量的描述: MNS使用失败提示对话框
+     */
     private AlertDialog mImInitFailedDialog;
+    /**
+     * 变量的描述: 显示性能界面的Fragment
+     */
     private LogInfoFragment mLogInfoFragment;
-
-
+    /**
+     * 变量的描述: 观看界面底部按钮Fragment
+     */
     private WatchBottomFragment mBottomFragment;
-
-    private String mIMFailedMessage;
-    private DialogInterface.OnClickListener mIMFailedListener;
+    /**
+     * 变量的描述: 网络状态变化监听广播
+     */
     private ConnectivityMonitor mConnectivityMonitor = new ConnectivityMonitor();
+    /**
+     * 变量的描述: 耳麦状态变化监听广播
+     */
     private HeadsetMonitor mHeadsetMonitor = new HeadsetMonitor();
-
+    /**
+     * 变量的描述: 观看界面的Presenter
+     */
     private ILifecycleLivePlayPresenter mPresenter;
+    /**
+     * 变量的描述: 直播间ID
+     */
     private String mLiveRoomID;
 
     /**
@@ -332,7 +349,16 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     // --------------------------------------------------------------------------------------------------------
 
     /**
-     * 显示IM消息通信初始化失败的Dialog
+     * 变量的描述: MNS出现错误的信息
+     */
+    private String mIMFailedMessage;
+    /**
+     * 变量的描述: 点击对话框确定按钮的监听回调，因为有两种失败情况，所以这个监听要作为参数
+     */
+    private DialogInterface.OnClickListener mIMFailedListener;
+
+    /**
+     * 显示IM消息通信登录或者初始化失败的Dialog
      */
     private void showImInitFailedDialog(String message, DialogInterface.OnClickListener listener) {
         mIMFailedListener = listener;
@@ -348,8 +374,10 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         mImInitFailedDialog.show();
     }
 
+    // --------------------------------------------------------------------------------------------------------
+
     /**
-     * 方法描述: 修改参数控件topMargin属性为300 。为的是让参数控件部在手机屏幕上隐藏
+     * 方法描述: 修改参数控件topMargin属性为300 。为的是让参数控件在手机屏幕上隐藏
      */
     private void hideSurfaceView(SurfaceView surfaceView) {
         Log.d(TAG, "hide SurfaceView :" + surfaceView.toString());
@@ -404,51 +432,139 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
     // --------------------------------------------------------------------------------------------------------
 
     private ILivePlayView mView = new ILivePlayView() {
+        // **************************************************** 观看和连麦的核心UI更新 ****************************************************
         @Override
-        public SurfaceView getPlaySurfaceView() {
+        public SurfaceView getPlaySurfaceView() {  // ----------------获取播放主播直播的SurfaceView
             return mPlaySurfaceView;
         }
 
         @Override
-        public void showEnterLiveRoomFailure() {
+        public SurfaceView showLaunchChatUI() {// ----------------获取本观众用来推流的SurfaceView，该SurfaceView设置了点击右上角的关闭，可以退出连麦的操作，并返回本观众用来推流的SurfaceView
+            showSurfaceView(mRightChattingHolder.mSurfaceView);
+            // 设置右上角的关闭，可以退出连麦的操作
+            mRightChattingHolder.mIvClose.setVisibility(View.VISIBLE);
+            mRightChattingHolder.mIvClose.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mPresenter.exitChatting();
+                    mBottomFragment.hideRecordView();
+                }
+            });
+            mBottomFragment.showRecordView();
+            return mRightChattingHolder.mSurfaceView;
         }
 
         @Override
-        public void showLiveInterruptUI(int msgRedID, int what) {
+        public Map<String, SurfaceView> getOtherParterViews(List<String> inviteeUIDs) {// ----------------根据参数invteeUIDs来获取其他连麦用户播放的SurfaceView
+            Map<String, SurfaceView> uidSurfaceMap = new HashMap<>();
+            ChattingViewHolder holder;
 
-            // 如果不在前台
-            if (isFinishing()) {
-                return;
+            // 如果参数集合的大小为0，说明暂时没有其他连麦人，直接返回空内容的uidSurfaceMap集合
+            if (inviteeUIDs == null || inviteeUIDs.size() == 0) {
+                return uidSurfaceMap;
             }
-            hideLoading();  //隐藏正在加载的UI
 
-            try {
-                AlertDialog.Builder normalDialog =
-                        new AlertDialog.Builder(WatchLiveActivity.this);
-                normalDialog.setTitle("错误提示");
-                normalDialog.setMessage(getString(msgRedID) + ", ErrorCode: " + what);
-                normalDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        finish();
+            synchronized (mFreeHolderMap) {
+                String inviteeUID;
+                // 因为连麦的人数最多就3人，而mFreeHolderMap中存储的是2个其他人连麦时用到的SurfaceView
+                // 所以inviteeUIDs集合的大小不会超过2
+                if (inviteeUIDs.size() <= mFreeHolderMap.size()) {
+
+                    // 从mFreeHolderMap中获取需要的数据，在根据参数inviteeUIDs将数据存储进 mUsedViewHolderMap(用来记录) 和 uidSurfaceMap(作为方法返回值)
+                    for (int i = 0; i < inviteeUIDs.size(); i++) {
+                        inviteeUID = inviteeUIDs.get(i);
+
+                        // 移除First的一对ChattingViewHolder,并作为返回值返回
+                        holder = mFreeHolderMap.pollFirstEntry().getValue();
+
+                        // 存储以确定使用的
+                        mUsedViewHolderMap.put(inviteeUID, holder);
+
+                        // 修改属性，让SurfaceView可见
+                        showSurfaceView(holder.mSurfaceView);
+
+                        // 以其他连麦观众的id为key，存储对应的SurfaceView
+                        uidSurfaceMap.put(inviteeUID, holder.mSurfaceView);
                     }
-                });
-
-                normalDialog.setCancelable(false);
-
-                normalDialog.show();
-            } catch (Throwable t) {
-                t.printStackTrace();
+                }
             }
-
-
+            return uidSurfaceMap;
         }
 
-        /**
-         * 方法描述: 将方法的参数作为消息提示显示对话框
-         */
+        @Override
+        public void showExitChattingUI(String inviteeUID) { // ----------------根据参数uid去移除对应的连麦UI
+            ChattingViewHolder holder = mUsedViewHolderMap.get(inviteeUID);
+            // 隐藏uid对应的SurfaceView控件，并从mUsedViewHolderMap集合中移除，添加进mFreeHolderMap集合
+            if (holder != null) {
+                mFreeHolderMap.put(holder.mIndex, holder);
+                mUsedViewHolderMap.remove(inviteeUID);
+                Log.d(TAG, "移除的连麦UI的uid是: " + inviteeUID);
+                hideSurfaceView(holder.mSurfaceView);
+            }
+        }
+
+        @Override
+        public void showSelfExitChattingUI() { // ----------------隐藏所有和连麦有关的控件UI
+            String key;
+            ChattingViewHolder holder;
+            // 隐藏本观众用于连麦的控件的关闭按钮
+            mRightChattingHolder.mIvClose.setVisibility(View.GONE);
+            // 隐藏本观众用于连麦的控件
+            hideSurfaceView(mRightChattingHolder.mSurfaceView);
+
+            // 其他正在连麦用户的界面也要隐藏
+            if (mUsedViewHolderMap.size() > 0) {
+                Iterator<String> keySetIt = mUsedViewHolderMap.keySet().iterator();
+                while (keySetIt.hasNext()) {
+                    key = keySetIt.next();
+                    holder = mUsedViewHolderMap.get(key);
+                    Log.d(TAG, "showSelfExitChattingUI, key inviteeUID = " + key);
+                    // 隐藏 播放其他连麦观众的界面的控件
+                    hideSurfaceView(holder.mSurfaceView);
+                    // 从集合中的移除
+                    mFreeHolderMap.put(holder.mIndex, holder);
+                }
+                mUsedViewHolderMap.clear();
+            }
+
+            // 隐藏本观众连麦时使用的摄像头，美颜和闪光灯按钮
+            mBottomFragment.hideRecordView();
+        }
+
+        @Override
+        public void showLiveCloseUI() { // ----------------显示主播结束直播的界面的UI
+            // 直播结束时，要显示的UI
+            hideLoading();
+            if (mLiveCloseDialog == null) {
+                mLiveCloseDialog = LiveCloseDialog.newInstance(getString(R.string.live_finished));
+            }
+            if (!mLiveCloseDialog.isShow()) {
+                mLiveCloseDialog.show(getSupportFragmentManager(), LiveCloseDialog.TAG);
+            }
+            showSelfExitChattingUI();
+        }
+        // --------------------------------------------------------------------------------------------------------
+
+        // **************************************************** 正在加载的界面UI ****************************************************
+        @Override
+        public void showLoading() {
+            // 显示正在加载的界面
+            if (mLoadingView != null && mLoadingView.getParent() == null) {
+                mRootContainer.addView(mLoadingView);
+            }
+        }
+
+        @Override
+        public void hideLoading() {
+            // 隐藏正在加载的界面
+            mRootContainer.removeView(mLoadingView);
+        }
+        // --------------------------------------------------------------------------------------------------------
+
+        // **************************************************** 对话框形式 ****************************************************
         @Override
         public void showInfoDialog(String msg) {
+            // 将方法的参数作为消息提示显示对话框
             AlertDialog.Builder normalDialog = new AlertDialog.Builder(WatchLiveActivity.this);
             normalDialog.setTitle("消息提示");
             if (msg != null) {
@@ -467,109 +583,55 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         }
 
         @Override
-        public void showLoading() {
-            if (mLoadingView != null && mLoadingView.getParent() == null) {
-                mRootContainer.addView(mLoadingView);
+        public void showLiveInterruptUI(int msgRedID, int what) {
+
+            hideLoading();  // 隐藏正在加载的UI
+
+            // 如果观看界面不在前台
+            if (isFinishing()) {
+                return;
+            }
+
+            // 显示一个提示对话框，使用参数代表的错误信息进行显示，当用户点击确定时会关闭本界面
+            try {
+                AlertDialog.Builder normalDialog = new AlertDialog.Builder(WatchLiveActivity.this);
+                normalDialog.setTitle("错误提示");
+                normalDialog.setMessage(getString(msgRedID) + ", ErrorCode: " + what);
+                normalDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                });
+                normalDialog.setCancelable(false);
+                normalDialog.show();
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
         }
+        // --------------------------------------------------------------------------------------------------------
 
-        @Override
-        public void hideLoading() {
-            mRootContainer.removeView(mLoadingView);
-        }
-
+        // **************************************************** 吐司形式 ****************************************************
         @Override
         public void showToast(int id) {
+            // 显示参数资源Id所对应的字符串
             ToastUtils.showToast(WatchLiveActivity.this, id);
         }
 
         @Override
         public void showToast(String msg) {
+            // 直接显示参数字符串
             ToastUtils.showToast(WatchLiveActivity.this, msg);
-        }
-
-        @Override
-        public void hideLiveInterruptUI() {
-        }
-
-        /**
-         * 方法描述: 显示直播界面的UI
-         */
-        @Override
-        public void showLiveCloseUI() {
-            hideLoading();
-            if (mLiveCloseDialog == null) {
-                mLiveCloseDialog = LiveCloseDialog.newInstance(getString(R.string.live_finished));
-            }
-            if (!mLiveCloseDialog.isShow()) {
-                mLiveCloseDialog.show(getSupportFragmentManager(), LiveCloseDialog.TAG);
-            }
-            showSelfExitChattingUI();
-        }
-
-        @Override
-        public void showChattingView() {
-            //TODO: 显示正在连麦的Loading View
-            showLiveInterruptUI(R.string.chatting, Integer.MAX_VALUE);
-        }
-
-        @Override
-        public void hideChattingView() {
-            //TODO: 隐藏正在连麦的Loading View
-            hideLiveInterruptUI();
-        }
-
-        @Override
-        public void showFirstFrameTime(long firstFrameTime) {
-            mTvFirstFrameTime.setText(firstFrameTime + "ms");
-        }
-
-
-        @Override
-        public void showImInitInvalidDialog(ImException e) {
-            if (e.getErrorCode() == ImErrorCode.NOT_LOGIN) {
-                showImInitFailedDialog(getString(R.string.message_im_login_failed), mImLoginFailedListener);
-            } else {
-                showImInitFailedDialog(getString(R.string.message_push_init_failed), mImInitFailedListener);
-            }
-        }
-
-        private DialogInterface.OnClickListener mImInitFailedListener = new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                finish();
-            }
-        };
-
-        private DialogInterface.OnClickListener mImLoginFailedListener = new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                finish();
-                Intent intent = new Intent(WatchLiveActivity.this, LoginActivity.class);
-                startActivity(intent);
-            }
-        };
-
-
-        @Override
-        public void closeVideoChatSmallView() {
-            mBottomFragment.hideRecordView();
-        }
-
-
-        @Override
-        public void showInviteRequestSuccessUI() {
-            ToastUtils.showToast(WatchLiveActivity.this, R.string.invite_succeed);
         }
 
         @Override
         public void showInviteRequestFailedUI(Throwable cause) {
             if (cause instanceof APIException) {
+                // 获取传递过来的异常对象
                 APIException ae = (APIException) cause;
                 switch (ae.getErrorCode()) {
                     case APIErrorCode.ERROR_ROOM_INVITING:
+                        // 直播间连麦中出现异常
                         ToastUtils.showToast(WatchLiveActivity.this, R.string.error_room_inviting);
                         break;
                     default:
@@ -578,31 +640,9 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
                 }
             }
         }
+        // --------------------------------------------------------------------------------------------------------
 
-        @Override
-        public void showCloseChatFailedUI() {
-            ToastUtils.showToast(WatchLiveActivity.this, R.string.close_video_chatting_failed);
-        }
-
-        /**
-         * 方法描述: 获取本观众用来推流的SurfaceView，该SurfaceView设置了点击右上角的关闭，可以退出连麦的操作
-         */
-        @Override
-        public SurfaceView showLaunchChatUI() {
-            showSurfaceView(mRightChattingHolder.mSurfaceView);
-            // 设置右上角的关闭，可以退出连麦的操作
-            mRightChattingHolder.mIvClose.setVisibility(View.VISIBLE);
-            mRightChattingHolder.mIvClose.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    mPresenter.exitChatting();
-                    mBottomFragment.hideRecordView();
-                }
-            });
-            mBottomFragment.showRecordView();
-            return mRightChattingHolder.mSurfaceView;
-        }
-
+        // **************************************************** 下面的方法没有用 ****************************************************
         @Override
         public void showOfflineChatBtn() {
             mRightChattingHolder.mIvClose.setVisibility(View.VISIBLE);
@@ -612,79 +652,67 @@ public class WatchLiveActivity extends BaseActivity implements View.OnClickListe
         @Override
         public void showOnlineChatBtn() {
             mBottomFragment.showCallAnchor();
-//            mRightChattingHolder.mIvClose.setVisibility(View.INVISIBLE);
-
+            // mRightChattingHolder.mIvClose.setVisibility(View.INVISIBLE);
         }
 
         @Override
-        public Map<String, SurfaceView> getOtherParterViews(List<String> inviteeUIDs) {
-            Map<String, SurfaceView> uidSurfaceMap = new HashMap<>();
-            ChattingViewHolder holder;
-            if (inviteeUIDs == null || inviteeUIDs.size() == 0) {
-                return uidSurfaceMap;
-            }
-            synchronized (mFreeHolderMap) {
-                String inviteeUID;
-                if (inviteeUIDs.size() <= mFreeHolderMap.size()) {
-                    for (int i = 0; i < inviteeUIDs.size(); i++) {
-                        inviteeUID = inviteeUIDs.get(i);
-
-                        // 移除First的一对ChattingViewHolder,并作为返回值返回
-                        holder = mFreeHolderMap.pollFirstEntry().getValue();
-
-                        // 存储以确定使用的
-                        mUsedViewHolderMap.put(inviteeUID, holder);
-
-                        // 修改属性
-                        showSurfaceView(holder.mSurfaceView);
-
-
-                        // 以其他连麦观众的id为key，存储对应的SurfaceView
-                        uidSurfaceMap.put(inviteeUID, holder.mSurfaceView);
-                    }
-                }
-            }
-            return uidSurfaceMap;
+        public void showCloseChatFailedUI() {
+            ToastUtils.showToast(WatchLiveActivity.this, R.string.close_video_chatting_failed);
         }
 
-        /**
-         * 方法描述: 根据参数uid去移除对应的连麦UI
-         */
         @Override
-        public void showExitChattingUI(String inviteeUID) {
-            ChattingViewHolder holder = mUsedViewHolderMap.get(inviteeUID);
-            if (holder != null) {
-                mFreeHolderMap.put(holder.mIndex, holder);
-                mUsedViewHolderMap.remove(inviteeUID);
-                Log.d(TAG, "showExitChattingUI, inviteeUID = " + inviteeUID);
-                hideSurfaceView(holder.mSurfaceView);
-            }
+        public void showInviteRequestSuccessUI() {
+            ToastUtils.showToast(WatchLiveActivity.this, R.string.invite_succeed);
         }
 
-        /**
-         * 方法描述: 隐藏连麦使用的Surface
-         */
         @Override
-        public void showSelfExitChattingUI() {
-            String key;
-            ChattingViewHolder holder;
-            //隐藏右下角的surface和小叉按钮
-            mRightChattingHolder.mIvClose.setVisibility(View.GONE);
-            hideSurfaceView(mRightChattingHolder.mSurfaceView);
-
-            //其他正在连麦用户的界面也要隐藏
-            if (mUsedViewHolderMap.size() > 0) {
-                Iterator<String> keySetIt = mUsedViewHolderMap.keySet().iterator();
-                while (keySetIt.hasNext()) {
-                    key = keySetIt.next();
-                    holder = mUsedViewHolderMap.get(key);
-                    Log.d(TAG, "showSelfExitChattingUI, key inviteeUID = " + key);
-                    hideSurfaceView(holder.mSurfaceView);
-                    mFreeHolderMap.put(holder.mIndex, holder);
-                }
-                mUsedViewHolderMap.clear();
-            }
+        public void closeVideoChatSmallView() {
             mBottomFragment.hideRecordView();
+        }
+
+        @Override
+        public void showImInitInvalidDialog(ImException e) {
+            if (e.getErrorCode() == ImErrorCode.NOT_LOGIN) {
+                // IM服务器登陆失败，请退出重新登陆
+                showImInitFailedDialog(getString(R.string.message_im_login_failed), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                        Intent intent = new Intent(WatchLiveActivity.this, LoginActivity.class);
+                        startActivity(intent);
+                    }
+                });
+            } else {
+                // 消息推送初始化失败，请退出重新进入
+                showImInitFailedDialog(getString(R.string.message_push_init_failed), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                });
+            }
+        }
+
+        @SuppressLint("SetTextI18n")
+        @Override
+        public void showFirstFrameTime(long firstFrameTime) {
+            mTvFirstFrameTime.setText(firstFrameTime + "ms");
+        }
+
+        @Override
+        public void hideChattingView() {
+        }
+
+        @Override
+        public void showChattingView() {
+        }
+
+        @Override
+        public void hideLiveInterruptUI() {
+        }
+
+        @Override
+        public void showEnterLiveRoomFailure() {
         }
     };
 }
