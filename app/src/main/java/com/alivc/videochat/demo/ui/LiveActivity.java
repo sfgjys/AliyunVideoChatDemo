@@ -316,7 +316,6 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
     // --------------------------------------------------------------------------------------------------------
 
     // **************************************************** 生命周期变化 ****************************************************
-
     @Override
     protected void onResume() {// 因为在onCreate开启了一个Fragment，所以是先走完了Fragment的onStart后才走Activity的onStart，onResume，接着在走Fragment的onResume
         super.onResume();
@@ -541,34 +540,21 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
     }
     // --------------------------------------------------------------------------------------------------------
 
-    private DialogInterface.OnClickListener mImInitFailedListener = new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            finish();
-        }
-    };
-
-    private DialogInterface.OnClickListener mImLoginFailedListener = new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            finish();
-            Intent intent = new Intent(LiveActivity.this, LoginActivity.class);
-            startActivity(intent);
-        }
-    };
-
     // **************************************************** 根据直播，连麦等操作的结果来自定义UI更新内容 ****************************************************
     private ILiveRecordView mView = new ILiveRecordView() {
 
+        // **************************************************** 直播和连麦的核心UI更新 ****************************************************
         @Override
-        public SurfaceView showChattingUI(final String uid) {
+        public SurfaceView showChattingUI(final String uid) {// ---------------- 从mFreeSurfaceHolderMap集合中取出SurfaceView，设置一系列的属性，然后将其存入mUsedViewHolderMap。同时作为返回值
             ChattingViewHolder viewHolder = null;
             // 上把锁，在获取空闲的ChattingViewHolder是不至于混乱
             synchronized (mFreeSurfaceHolderMap) {
                 if (mFreeSurfaceHolderMap.size() > 0) {
+                    // 移除集合中第一个元素，并将这个元素返回出来
                     viewHolder = mFreeSurfaceHolderMap.pollFirstEntry().getValue();
                 }
             }
+
             if (viewHolder == null) {
                 // 当前的三个小窗都已经被占用了
                 Log.e(TAG, "No enough surfaceview to show chatting!");
@@ -596,7 +582,7 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
         }
 
         @Override
-        public void showInviteVideoChatFailedUI(Throwable e) {
+        public void showInviteVideoChatFailedUI(Throwable e) {// ---------------- 请求网络邀请观众进行连麦的请求失败了，所以界面需要展示失败的原因
 //            mLiveBottomFragment.setInviteUIEnable(true);   //启用底部的连麦按钮
             if (e instanceof APIException) {
                 APIException ae = (APIException) e;
@@ -622,7 +608,7 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
         }
 
         @Override
-        public void showTerminateChattingUI(String playerUID) {
+        public void showTerminateChattingUI(String playerUID) {// ---------------- 显示退出连麦的UI，分为退出所有连麦，和其中某个退出连麦
             Log.e(TAG, "showTerminateChattingUI[" + playerUID + "] is called!");
             String key;
             ChattingViewHolder holder;
@@ -633,7 +619,9 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
                     key = keySetIt.next();
                     holder = mUsedViewHolderMap.get(key);
                     hideSurfaceView(holder.mChatSurfaceView);
+                    // 隐藏连麦UI
                     holder.mCloseChattingButton.setVisibility(View.GONE);
+                    // 转移存放地点
                     mFreeSurfaceHolderMap.put(holder.mIndex, holder);
                 }
                 mUsedViewHolderMap.clear();
@@ -655,7 +643,7 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
         }
 
         @Override
-        public void showLiveCloseUI() {
+        public void showLiveCloseUI() {// ---------------- 因为主播在进行推流的时候一直没有成功，所以显示 提示主播退出直播的画面。
             hideInterruptUI();      //隐藏其他的提示UI
             if (mLiveCloseDialog == null) {
                 mLiveCloseDialog = LiveCloseDialog.newInstance(getString(R.string.live_cannot_publish));
@@ -675,7 +663,8 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
         @Override
         public void showInviteVideoChatSuccessfulUI() {
             ToastUtils.showToast(LiveActivity.this, R.string.invite_succeed);
-            dismissAnchorListDialog();                  //关闭选择连麦对象的Dialog
+            // 关闭选择连麦对象的Dialog
+            dismissAnchorListDialog();
 //            mLiveBottomFragment.setInviteUIEnable(false);   //禁用底部的连麦按钮
         }
         // --------------------------------------------------------------------------------------------------------
@@ -719,6 +708,7 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
             normalDialog.show();
         }
 
+        // MNS初始化出现问题，导致失败了，但是MNS又是直播中必须的功能，所以结束本界面
         @Override
         public void showImInitFailedDialog(final int tipResID, final int errorType) {
             if (mImInitFailedDialog == null) {
@@ -738,6 +728,28 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
             }
             mImInitFailedDialog.show();
         }
+
+        /**
+         * 变量的描述: MNS初始化失败，处理方法--->关闭本界面
+         */
+        private DialogInterface.OnClickListener mImInitFailedListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+            }
+        };
+
+        /**
+         * 变量的描述: MNS登录失败，处理方法--->关闭本界面，在重新进入本界面
+         */
+        private DialogInterface.OnClickListener mImLoginFailedListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+                Intent intent = new Intent(LiveActivity.this, LoginActivity.class);
+                startActivity(intent);
+            }
+        };
         // --------------------------------------------------------------------------------------------------------
 
         // **************************************************** 下面的方法没有用 ****************************************************
@@ -750,7 +762,7 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
         @Override
         public void updateBeautyUI(boolean beautyOn) {
             if (mLiveBottomFragment != null) {
-                mLiveBottomFragment.setBeautyUI(true);
+                mLiveBottomFragment.setBeautyUI(beautyOn);
             }
         }
 
@@ -766,7 +778,7 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
 
         @Override
         public void showInviteChattingTimeoutUI(String uid) {
-//            mLiveBottomFragment.setInviteUIEnable(true);    //显示连麦对方响应超时的UI
+            // mLiveBottomFragment.setInviteUIEnable(true);    //显示连麦对方响应超时的UI
         }
 
         @Override
@@ -774,13 +786,11 @@ public class LiveActivity extends BaseActivity implements FragmentInteraction {
         }
 
         @Override
-        public void hideInterruptUI() {
+        public void showChatCloseNotifyDialog(String name) {
         }
 
         @Override
-        public void showChatCloseNotifyDialog(String name) {
+        public void hideInterruptUI() {
         }
     };
-
-    // --------------------------------------------------------------------------------------------------------
 }
