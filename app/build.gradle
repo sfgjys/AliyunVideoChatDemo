@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '26.0.2'
+    compileSdkVersion 23
+    buildToolsVersion '25.0.0'
     defaultConfig {
         applicationId "com.alivc.videochat.demoapp"
         minSdkVersion 16
-        targetSdkVersion 26
+        targetSdkVersion 23
         versionCode 21203
         versionName "2.1.2.3"
         multiDexEnabled false
@@ -71,7 +71,7 @@ dependencies {
     compile(name: 'design-23.0.0', ext: 'aar')
     compile(name: 'recyclerview-v7-23.0.0', ext: 'aar')
     compile(name: 'support-v4-23.0.0', ext: 'aar')
-    compile project(':FaceUnity')
+    //    compile project(':FaceUnity')
     //以下注释部分为实际开发中推荐的依赖方式
     //    compile 'com.squareup.retrofit2:retrofit:2.1.0'
     //    compile 'com.squareup.okhttp3:logging-interceptor:3.3.0'
