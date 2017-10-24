@@ -1,13 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '25.0.0'
-
+    compileSdkVersion 26
+    buildToolsVersion '26.0.2'
     defaultConfig {
         applicationId "com.alivc.videochat.demoapp"
         minSdkVersion 16
-        targetSdkVersion 23
+        targetSdkVersion 26
         versionCode 21203
         versionName "2.1.2.3"
         multiDexEnabled false
@@ -17,7 +16,6 @@ android {
             abiFilters "arm64-v8a"
         }
     }
-
     buildTypes {
         release {
             minifyEnabled false
@@ -29,7 +27,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
     packagingOptions {
         exclude 'META-INF/rxjava.properties'
         exclude 'META-INF/LICENSE.txt'
@@ -43,7 +40,6 @@ android {
         exclude 'META-INF/LGPL2.1'
         exclude 'META-INF/maven.com.squareup.retrofit2.converter-gson/pom.xml'
     }
-
 //    splits {
 //        abi {
 //            enable false
@@ -52,41 +48,38 @@ android {
 //        }
 //
 //    }
+    productFlavors {
+    }
 }
 
 //注意：这里为了开发者导入demo比较方便快捷，将依赖库都下载下来，放入了src/main/libs目录中，
 //     并且理清了各种库之间的嵌套依赖关系，真正开发的过程中不建议这么使用
 dependencies {
-
     //与连麦相关的依赖库放在libs目录中
-    compile fileTree(dir: 'src/main/libs', include: ['*.jar'])
-
+    compile fileTree(include: ['*.jar'], dir: 'src/main/libs')
     //与连麦sdk无关的第三方依赖库放在thirdpartyLibs目录中
-    compile fileTree(dir: 'src/main/thirdpartyLibs', include: ['*.jar'])
-
-//    compile 'com.android.support:appcompat-v7:23.0.0'
-//    compile 'com.android.support:recyclerview-v7:23.0.0'
-//    compile 'com.android.support:support-v4:23.0.0'
-//    compile 'com.android.support:design:23.2.0'
-//    compile 'com.android.support:multidex:1.0.1'
-
+    compile fileTree(include: ['*.jar'], dir: 'src/main/thirdpartyLibs')
+    //    compile 'com.android.support:appcompat-v7:23.0.0'
+    //    compile 'com.android.support:recyclerview-v7:23.0.0'
+    //    compile 'com.android.support:support-v4:23.0.0'
+    //    compile 'com.android.support:design:23.2.0'
+    //    compile 'com.android.support:multidex:1.0.1'
     //依赖的aar包都在aarLibs这个目录中
     compile(name: 'androidasync-2.1.8', ext: 'aar')
     compile(name: 'bubblinganimationview-release', ext: 'aar')
-    compile(name: 'appcompat-v7-23.0.0', ext: 'aar')
+    //    compile(name: 'appcompat-v7-23.0.0', ext: 'aar') // 因为在FaceUnity包中已经导入了更高版本的
     compile(name: 'design-23.0.0', ext: 'aar')
     compile(name: 'recyclerview-v7-23.0.0', ext: 'aar')
     compile(name: 'support-v4-23.0.0', ext: 'aar')
-
+    compile project(':FaceUnity')
     //以下注释部分为实际开发中推荐的依赖方式
-//    compile 'com.squareup.retrofit2:retrofit:2.1.0'
-//    compile 'com.squareup.okhttp3:logging-interceptor:3.3.0'
-//    compile 'com.squareup.okhttp3:okhttp:3.3.0'
-//    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
-//    compile 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
-//    compile 'io.reactivex:rxjava:1.1.0'
-//    compile 'io.reactivex:rxandroid:1.1.0'
-//    compile 'com.google.code.gson:gson:2.8'
-//    compile 'com.koushikdutta.async:androidasync:2.1.8'
-
+    //    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+    //    compile 'com.squareup.okhttp3:logging-interceptor:3.3.0'
+    //    compile 'com.squareup.okhttp3:okhttp:3.3.0'
+    //    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
+    //    compile 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
+    //    compile 'io.reactivex:rxjava:1.1.0'
+    //    compile 'io.reactivex:rxandroid:1.1.0'
+    //    compile 'com.google.code.gson:gson:2.8'
+    //    compile 'com.koushikdutta.async:androidasync:2.1.8'
 }
