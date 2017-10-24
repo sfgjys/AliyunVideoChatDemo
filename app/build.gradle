@@ -67,7 +67,7 @@ dependencies {
     //依赖的aar包都在aarLibs这个目录中
     compile(name: 'androidasync-2.1.8', ext: 'aar')
     compile(name: 'bubblinganimationview-release', ext: 'aar')
-    //    compile(name: 'appcompat-v7-23.0.0', ext: 'aar') // 因为在FaceUnity包中已经导入了更高版本的
+    compile(name: 'appcompat-v7-23.0.0', ext: 'aar')
     compile(name: 'design-23.0.0', ext: 'aar')
     compile(name: 'recyclerview-v7-23.0.0', ext: 'aar')
     compile(name: 'support-v4-23.0.0', ext: 'aar')
