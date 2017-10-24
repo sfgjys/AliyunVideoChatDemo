@@ -8,7 +8,7 @@ public class HttpConstant {
     /**
      * 变量的描述: 网络请求的网址的基础地址
      */
-    public static final String HTTP_BASE_URL = "http://116.62.236.244:4000";
+    public static final String HTTP_BASE_URL = "http://118.31.79.239:4000";
 
     // **************************************************** 登录网络请求 ****************************************************
     /**
